@@ -1,0 +1,39 @@
+.button {
+  background-color: black !important;
+}
+
+body{
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; /* or any font */
+}
+
+/* Custom scrollbar */
+.custom-scroll {
+  overflow-y: auto;   /* only vertical scroll */
+  overflow-x: hidden; /* no horizontal scroll */
+  scrollbar-width: thin;
+  scrollbar-color: #444 #f1f1f1;
+}
+
+/* Chrome, Edge, Safari */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;   /* only vertical scrollbar */
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #444; /* dark scrollbar */
+  border-radius: 8px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #222;
+}
+
+button {
+  font-weight: 500 !important;
+}
+
