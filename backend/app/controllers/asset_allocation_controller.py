@@ -37,19 +37,6 @@ def create_asset_allocation(allocation: AssetAllocationCreate, db: Session = Dep
     return new_allocation
 
 
-
-# @router.get("/assetbyempid/{employee_id}", response_model=list[AssetAllocationResponse])
-# def get_allocations_by_employee(employee_id: int, db: Session = Depends(get_db)):
-#     allocations = db.query(AssetAllocation).filter(
-#         AssetAllocation.employee_id == employee_id
-#     ).all()
-
-#     if not allocations:
-#         raise HTTPException(status_code=404, detail="No allocations found for this employee")
-
-#     return allocations
-
-
 @router.get("/assetbyempid/{employee_id}", response_model=list[AssetAllocationResponse])
 def get_allocations_by_employee(employee_id: int, db: Session = Depends(get_db)):
     allocations = db.query(AssetAllocation).options(
@@ -62,3 +49,5 @@ def get_allocations_by_employee(employee_id: int, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="No allocations found for this employee")
 
     return allocations
+
+

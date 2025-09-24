@@ -61,7 +61,7 @@ const EmployeeView = ({ employee, onClose }) => {
         </div>
 
         <div className="mt-3 text-end">
-          <button className="btn btn-secondary" onClick={onClose}>
+          <button className="btn btn-dark" onClick={onClose}>
             Close
           </button>
         </div>

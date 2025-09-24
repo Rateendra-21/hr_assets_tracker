@@ -329,7 +329,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
             {/* Footer */}
             <div className="modal-footer">
               <button
-                className="btn btn-light"
+                className="btn btn-outline-dark"
                 onClick={() => {
                   setFormData(initialFormData);
                   setErrors({});

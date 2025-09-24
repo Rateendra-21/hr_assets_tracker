@@ -55,7 +55,7 @@ const AddAsset = ({ onClose, onAssetSaved }) => {
     const locationName =
       locations.find((loc) => loc.id === parseInt(formData.workLocation))
         ?.locationname || "LOC";
-    return `Argibid-${locationName}-${categoryCode}-/${randomSeq}`;
+    return `Argibid-${locationName}-${categoryCode}-${randomSeq}`;
   };
 
   const validateForm = () => {

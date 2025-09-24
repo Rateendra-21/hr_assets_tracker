@@ -29,6 +29,14 @@ class AssetResponse(BaseModel):
     serial_number: Optional[str] = None
     manufacturer: Optional[str] = None
     location_id: Optional[int] = None
+    connectivity_type: Optional[str] = None
+    power_source: Optional[str] = None
+    color: Optional[str] = None
+    specifications: Optional[str] = None
+    ip_address: Optional[str] = None
+    power_output: Optional[str] = None
+    connector_type: Optional[str] = None
+    cable_type: Optional[str] = None
     location: Optional[LocationResponse] = None
 
     class Config:

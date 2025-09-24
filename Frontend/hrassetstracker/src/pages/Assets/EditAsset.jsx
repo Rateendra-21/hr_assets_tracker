@@ -274,7 +274,7 @@ const EditAsset = ({ asset, onClose, onSave }) => {
 
                   {/* Buttons */}
                   <div className="col-12 mt-4 d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-light" onClick={onClose}>
+                    <button type="button" className="btn btn-outline-dark" onClick={onClose}>
                       Cancel
                     </button>
                     <button type="submit" className="btn btn-dark" disabled={loading}>

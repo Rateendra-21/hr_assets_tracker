@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit, Eye, QrCode, Trash2 } from "lucide-react";
+import { Edit, Eye, QrCode, Trash2, LayoutGrid, Table } from "lucide-react";
 import Qrcode from "./Qrcode";
 import AssetDetails from "./AssetDetails";
 import EditAsset from "./EditAsset";
@@ -11,6 +11,7 @@ const AssetList = ({ reloadAssets }) => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [statusFilterByCat, setStatusFilterByCat] = useState("all");
+  const [viewMode, setViewMode] = useState("grid");
 
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showQrPopup, setShowQrPopup] = useState(false);
@@ -110,7 +111,7 @@ const AssetList = ({ reloadAssets }) => {
         style={{ border: "1px solid lightgrey", borderRadius: "8px" }}
       >
         {/* Search Input */}
-        <div className="col-12 col-md-8">
+        <div className="col-12 col-md-7">
           <input
             type="text"
             value={search}
@@ -135,7 +136,7 @@ const AssetList = ({ reloadAssets }) => {
         </div>
 
         {/* Category Filter */}
-        <div className="col-12 col-md-2">
+        <div className="col-8 col-md-2">
           <select
             value={statusFilterByCat}
             onChange={(e) => setStatusFilterByCat(e.target.value)}
@@ -148,106 +149,252 @@ const AssetList = ({ reloadAssets }) => {
             <option value="Charger">Charger</option>
           </select>
         </div>
+
+        <div className="col-4 col-md-1 d-flex justify-content-end">
+          <button
+            className="btn btn-dark btn-sm mb-2 mx-1"
+            onClick={() => setViewMode("grid")}
+          >
+            <LayoutGrid size={14} className="" />
+          </button>
+
+          <button
+            className="btn btn-dark btn-sm mb-2 mx-1"
+            onClick={() => setViewMode("table")}
+          >
+            <Table size={14} className="" />
+          </button>
+        </div>
       </div>
 
-      {/* Asset Cards */}
-      <div
-        className="w-100 custom-scroll py-3"
-        style={{ maxWidth: "1100px", maxHeight: "330px", paddingRight: "10px" }}
-      >
-        {loading ? (
-          <div className="text-center py-5">
-            <span className="text-muted">Loading assets...</span>
-          </div>
-        ) : filteredAssets.length === 0 ? (
-          <div
-            className="text-center py-5 rounded"
-            style={{ border: "1px solid lightgrey" }}
-          >
-            <span className="text-muted">No assets found</span>
-          </div>
-        ) : (
-          <div className="row g-4">
-            {filteredAssets.map((asset) => (
-              <div className="col-md-6" key={asset.id}>
-                <div className="card h-100 shadow-sm border rounded-3">
-                  <div className="card-body d-flex flex-column">
-                    <div className="d-flex justify-content-between align-items-start mb-3">
-                      <h5 className="card-title mb-1">{asset.asset_name}</h5>
-                      <span
-                        className={`badge ${
-                          asset.status === "available"
-                            ? "bg-success"
-                            : asset.status === "assigned"
-                            ? "bg-dark"
-                            : "bg-danger"
-                        } rounded-pill`}
-                      >
-                        {asset.status}
-                      </span>
-                    </div>
-
-                    <div className="row mb-4">
-                      <div className="col-6">
-                        <small className="text-muted">Category</small>
-                        <p className="mb-1">{asset.category || "-"}</p>
+      <div style={{ display: viewMode === "grid" ? "block" : "none" }}>
+        {/* Asset Cards */}
+        <div
+          className="w-100 custom-scroll py-3"
+          style={{
+            maxWidth: "1100px",
+            maxHeight: "330px",
+            paddingRight: "10px",
+          }}
+        >
+          {loading ? (
+            <div className="text-center py-5">
+              <span className="text-muted">Loading assets...</span>
+            </div>
+          ) : filteredAssets.length === 0 ? (
+            <div
+              className="text-center py-5 rounded"
+              style={{ border: "1px solid lightgrey" }}
+            >
+              <span className="text-muted">No assets found</span>
+            </div>
+          ) : (
+            <div className="row g-4">
+              {filteredAssets.map((asset) => (
+                <div className="col-md-6" key={asset.id}>
+                  <div className="card h-100 shadow-sm border rounded-3">
+                    <div className="card-body d-flex flex-column">
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <h5 className="card-title mb-1">{asset.asset_name}</h5>
+                        <span
+                          className={`badge ${
+                            asset.status === "available"
+                              ? "bg-success"
+                              : asset.status === "assigned"
+                              ? "bg-dark"
+                              : "bg-danger"
+                          } rounded-pill`}
+                        >
+                          {asset.status}
+                        </span>
                       </div>
-                      <div className="col-6">
-                        <small className="text-muted">Manufacturer</small>
-                        <p className="mb-1">{asset.manufacturer || "-"}</p>
-                      </div>
-                      <div className="col-6">
-                        <small className="text-muted">Location</small>
-                        <p className="mb-1">
-                          {asset.location?.locationname || "-"}
-                        </p>
-                      </div>
-                      <div className="col-6">
-                        <small className="text-muted">Status</small>
-                        <p className="mb-1">{asset.status}</p>
-                      </div>
-                    </div>
 
-                    <div className="mt-auto d-flex justify-content-end flex-wrap gap-2">
-                      <button
-                        className="btn btn-outline-dark btn-sm d-flex align-items-center"
-                        onClick={() => handleQrClick(asset)}
-                      >
-                        <QrCode className="me-1" size={15} />
-                        QR Code
-                      </button>
+                      <div className="row mb-4">
+                        <div className="col-6">
+                          <small className="text-muted">Category</small>
+                          <p className="mb-1">{asset.category || "-"}</p>
+                        </div>
+                        <div className="col-6">
+                          <small className="text-muted">Manufacturer</small>
+                          <p className="mb-1">{asset.manufacturer || "-"}</p>
+                        </div>
+                        <div className="col-6">
+                          <small className="text-muted">Location</small>
+                          <p className="mb-1">
+                            {asset.location?.locationname || "-"}
+                          </p>
+                        </div>
+                        <div className="col-6">
+                          <small className="text-muted">Status</small>
+                          <p className="mb-1">{asset.status}</p>
+                        </div>
+                      </div>
 
-                      <button
-                        className="btn btn-dark btn-sm"
-                        onClick={() => handleViewClick(asset)}
-                      >
-                        <Eye size={15} className="mb-1" />
-                      </button>
+                      <div className="mt-auto d-flex justify-content-end flex-wrap gap-2">
+                        <button
+                          className="btn btn-outline-dark btn-sm d-flex align-items-center"
+                          onClick={() => handleQrClick(asset)}
+                        >
+                          <QrCode className="me-1" size={15} />
+                          QR Code
+                        </button>
 
-                      {asset.status === "available" && (
                         <button
                           className="btn btn-dark btn-sm"
-                          onClick={() => handleEditClick(asset)}
+                          onClick={() => handleViewClick(asset)}
                         >
-                            <Edit size={15} className="mb-1" />
+                          <Eye size={15} className="mb-1" />
                         </button>
-                      )}
 
-                      {asset.status !== "e-waste" && (
-                        <button
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={() => handleEwasteClick(asset)}
-                        >
-                          e-waste <Trash2 size={17} className="mb-1" />
-                        </button>
-                      )}
+                        {asset.status === "available" && (
+                          <button
+                            className="btn btn-dark btn-sm"
+                            onClick={() => handleEditClick(asset)}
+                          >
+                            <Edit size={15} className="mb-1" />
+                          </button>
+                        )}
+
+                        {asset.status !== "e-waste" && (
+                          <button
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => handleEwasteClick(asset)}
+                          >
+                            e-waste <Trash2 size={17} className="mb-1" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: viewMode === "table" ? "block" : "none" }}>
+        <div className="py-2 rounded" style={{ border: "1px solid lightgrey" }}>
+          <div className="container-fluid">
+            {loading ? (
+              <div className="text-center py-5">
+                <small className="text-muted">Loading assets...</small>
               </div>
-            ))}
+            ) : filteredAssets.length === 0 ? (
+              <div
+                className="text-center py-5 rounded"
+                style={{ border: "1px solid lightgrey" }}
+              >
+                <small className="text-muted">No assets found</small>
+              </div>
+            ) : (
+              <div
+                className="table-responsive custom-scroll"
+                style={{
+                  maxHeight: "500px",
+                  overflowY: "scroll",
+                  overflowX: "scroll",
+                }}
+              >
+                <table
+                  className="table table-bordered table-hover mb-0 align-middle text-center"
+                  style={{ width: "100%", minWidth: "1200px" }}
+                >
+                  <thead className="table">
+                    <tr>
+                      <th>
+                        <small>Asset Name</small>
+                      </th>
+                      <th>
+                        <small>Category</small>
+                      </th>
+                      <th>
+                        <small>Manufacturer</small>
+                      </th>
+                      <th>
+                        <small>Location</small>
+                      </th>
+                      <th>
+                        <small>Status</small>
+                      </th>
+                      <th>
+                        <small>Actions</small>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAssets.map((asset) => (
+                      <tr key={asset.id}>
+                        <td>
+                          <small>{asset.asset_name}</small>
+                        </td>
+                        <td>
+                          <small>{asset.category || "-"}</small>
+                        </td>
+                        <td>
+                          <small>{asset.manufacturer || "-"}</small>
+                        </td>
+                        <td>
+                          <small>{asset.location?.locationname || "-"}</small>
+                        </td>
+                        <td>
+                          <small>
+                            <span
+                              className={`badge ${
+                                asset.status === "available"
+                                  ? "bg-success"
+                                  : asset.status === "assigned"
+                                  ? "bg-dark"
+                                  : "bg-danger"
+                              }`}
+                            >
+                              {asset.status}
+                            </span>
+                          </small>
+                        </td>
+                        <td className="d-flex justify-content-center flex-wrap gap-1">
+                          <button
+                            className="btn btn-dark btn-sm d-flex align-items-center"
+                            onClick={() => handleQrClick(asset)}
+                          >
+                            <QrCode size={14} />
+                            {/* <small>QR</small> */}
+                          </button>
+
+                          <button
+                            className="btn btn-dark btn-sm"
+                            onClick={() => handleViewClick(asset)}
+                          >
+                            <Eye size={14} />
+                          </button>
+
+                          {asset.status === "available" && (
+                            <button
+                              className="btn btn-dark btn-sm"
+                              onClick={() => handleEditClick(asset)}
+                            >
+                              <Edit size={14} />
+                            </button>
+                          )}
+
+                          {asset.status !== "e-waste" && (
+                            <button
+                              className="btn btn-danger btn-sm d-flex align-items-center"
+                              onClick={() => handleEwasteClick(asset)}
+                            >
+                              {/* <small className="me-1"></small> */}
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Modals */}

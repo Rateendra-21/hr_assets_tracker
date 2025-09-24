@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { Box, MapPin, UserRoundCheck } from "lucide-react";
+import { Box, MapPin, LayoutGrid, Table } from "lucide-react";
 import AssignAsset from "./AssignAsset";
-
 const Assign = () => {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [viewMode, setViewMode] = useState("grid");
 
   const fetchAssets = () => {
     setLoading(true);
@@ -87,14 +87,9 @@ const Assign = () => {
           </div>
 
           {/* Right Column */}
-          <div className="col-12 col-md-6 d-flex justify-content-md-end">
-            <div className="col-12 col-md-6">
-              <label
-                htmlFor="categoryFilter"
-                className="form-label small fw-semibold text-dark"
-              >
-                Filter by Category
-              </label>
+          <div className="col-12 col-md-6 d-flex justify-content-md-end mt-3">
+            <div className="col-9 col-md-4">
+         
               <select
                 id="categoryFilter"
                 className="form-select form-select-sm w-100"
@@ -108,92 +103,22 @@ const Assign = () => {
                 <option value="Charger">Charger</option>
               </select>
             </div>
-          </div>
-        </div>
 
-        {/* Table */}
-        <div
-          className="table-responsive mt-4 custom-scroll"
-          style={{ maxHeight: "300px" }}
-        >
-          <div className="border rounded p-3 w-100">
-            {loading ? (
-              <div className="text-center py-5">Loading assets...</div>
-            ) : (
-              <table className="table table-bordered align-middle mb-0 rounded">
-                {/* <thead className="table-light">
-                  <tr>
-                    <th className="text-dark small bg-white fw-medium">
-                      Asset Name
-                    </th>
-                    <th className="text-dark small bg-white fw-medium">
-                      Category
-                    </th>
-                    <th className="text-dark small bg-white fw-medium">
-                      Serial Number
-                    </th>
-                    <th className="text-dark small bg-white fw-medium">
-                      Location
-                    </th>
-                    <th className="text-dark small bg-white fw-medium">
-                      Manufacturer
-                    </th>
-                    <th className="text-dark small bg-white fw-medium">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
+            <div className="col-3 col-md-2">
+              <button
+                className="btn btn-dark btn-sm mb-2 mx-1"
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid size={14} className="" />
+              </button>
 
-                <tbody>
-                  {filteredAssets.length > 0 ? (
-                    filteredAssets.map((asset) => (
-                      <tr key={asset.id}>
-                        <td className="text-dark small bg-white fw-medium">
-                          {asset.asset_name || "-"}
-                        </td>
-                        <td className="text-dark small bg-white fw-medium">
-                          <span className="badge bg-dark text-white border rounded-pill px-2 py-1">
-                            {asset.category?.name || asset.category || "-"}
-                          </span>
-                        </td>
-                        <td className="text-dark small bg-white fw-medium">
-                          {asset.serial_number || "-"}
-                        </td>
-                        <td className="text-dark small bg-white fw-medium">
-                          <MapPin size={14} className="me-2" />
-                          {asset.location?.locationname ||
-                            asset.location ||
-                            "-"}
-                        </td>
-                        <td className="text-dark small bg-white fw-medium">
-                          {asset.manufacturer?.manufacturer ||
-                            asset.manufacturer ||
-                            "-"}
-                        </td>
-                        <td className="text-dark small bg-white fw-medium">
-                          <button
-                            className="btn btn-dark btn-sm d-flex align-items-center gap-2"
-                            onClick={() => handleAssignClick(asset)}
-                          >
-                            <UserRoundCheck size={15} />
-                            Assign
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="6"
-                        className="text-center text-dark small bg-white fw-medium"
-                      >
-                        No assets found
-                      </td>
-                    </tr>
-                  )}
-                </tbody> */}
-              </table>
-            )}
+              <button
+                className="btn btn-dark btn-sm mb-2"
+                onClick={() => setViewMode("table")}
+              >
+                <Table size={14} className="" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

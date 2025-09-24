@@ -1,6 +1,6 @@
 import { useEffect, useState, forwardRef } from "react";
 import { toast } from "react-hot-toast";
-import { User } from "lucide-react";
+import { User, LayoutGrid, Table, View, Eye, Edit } from "lucide-react";
 import EmployeeDeactivate from "../employee/EmployeeDeactivate";
 import EmployeeView from "../employee/Employedetailsview";
 import EditEmployeeModal from "../employee/EditEmployeeModal";
@@ -9,7 +9,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "inactive"
-
+  const [viewMode, setViewMode] = useState("grid");
   // Modal states
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -150,7 +150,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
       >
         <div className="row g-2 align-items-center">
           {/* Search input */}
-          <div className="col-12 col-md-8 position-relative">
+          <div className="col-12 col-md-7 position-relative">
             <User
               className="position-absolute text-muted"
               size={20}
@@ -170,7 +170,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
           </div>
 
           {/* Status Dropdown */}
-          <div className="col-12 col-md-4">
+          <div className="col-9 col-md-4">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -181,119 +181,271 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
               <option value="inactive">Inactive</option>
             </select>
           </div>
+
+          <div className="col-md-1 col-3">
+            <button
+              className="btn btn-dark btn-sm  mx-1"
+              onClick={() => setViewMode("grid")}
+            >
+              <LayoutGrid size={14} className="" />
+            </button>
+
+            <button
+              className="btn btn-dark btn-sm "
+              onClick={() => setViewMode("table")}
+            >
+              <Table size={14} className="" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Employee Cards */}
-      <div
-        className="w-100 custom-scroll py-3"
-        style={{ maxWidth: "1100px", maxHeight: "330px", paddingRight: "10px" }}
-      >
-        {filteredEmployees.length === 0 ? (
-          <div
-            className="text-center py-5 rounded"
-            style={{ border: "1px solid lightgrey" }}
-          >
-            <span className="text-muted">No employees found</span>
-          </div>
-        ) : (
-          <div className="row g-3">
-            {filteredEmployees.map((emp, index) => (
-              <div className="col-12 col-sm-6 col-lg-6" key={emp.id || index}>
-                {/* Card */}
-                <div className="card h-100 shadow-sm border rounded-3">
-                  <div className="card-body d-flex flex-column">
-                    {/* Header */}
-                    <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap">
-                      <div>
-                        <h5
-                          className="card-title mb-1"
-                          style={{ fontSize: "1rem" }}
-                        >
-                          {emp.fullname}
-                        </h5>
-                        <h6
-                          className="card-subtitle text-muted"
-                          style={{ fontSize: "0.85rem" }}
-                        >
-                          {emp.designation} •{" "}
-                          {emp.department?.departmentname || "-"}
-                        </h6>
-                      </div>
-                      <span
-                        className={`badge ${
-                          emp.is_active ? "bg-success" : "bg-danger"
-                        } rounded-pill mt-1 mt-md-0`}
-                      >
-                        {emp.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
 
-                    {/* Info */}
-                    <div className="row mb-3">
-                      <div className="col-6 mb-2 mb-md-0">
-                        <small className="text-muted">Employee ID</small>
-                        <p className="mb-1" style={{ fontSize: "0.85rem" }}>
-                          {emp.employee_id}
-                        </p>
+      <div style={{ display: viewMode === "grid" ? "block" : "none" }}>
+        <div
+          className="w-100 custom-scroll py-3"
+          style={{
+            maxWidth: "1100px",
+            maxHeight: "330px",
+            paddingRight: "10px",
+          }}
+        >
+          {filteredEmployees.length === 0 ? (
+            <div
+              className="text-center py-5 rounded"
+              style={{ border: "1px solid lightgrey" }}
+            >
+              <span className="text-muted">No employees found</span>
+            </div>
+          ) : (
+            <div className="row g-3">
+              {filteredEmployees.map((emp, index) => (
+                <div className="col-12 col-sm-6 col-lg-6" key={emp.id || index}>
+                  {/* Card */}
+                  <div className="card h-100 shadow-sm border rounded-3">
+                    <div className="card-body d-flex flex-column">
+                      {/* Header */}
+                      <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap">
+                        <div>
+                          <h5
+                            className="card-title mb-1"
+                            style={{ fontSize: "1rem" }}
+                          >
+                            {emp.fullname}
+                          </h5>
+                          <h6
+                            className="card-subtitle text-muted"
+                            style={{ fontSize: "0.85rem" }}
+                          >
+                            {emp.designation} •{" "}
+                            {emp.department?.departmentname || "-"}
+                          </h6>
+                        </div>
+                        <span
+                          className={`badge ${
+                            emp.is_active ? "bg-success" : "bg-danger"
+                          } rounded-pill mt-1 mt-md-0`}
+                        >
+                          {emp.is_active ? "Active" : "Inactive"}
+                        </span>
                       </div>
-                      <div className="col-6 mb-2 mb-md-0">
-                        <small className="text-muted">Location</small>
-                        <p className="mb-1" style={{ fontSize: "0.85rem" }}>
-                          {emp.location?.locationname || "-"}
-                        </p>
-                      </div>
-                      <div className="col-6 mb-2 mb-md-0">
-                        <small className="text-muted">Email</small>
-                        <p className="mb-1" style={{ fontSize: "0.85rem" }}>
-                          {emp.email}
-                        </p>
-                      </div>
-                      <div className="col-6 mb-2 mb-md-0">
-                        <small className="text-muted">Mobile</small>
-                        <p className="mb-1" style={{ fontSize: "0.85rem" }}>
-                          {emp.mobile_no}
-                        </p>
-                      </div>
-                    </div>
 
-                    {/* Buttons */}
-                    <div className="mt-auto d-flex gap-2 flex-wrap justify-content-end">
-                      {emp.is_active === 1 || emp.is_active === true ? (
+                      {/* Info */}
+                      <div className="row mb-3">
+                        <div className="col-6 mb-2 mb-md-0">
+                          <small className="text-muted">Employee ID</small>
+                          <p className="mb-1" style={{ fontSize: "0.85rem" }}>
+                            {emp.employee_id}
+                          </p>
+                        </div>
+                        <div className="col-6 mb-2 mb-md-0">
+                          <small className="text-muted">Location</small>
+                          <p className="mb-1" style={{ fontSize: "0.85rem" }}>
+                            {emp.location?.locationname || "-"}
+                          </p>
+                        </div>
+                        <div className="col-6 mb-2 mb-md-0">
+                          <small className="text-muted">Email</small>
+                          <p className="mb-1" style={{ fontSize: "0.85rem" }}>
+                            {emp.email}
+                          </p>
+                        </div>
+                        <div className="col-6 mb-2 mb-md-0">
+                          <small className="text-muted">Mobile</small>
+                          <p className="mb-1" style={{ fontSize: "0.85rem" }}>
+                            {emp.mobile_no}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Buttons */}
+                      <div className="mt-auto d-flex gap-2 flex-wrap justify-content-end">
+                        {emp.is_active === 1 || emp.is_active === true ? (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeactivateClick(emp)}
+                          >
+                            Deactivate
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-success btn-sm"
+                            onClick={() => handleActivateClick(emp)}
+                          >
+                            Activate
+                          </button>
+                        )}
+
                         <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDeactivateClick(emp)}
+                          className="btn btn-dark btn-sm"
+                          onClick={() => handleView(emp)}
                         >
-                          Deactivate
+                          View
                         </button>
-                      ) : (
                         <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => handleActivateClick(emp)}
+                          className="btn btn-dark text-light btn-sm"
+                          onClick={() => handleEditClick(emp)}
                         >
-                          Activate
+                          Edit
                         </button>
-                      )}
-
-                      <button
-                        className="btn btn-dark btn-sm"
-                        onClick={() => handleView(emp)}
-                      >
-                        View
-                      </button>
-                      <button
-                        className="btn btn-dark text-light btn-sm"
-                        onClick={() => handleEditClick(emp)}
-                      >
-                        Edit
-                      </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: viewMode === "table" ? "block" : "none" }}>
+        <div className="py-2 rounded" style={{ border: "1px solid lightgrey" }}>
+          <div className="container-fluid">
+            {filteredEmployees.length === 0 ? (
+              <div
+                className="text-center py-5 rounded"
+                style={{ border: "1px solid lightgrey" }}
+              >
+                <small className="text-muted">No employees found</small>
               </div>
-            ))}
+            ) : (
+              <div
+                className="table-responsive custom-scroll"
+                style={{
+                  maxHeight: "500px",
+                  overflowY: "scroll",
+                  overflowX: "scroll",
+                }}
+              >
+                <table
+                  className="table table-bordered table-hover mb-0 align-middle text-center"
+                  style={{ width: "100%", minWidth: "1200px" }}
+                >
+                  <thead className="table">
+                    <tr>
+                      <th>
+                        <small>Emp ID</small>
+                      </th>
+                      <th>
+                        <small>Name</small>
+                      </th>
+                      <th>
+                        <small>Location</small>
+                      </th>
+                      <th>
+                        <small>Mobile</small>
+                      </th>
+                      <th>
+                        <small>Email</small>
+                      </th>
+                      <th>
+                        <small>Designation</small>
+                      </th>
+                      <th>
+                        <small>Department</small>
+                      </th>
+                      <th>
+                        <small>Status</small>
+                      </th>
+                      <th>
+                        <small>Actions</small>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees.map((emp, index) => (
+                      <tr key={emp.id || index}>
+                        <td>
+                          <small>{emp.employee_id}</small>
+                        </td>
+                        <td>
+                          <small>{emp.fullname}</small>
+                        </td>
+                        <td>
+                          <small>{emp.location?.locationname || "-"}</small>
+                        </td>
+                        <td>
+                          <small>{emp.mobile_no}</small>
+                        </td>
+                        <td>
+                          <small>{emp.email}</small>
+                        </td>
+                        <td>
+                          <small>{emp.designation || "-"}</small>
+                        </td>
+                        <td>
+                          <small>{emp.department?.departmentname || "-"}</small>
+                        </td>
+                        <td>
+                          <small>
+                            <span
+                              className={`badge ${
+                                emp.is_active ? "bg-success" : "bg-danger"
+                              }`}
+                            >
+                              {emp.is_active ? "Active" : "Inactive"}
+                            </span>
+                          </small>
+                        </td>
+                        <td>
+                          {emp.is_active === 1 || emp.is_active === true ? (
+                            <button
+                              className="btn btn-danger btn-sm me-1"
+                              onClick={() => handleDeactivateClick(emp)}
+                            >
+                              <small>Deactivate</small>
+                            </button>
+                          ) : (
+                            <button
+                              className="btn btn-success btn-sm me-1"
+                              onClick={() => handleActivateClick(emp)}
+                            >
+                              <small>Activate</small>
+                            </button>
+                          )}
+
+                          <button
+                            className="btn btn-dark btn-sm me-1"
+                            onClick={() => handleView(emp)}
+                          >
+                            <Eye size={16}/>
+                          </button>
+                          <button
+                            className="btn btn-dark text-light btn-sm"
+                            onClick={() => handleEditClick(emp)}
+                          >
+                            <Edit size={16}/>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Modals */}

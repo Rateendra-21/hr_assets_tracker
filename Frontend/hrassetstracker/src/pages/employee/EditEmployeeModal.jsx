@@ -31,8 +31,12 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
         email: employeeData.email || "",
         employeeId: employeeData.employee_id || "",
         designation: employeeData.designation || "",
-        department: employeeData.department_id ? String(employeeData.department_id) : "",
-        workLocation: employeeData.location_id ? String(employeeData.location_id) : "",
+        department: employeeData.department_id
+          ? String(employeeData.department_id)
+          : "",
+        workLocation: employeeData.location_id
+          ? String(employeeData.location_id)
+          : "",
         reportingManager: employeeData.reporting_manager || "",
       });
     }
@@ -92,7 +96,10 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
 
       case "department":
       case "workLocation":
-        if (!value) return `${name === "department" ? "Department" : "Work Location"} is required`;
+        if (!value)
+          return `${
+            name === "department" ? "Department" : "Work Location"
+          } is required`;
         break;
 
       default:
@@ -121,53 +128,53 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
     setErrors({ ...errors, [name]: errorMsg });
   };
 
-  
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validate()) return;
+    e.preventDefault();
+    if (!validate()) return;
 
-  // Construct payload with only allowed fields
-  const payload = {
-    fullname: formData.fullName,
-    mobile_no: formData.mobileNumber,
-    email: formData.email,
-    designation: formData.designation,
-    reporting_manager: formData.reportingManager,
-    department_id: formData.department ? parseInt(formData.department) : null,
-    location_id: formData.workLocation ? parseInt(formData.workLocation) : null,
-  };
+    // Construct payload with only allowed fields
+    const payload = {
+      fullname: formData.fullName,
+      mobile_no: formData.mobileNumber,
+      email: formData.email,
+      designation: formData.designation,
+      reporting_manager: formData.reportingManager,
+      department_id: formData.department ? parseInt(formData.department) : null,
+      location_id: formData.workLocation
+        ? parseInt(formData.workLocation)
+        : null,
+    };
 
-  try {
-    // Make PUT request with employee_id in the URL
-    const url = `http://127.0.0.1:8000/employees/update/${formData.employeeId}`;
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      // Make PUT request with employee_id in the URL
+      const url = `http://127.0.0.1:8000/employees/update/${formData.employeeId}`;
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.detail || "Failed to update employee");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to update employee");
+      }
+
+      toast.success("Employee updated successfully!");
+      handleClose();
+      if (onSave) onSave();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Something went wrong!");
     }
-
-    toast.success("Employee updated successfully!");
-    handleClose();
-    if (onSave) onSave();
-  } catch (err) {
-    console.error(err);
-    toast.error(err.message || "Something went wrong!");
-  }
-};
-
-
-
-
+  };
 
   if (!show) return null;
 
   return (
-    <div className="modal fade show" style={{ display: "block", background: "rgba(0,0,0,0.5)" }}>
+    <div
+      className="modal fade show"
+      style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
+    >
       <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
@@ -175,18 +182,39 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
               <h5 className="modal-title">Edit Employee</h5>
               <small className="text-muted">Update employee details</small>
             </div>
-            <button type="button" className="btn-close" onClick={handleClose}></button>
+            <button
+              type="button"
+              className="btn-close"
+              onClick={handleClose}
+            ></button>
           </div>
-          <div className="modal-body" style={{ height: "430px", overflowY: "auto" }}>
+          <div
+            className="modal-body"
+            style={{ height: "430px", overflowY: "auto" }}
+          >
             <form onSubmit={handleSubmit} className="row g-3">
               {/** Full form fields with validation */}
               {[
                 { label: "Full Name", name: "fullName", type: "text" },
-                { label: "Mobile Number", name: "mobileNumber", type: "text", maxLength: 10 },
+                {
+                  label: "Mobile Number",
+                  name: "mobileNumber",
+                  type: "text",
+                  maxLength: 10,
+                },
                 { label: "Email", name: "email", type: "email" },
-                { label: "Employee ID", name: "employeeId", type: "text", disabled: true },
+                {
+                  label: "Employee ID",
+                  name: "employeeId",
+                  type: "text",
+                  disabled: true,
+                },
                 { label: "Designation", name: "designation", type: "text" },
-                { label: "Reporting Manager", name: "reportingManager", type: "text" },
+                {
+                  label: "Reporting Manager",
+                  name: "reportingManager",
+                  type: "text",
+                },
               ].map((field) => (
                 <div className="col-md-6" key={field.name}>
                   <label className="form-label">
@@ -195,7 +223,9 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
                   <input
                     type={field.type}
                     name={field.name}
-                    className={`form-control ${errors[field.name] ? "is-invalid" : ""}`}
+                    className={`form-control ${
+                      errors[field.name] ? "is-invalid" : ""
+                    }`}
                     value={formData[field.name]}
                     onChange={handleChange}
                     maxLength={field.maxLength || undefined}
@@ -214,7 +244,9 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
                 </label>
                 <select
                   name="department"
-                  className={`form-select ${errors.department ? "is-invalid" : ""}`}
+                  className={`form-select ${
+                    errors.department ? "is-invalid" : ""
+                  }`}
                   value={formData.department}
                   onChange={handleChange}
                 >
@@ -237,7 +269,9 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
                 </label>
                 <select
                   name="workLocation"
-                  className={`form-select ${errors.workLocation ? "is-invalid" : ""}`}
+                  className={`form-select ${
+                    errors.workLocation ? "is-invalid" : ""
+                  }`}
                   value={formData.workLocation}
                   onChange={handleChange}
                 >
@@ -254,7 +288,11 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
               </div>
 
               <div className="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" className="btn btn-outline-secondary" onClick={handleClose}>
+                <button
+                  type="button"
+                  className="btn btn-outline-dark"
+                  onClick={handleClose}
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-dark">
