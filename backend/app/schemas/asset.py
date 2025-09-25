@@ -4,9 +4,6 @@ from datetime import datetime
 # ---------------------------------
 from app.schemas.location import LocationSchema
 from app.schemas.user import UserResponse
-
-
-
 from app.schemas.employee import EmployeeResponse
 
 # Request schema
@@ -47,14 +44,10 @@ class AssetResponse(BaseModel):
     cable_type: Optional[str] = None
     status: Optional[str] = None
     qr_id: Optional[str] = None
+    location_id: Optional[int] = None
     register_date: datetime
     updated_at: Optional[datetime] = None
-    employee_id: Optional[int] = None
-    location: Optional[LocationSchema]
-
-    # ------------------------------
-
-    employee: Optional[UserResponse] = None
+    location: Optional[LocationSchema] = None
 
     class Config:
         from_attributes = True

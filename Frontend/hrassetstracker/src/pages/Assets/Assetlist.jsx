@@ -291,7 +291,7 @@ const AssetList = ({ reloadAssets }) => {
               <div
                 className="table-responsive custom-scroll"
                 style={{
-                  maxHeight: "500px",
+                  maxHeight: "300px",
                   overflowY: "scroll",
                   overflowX: "scroll",
                 }}

@@ -1,29 +1,32 @@
-from sqlalchemy import Column, Integer, String, Enum, TIMESTAMP, text, ForeignKey
+from sqlalchemy import Column, Integer, String, Enum, TIMESTAMP, text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
-from app.models.asset import Asset  # import your Asset model
+from app.models.asset_lifecycle import AssetStatus
 import enum
+from datetime import datetime
 
 class AllocationStatus(enum.Enum):
-    assigned = "assigned"
-    returned = "returned"
+    ASSIGNED = "assigned"
+    RETURNED = "returned"
 
 class AssetAllocation(Base):
     __tablename__ = "asset_allocations"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     asset_id = Column(Integer, ForeignKey("assets.id"), nullable=False)  
-    employee_id = Column(Integer, nullable=False)
-    allocated_by = Column(String(50), nullable=False)
-    allocation_date = Column(TIMESTAMP, nullable=True, server_default=text("CURRENT_TIMESTAMP"))
-    return_date = Column(TIMESTAMP, nullable=True, default=None)
-    status = Column(Enum(AllocationStatus), nullable=False, server_default="assigned")
-    notes = Column(String(500), nullable=True, default=None)
-    created_at = Column(TIMESTAMP, nullable=True, default=None)
-    updated_at = Column(TIMESTAMP, nullable=True, default=None)
+    employee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    allocated_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    allocation_date = Column(DateTime, default=datetime.utcnow)
+    return_date = Column(DateTime, nullable=True)
+    status = Column(Enum(AllocationStatus), default=AllocationStatus.ASSIGNED)
+    notes = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Add relationship to Asset
-    asset = relationship("Asset", backref="allocations")
+    # Relationships
+    asset = relationship("Asset", back_populates="current_allocation")
+    employee = relationship("User", foreign_keys=[employee_id])
+    admin = relationship("User", foreign_keys=[allocated_by])
     
 
 

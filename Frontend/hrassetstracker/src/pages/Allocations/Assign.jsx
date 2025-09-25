@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Box, MapPin, LayoutGrid, Table } from "lucide-react";
+import { Box, MapPin, LayoutGrid, Table, Check } from "lucide-react";
 import AssignAsset from "./AssignAsset";
 const Assign = () => {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [selectedAssets, setSelectedAssets] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
 
   const fetchAssets = () => {
@@ -36,34 +36,39 @@ const Assign = () => {
           (a) => (a.category?.name || a.category) === categoryFilter
         );
 
-  const handleAssignClick = (asset) => {
-    setSelectedAsset(asset);
+  const handleAssetSelect = (asset) => {
+    setSelectedAssets(prev => {
+      const isSelected = prev.some(a => a.id === asset.id);
+      if (isSelected) {
+        return prev.filter(a => a.id !== asset.id);
+      } else {
+        return [...prev, asset];
+      }
+    });
+  };
+
+  const handleAssignClick = () => {
+    if (selectedAssets.length === 0) {
+      alert("Please select at least one asset to assign");
+      return;
+    }
     setShowModal(true);
   };
 
   const handleModalClose = () => {
     setShowModal(false);
-    setSelectedAsset(null);
   };
 
-  const handleSave = async (employeeName) => {
-    if (!selectedAsset) return;
+  const handleSave = async (employeeId) => {
+    if (selectedAssets.length === 0) return;
 
     try {
-      // Example API request for assigning asset
-      await fetch("http://127.0.0.1:8000/assets/assignAsset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assetId: selectedAsset.id,
-          employeeName,
-        }),
-      });
-
-      handleModalClose();
+      // Will be implemented in the AssignAsset component
       fetchAssets(); // refresh after save
+      setSelectedAssets([]);
+      handleModalClose();
     } catch (err) {
-      console.error("Error assigning asset:", err);
+      console.error("Error assigning assets:", err);
     }
   };
 
@@ -81,15 +86,13 @@ const Assign = () => {
               Allocations
             </h5>
             <small className="text-muted d-block">
-              Select a category to view available assets and assign them to
-              employees
+              Select assets using checkboxes and assign them to an employee
             </small>
           </div>
 
           {/* Right Column */}
           <div className="col-12 col-md-6 d-flex justify-content-md-end mt-3">
             <div className="col-9 col-md-4">
-         
               <select
                 id="categoryFilter"
                 className="form-select form-select-sm w-100"
@@ -123,10 +126,112 @@ const Assign = () => {
         </div>
       </div>
 
+      {/* Asset List with Checkboxes */}
+      <div className="mt-3">
+        {loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        ) : filteredAssets.length === 0 ? (
+          <div className="text-center py-5">
+            <p className="text-muted">No available assets found</p>
+          </div>
+        ) : (
+          <>
+            <div className="d-flex justify-content-between mb-3">
+              <h6>{filteredAssets.length} available assets</h6>
+              <button 
+                className="btn btn-primary btn-sm" 
+                onClick={handleAssignClick}
+                disabled={selectedAssets.length === 0}
+              >
+                Assign Selected Assets ({selectedAssets.length})
+              </button>
+            </div>
+            
+            {viewMode === "grid" ? (
+              <div className="row g-3">
+                {filteredAssets.map((asset) => (
+                  <div key={asset.id} className="col-md-4 col-lg-3">
+                    <div 
+                      className={`card h-100 ${selectedAssets.some(a => a.id === asset.id) ? 'border-primary' : ''}`}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleAssetSelect(asset)}
+                    >
+                      <div className="card-body">
+                        <div className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={selectedAssets.some(a => a.id === asset.id)}
+                            onChange={() => handleAssetSelect(asset)}
+                            id={`asset-${asset.id}`}
+                          />
+                          <label className="form-check-label" htmlFor={`asset-${asset.id}`}>
+                            <h6 className="card-title">{asset.asset_name}</h6>
+                          </label>
+                        </div>
+                        <p className="card-text small">
+                          <strong>Category:</strong> {asset.category?.name || asset.category || "-"}
+                          <br />
+                          <strong>Serial:</strong> {asset.serial_number || "-"}
+                          <br />
+                          <strong>Location:</strong> {asset.location?.locationname || asset.location || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Select</th>
+                      <th>Asset Name</th>
+                      <th>Category</th>
+                      <th>Serial Number</th>
+                      <th>Location</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAssets.map((asset) => (
+                      <tr 
+                        key={asset.id}
+                        className={selectedAssets.some(a => a.id === asset.id) ? 'table-primary' : ''}
+                      >
+                        <td>
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              checked={selectedAssets.some(a => a.id === asset.id)}
+                              onChange={() => handleAssetSelect(asset)}
+                              id={`asset-table-${asset.id}`}
+                            />
+                          </div>
+                        </td>
+                        <td>{asset.asset_name}</td>
+                        <td>{asset.category?.name || asset.category || "-"}</td>
+                        <td>{asset.serial_number || "-"}</td>
+                        <td>{asset.location?.locationname || asset.location || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Assign Modal */}
       {showModal && (
         <AssignAsset
-          asset={selectedAsset}
+          assets={selectedAssets}
           onClose={handleModalClose}
           onSave={handleSave}
         />

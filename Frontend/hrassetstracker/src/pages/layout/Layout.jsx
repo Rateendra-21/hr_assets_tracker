@@ -10,6 +10,8 @@ import {
   SquareMenu,
   X,
   QrCodeIcon,
+  Wrench,
+  History,
 } from "lucide-react";
 
 const Layout = () => {
@@ -29,27 +31,34 @@ const Layout = () => {
   if (!user) return null;
 
   const menuItems = {
-    super_admin: [
+    SUPER_ADMIN: [
       { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
       { name: "Manage Admins", path: "/admin-management", icon: <UserCog size={15} /> },
       { name: "Users", path: "/employee-management", icon: <Users size={15} /> },
       { name: "Assets", path: "/asset-management", icon: <Package size={15} /> },
+      { name: "Asset Lifecycle", path: "/asset-lifecycle", icon: <History size={15} /> },
       { name: "Allocation", path: "/asset-allocation", icon: <Share2 size={15} /> },
-      { name: "Track Asset", path:"/track-asset", icon:<QrCodeIcon size={15}/>}
+      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
+      { name: "Track Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
     ],
-    admin: [
+    ADMIN: [
       { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
       { name: "Employees", path: "/employee-management", icon: <Users size={15} /> },
       { name: "Assets", path: "/asset-management", icon: <Package size={15} /> },
+      { name: "Asset Lifecycle", path: "/asset-lifecycle", icon: <History size={15} /> },
       { name: "Allocation", path: "/asset-allocation", icon: <Share2 size={15} /> },
-      { name: "Track Asset", path:"/track-asset", icon:<QrCodeIcon size={15}/>}
+      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
+      { name: "Track Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
     ],
-    employee: [
+    EMPLOYEE: [
       { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
       { name: "My Assets", path: "/my-assets", icon: <Package size={15} /> },
-      { name:"Track My Asset", path:"/track-asset", icon:<QrCodeIcon size={15}/>}
+      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
+      { name: "Track My Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
     ],
   };
+
+  const items = menuItems[user.role?.toUpperCase()] || []; // ADDED: Use role instead of employee_type
 
   const handleLogout = () => {
     sessionStorage.removeItem("userData");
@@ -76,7 +85,7 @@ const Layout = () => {
           </div>
 
           <ul className="list-unstyled flex-grow-1 p-2 m-0">
-            {menuItems[user.employee_type]?.map((item) => (
+            {items.map((item) => (
               <li key={item.path} className="mb-0">
                 <NavLink
                   to={item.path}
@@ -135,16 +144,13 @@ const Layout = () => {
             {/* Header with Title and Close */}
             <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
               <h5 className="mb-0">HR Assets</h5>
-              <button
-                className="btn btn-transparent p-0"
-                onClick={closeMobileMenu}
-              >
+              <button className="btn btn-transparent p-0" onClick={closeMobileMenu}>
                 <X size={24} />
               </button>
             </div>
 
             <ul className="list-unstyled p-2 flex-grow-1">
-              {menuItems[user.employee_type]?.map((item) => (
+              {items.map((item) => (
                 <li key={item.path} className="mb-2">
                   <NavLink
                     to={item.path}

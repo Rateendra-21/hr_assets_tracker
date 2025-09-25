@@ -1,8 +1,14 @@
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey , Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Enum
 from datetime import datetime
 from app.database import Base
 from sqlalchemy.orm import relationship
+import enum
+
+class UserRole(enum.Enum):
+    SUPER_ADMIN = "super_admin"
+    ADMIN = "admin"
+    EMPLOYEE = "employee"
 
 class User(Base):
     __tablename__ = "users"  
@@ -19,7 +25,8 @@ class User(Base):
     username = Column(String(255))
     password = Column(String(255))
     is_active = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False)
+    role = Column(Enum(UserRole), default=UserRole.EMPLOYEE, nullable=False)
+    is_admin = Column(Boolean, default=False)  # Keeping for backward compatibility
     working_status = Column(String(50), default="active")
     
     created_at = Column(DateTime, default=datetime.utcnow)

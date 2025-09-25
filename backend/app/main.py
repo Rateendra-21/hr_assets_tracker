@@ -7,7 +7,9 @@ from app.controllers import (
     department_controller,
     location_controller,
     asset_controller,
-    asset_allocation_controller
+    asset_allocation_controller,
+    repair_request_controller,
+    asset_lifecycle_controller
 )
 
 
@@ -20,17 +22,18 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://192.168.1.34:5173"
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "*"  # Allow all origins temporarily for testing
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=False,  # Must be False when using "*"
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
 # Include routers
 app.include_router(admin_controller.router, prefix="/admin")
 app.include_router(user_controller.router, tags=["login"])
@@ -39,6 +42,8 @@ app.include_router(department_controller.router)
 app.include_router(location_controller.router)
 app.include_router(asset_controller.router)
 app.include_router(asset_allocation_controller.router)
+app.include_router(repair_request_controller.router, tags=["repairs"])
+app.include_router(asset_lifecycle_controller.router, tags=["lifecycle"])
 
 
 

@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 
-const AssignAsset = ({ asset, onClose, onSave }) => {
+const AssignAsset = ({ assets, onClose, onSave }) => {
   const [employeeId, setEmployeeId] = useState(""); // store selected employee_id
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    console.log("Asset ID on init:", asset?.id);
-  }, [asset]);
+  const [submitting, setSubmitting] = useState(false);
+  const [makeAdmin, setMakeAdmin] = useState(false); // New state for admin checkbox
 
   // Fetch employees on component mount
   useEffect(() => {
@@ -23,7 +22,6 @@ const AssignAsset = ({ asset, onClose, onSave }) => {
           : [];
 
         setEmployees(activeEmployees);
-        // console.log("Active employees:", activeEmployees); 
       } catch (error) {
         console.error("Failed to fetch employees:", error);
         setEmployees([]);
@@ -38,116 +36,174 @@ const AssignAsset = ({ asset, onClose, onSave }) => {
   // Handle select change
   const handleEmployeeChange = (e) => {
     setEmployeeId(e.target.value);
-
-    const selectedEmployee = employees.find(
-      (emp) => emp.employee_id === e.target.value
-    );
-
-    console.log("Selected employee on change:", selectedEmployee.employee_id);
+    console.log("Selected employee ID:", e.target.value);
   };
 
-  // Handle form submit
- 
+  // Handle admin checkbox change
+  const handleAdminChange = (e) => {
+    setMakeAdmin(e.target.checked);
+  };
+
+  
+
+
+// const handleSubmit = async () => {
+//   if (!employeeId) {
+//     alert("Please select an employee!");
+//     return;
+//   }
+
+//   if (assets.length === 0) {
+//     alert("No assets selected!");
+//     return;
+//   }
+
+//   const selectedEmployee = employees.find(emp => emp.employee_id === parseInt(employeeId));
+//   console.log("Selected Employee:", selectedEmployee);
+
+//   const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
+//   const allocatedBy = userData.fullname || "Admin"; 
+
+//   setSubmitting(true);
+
+//   try {
+//     const allocations = assets.map(asset => ({
+//       asset_id: asset.id,
+//       employee_id: parseInt(employeeId),
+//       allocated_by: allocatedBy, // Send as string
+//     }));
+
+//     // Fixed API endpoint URL to match backend route
+//     const response = await fetch("http://127.0.0.1:8000/asset_allocations/bulk", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(allocations),
+//     });
+//     const result = await response.json();
+
+//     // Just log the payload
+//     console.log("Payload to send:", allocations);
+
+//     // Optional: show alert to verify
+//     alert(`Payload ready for submission: ${JSON.stringify(allocations, null, 2)}`);
+
+//     // If you have an onSave function you still want to call
+//     onSave(employeeId);
+
+//   } catch (error) {
+//     console.error("Error in asset allocation process:", error);
+//     alert("An unexpected error occurred during asset allocation");
+//   } finally {
+//     setSubmitting(false);
+//   }
+// };
+
+
+
+
   const handleSubmit = async () => {
-  if (!employeeId || !asset?.id) {
-    toast.error("Please select an employee!");
+  if (!employeeId) {
+    alert("Please select an employee!");
     return;
   }
 
-  const selectedEmployee = employees.find(
-    (emp) => emp.employee_id === parseInt(employeeId)
-  );
-
-  if (!selectedEmployee) {
-    toast.error("Selected employee not found!");
+  if (assets.length === 0) {
+    alert("No assets selected!");
     return;
   }
+
+  const selectedEmployee = employees.find(emp => emp.employee_id === parseInt(employeeId));
+  console.log("Selected Employee:", selectedEmployee);
 
   const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
-  const allocatedBy = userData.fullname || "Unknown";
+  const allocatedBy = userData.fullname || "Admin"; 
 
-  const payload = {
-    asset_id: asset.id,
-    employee_id: selectedEmployee.employee_id,
-    allocated_by: allocatedBy,
-  };
+  setSubmitting(true);
 
-  console.log(payload)
+  try {
+    // Prepare allocations payload
+    const allocations = assets.map(asset => ({
+      asset_id: asset.id,
+      employee_id: parseInt(employeeId),
+      allocated_by: allocatedBy,
+      // status: "assigned" 
+    }));
 
-  // try {
-  //   toast.loading("Assigning asset...", { id: "assignToast" });
+    // Backend endpoint
+    const response = await fetch("http://127.0.0.1:8000/asset-allocations/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(allocations),
+    });
 
-  //   const response = await fetch("http://127.0.0.1:8000/asset-allocations/", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
+    const result = await response.json();
 
-  //   if (!response.ok) {
-  //     const errorData = await response.json();
-  //     console.error("Failed to assign asset:", errorData);
-  //     toast.error("Failed to assign asset!", { id: "assignToast" });
-  //     return;
-  //   }
+    console.log("Payload sent:", allocations);
+    console.log("API response:", result);
 
-  //   const allocationData = await response.json();
-  //   console.log("Asset allocated successfully:", allocationData);
-  //   toast.success("Asset assigned successfully!", { id: "assignToast" });
+    if (result.errors > 0) {
+      alert(`Some allocations failed: ${JSON.stringify(result.error_details, null, 2)}`);
+    } else {
+      alert("Assets allocated successfully!");
+    }
 
-  //   onSave(allocationData); // pass allocation to parent
-  //   onClose();
-  // } catch (error) {
-  //   console.error("Error assigning asset:", error);
-  //   toast.error("Error assigning asset!", { id: "assignToast" });
-  // }
+    onSave(employeeId); // optional post-save action
+
+  } catch (error) {
+    console.error("Error in asset allocation process:", error);
+    alert("An unexpected error occurred during asset allocation");
+  } finally {
+    setSubmitting(false);
+  }
 };
 
 
   return (
     <>
       <div className="modal fade show d-block" tabIndex="-1">
-        <div className="modal-dialog modal-md">
+        <div className="modal-dialog modal-lg">
           <div className="modal-content">
             {/* Header */}
             <div className="modal-header">
               <div>
-                <h5 className="modal-title mb-1">Assign Asset to Employee</h5>
+                <h5 className="modal-title mb-1">Assign Assets to Employee</h5>
                 <small className="text-muted">
-                  Select an employee to assign {asset?.asset_name}
+                  Select an employee to assign {assets.length} selected assets
                 </small>
               </div>
               <button
                 type="button"
                 className="btn-close"
                 onClick={onClose}
+                disabled={submitting}
               ></button>
             </div>
 
             <div className="modal-body">
-              {/* Asset Details */}
-              <div
-                className="p-3 mb-2"
-                style={{
-                  borderRadius: "10px",
-                  border: "1px solid lightgrey",
-                  backgroundColor: "#F9FAFB",
-                }}
-              >
-                <div className="row small">
-                  <div className="col-6 mb-2">
-                    <strong>Name:</strong> {asset?.asset_name || "-"}
-                  </div>
-                  <div className="col-6 mb-2">
-                    <strong>Category:</strong>{" "}
-                    {asset?.category?.name || asset?.category || "-"}
-                  </div>
-                  <div className="col-6 mb-2">
-                    <strong>Serial:</strong> {asset?.serial_number || "-"}
-                  </div>
-                  <div className="col-6 mb-2">
-                    <strong>Location:</strong>{" "}
-                    {asset?.location?.locationname || asset?.location || "-"}
-                  </div>
+              {/* Selected Assets Summary */}
+              <div className="mb-3">
+                <h6>Selected Assets ({assets.length})</h6>
+                <div className="table-responsive">
+                  <table className="table table-sm table-bordered">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Asset Name</th>
+                        <th>Category</th>
+                        <th>Serial Number</th>
+                        <th>Location</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assets.map((asset) => (
+                        <tr key={asset.id}>
+                          <td>{asset.asset_name}</td>
+                          <td>{asset.category?.name || asset.category || "-"}</td>
+                          <td>{asset.serial_number || "-"}</td>
+                          <td>{asset.location?.locationname || asset.location || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -160,30 +216,56 @@ const AssignAsset = ({ asset, onClose, onSave }) => {
                   className="form-select"
                   value={employeeId}
                   onChange={handleEmployeeChange}
-                  disabled={loading}
+                  disabled={loading || submitting}
                 >
                   <option value="">
                     {loading ? "Loading employees..." : "Choose an employee"}
                   </option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.employee_id}>
+                    <option key={emp.id} value={emp.id}>
                       {emp.fullname} - {emp.location?.locationname || "-"}
                     </option>
                   ))}
                 </select>
               </div>
+              
+              {/* Admin checkbox */}
+              {/* <div className="mb-3 form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="makeAdminCheck"
+                  checked={makeAdmin}
+                  onChange={handleAdminChange}
+                  disabled={loading || submitting}
+                />
+                <label className="form-check-label" htmlFor="makeAdminCheck">
+                  Make this employee an admin
+                </label>
+              </div> */}
 
               {/* Action buttons */}
               <div className="d-flex justify-content-end gap-2 mt-4">
-                <button className="btn btn-outline-dark" onClick={onClose}>
+                <button 
+                  className="btn btn-outline-dark" 
+                  onClick={onClose}
+                  disabled={submitting}
+                >
                   Cancel
                 </button>
                 <button
-                  className="btn btn-dark"
+                  className="btn btn-primary"
                   onClick={handleSubmit}
-                  disabled={!employeeId}
+                  disabled={!employeeId || submitting}
                 >
-                  Assign Asset
+                  {submitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Assigning Assets...
+                    </>
+                  ) : (
+                    `Assign ${assets.length} Assets`
+                  )}
                 </button>
               </div>
             </div>

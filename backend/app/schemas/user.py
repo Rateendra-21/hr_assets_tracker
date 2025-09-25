@@ -38,7 +38,7 @@ class UserResponse(BaseModel):
     working_status: str
     created_at: datetime
     updated_at: Optional[datetime] = None
-
+    
 
     department_id: Optional[int] = None
     location_id: Optional[int] = None
@@ -107,6 +107,7 @@ class UserResponse(BaseModel):
     department: Optional[DepartmentResponse] = None
     location: Optional[LocationResponse] = None
     employee_type: str
+    role: str   
     class Config:
         from_attributes = True
 
