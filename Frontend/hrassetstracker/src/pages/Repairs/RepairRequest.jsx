@@ -25,7 +25,7 @@ const RepairRequest = () => {
       try {
         // Fetch user's allocated assets
         const assetsResponse = await axios.get(
-          `${API_URL}/assets/allocated-to-employee/${user.id}`,
+          `${API_URL}/assets/allocated-to-employee/${user.employee_id}`,
           {
             headers: { Authorization: `Bearer ${user.token}` },
           }

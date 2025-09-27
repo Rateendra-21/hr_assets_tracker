@@ -8,7 +8,7 @@ import Assets from "../pages/Assets/Assets";
 import Allocation from "../pages/Allocations/Allocation";
 import TrackAsset from "../pages/Common/TrackAsset";
 import EmployeeAsset from "../pages/employee/EmployeeAsset";
-import RepairRequest from "../pages/Repairs/RepairRequest";
+import RepairRequests from "../pages/Repairs/RepairRequests";
 import AssetLifecycle from "../pages/Assets/AssetLifecycle";
 import EwasteDisposal from "../pages/Assets/EwasteDisposal";
 
@@ -46,7 +46,7 @@ const AppRoutes = () => {
         <Route path="asset-allocation" element={<Allocation />} />
         <Route path="track-asset" element={<TrackAsset />} />
         <Route path="my-assets" element={<EmployeeAsset />} />
-        <Route path="repair-requests" element={<RepairRequest />} />
+        <Route path="repair-requests" element={<RepairRequests />} />
         <Route path="asset-lifecycle" element={<AssetLifecycle />} />
         <Route path="ewaste-disposal" element={<EwasteDisposal />} />
       </Route>

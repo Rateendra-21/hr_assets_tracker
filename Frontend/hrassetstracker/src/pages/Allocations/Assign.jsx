@@ -141,9 +141,9 @@ const Assign = () => {
         ) : (
           <>
             <div className="d-flex justify-content-between mb-3">
-              <h6>{filteredAssets.length} available assets</h6>
+              <h6></h6>
               <button 
-                className="btn btn-primary btn-sm" 
+                className="btn btn-dark btn-sm" 
                 onClick={handleAssignClick}
                 disabled={selectedAssets.length === 0}
               >

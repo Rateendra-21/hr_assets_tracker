@@ -14,7 +14,7 @@ const AdminList = forwardRef((props, ref) => {
     try {
       setLoading(true);
       const res = await fetch("http://127.0.0.1:8000/admin/admin/admindata");
-      const data = await res.json();
+      const data = (await res.json()).filter(user => user.role === "admin");
       setAdmins(data);
       setFilteredAdmins(data);
     } catch (err) {

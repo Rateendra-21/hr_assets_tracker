@@ -59,9 +59,70 @@ def mark_ewaste(asset_id: int, remarks: str, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+    
+    # Check if the asset is currently assigned to anyone
+    allocation = (
+        db.query(AssetAllocation)
+        .filter(AssetAllocation.asset_id == asset_id, AssetAllocation.return_date.is_(None))
+        .first()
+    )
+    
+    if allocation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot mark as e-waste: Asset is currently assigned to an employee. Please return the asset first."
+        )
+    
     asset.status = "e-waste"
     asset.remarks = remarks  
     asset.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(asset)
+
+    return asset
+
+@router.post("/return-asset", response_model=AssetResponse)
+def return_asset_post(asset_id: int, remarks: str = None, db: Session = Depends(get_db)):
+    asset = db.query(Asset).filter(Asset.id == asset_id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    # Check if the asset is currently assigned to anyone
+    allocation = (
+        db.query(AssetAllocation)
+        .filter(AssetAllocation.asset_id == asset_id, AssetAllocation.return_date.is_(None))
+        .first()
+    )
+    
+    if not allocation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Asset is not currently assigned to anyone."
+        )
+    
+    # Create a new allocation record instead of updating the existing one
+    # First, mark the current allocation as returned
+    allocation.return_date = datetime.utcnow()
+    allocation.status = "returned"
+    
+    # Update asset status to available
+    asset.status = "available"
+    if remarks:
+        asset.remarks = remarks
+    asset.updated_at = datetime.utcnow()
+    
+    # Create asset lifecycle entry to track the return
+    from app.models.asset_lifecycle import AssetLifecycle, AssetStatus
+    lifecycle_event = AssetLifecycle(
+        asset_id=asset.id,
+        previous_status="assigned",
+        current_status="available",
+        updated_by=allocation.employee_id,  # The employee who returned it
+        notes=f"Asset returned. Remarks: {remarks}" if remarks else "Asset returned",
+        return_date=datetime.utcnow()
+    )
+    db.add(lifecycle_event)
+    
     db.commit()
     db.refresh(asset)
 

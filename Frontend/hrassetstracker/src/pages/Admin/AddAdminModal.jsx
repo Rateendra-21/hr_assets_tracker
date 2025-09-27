@@ -97,6 +97,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
         username: formData.email,
         department_id: formData.department,
         password: "defaultPassword123",
+        role: "admin",
       };
       const url = "http://127.0.0.1:8000/admin/admin/createadmin";
       const res = await fetch(url, {

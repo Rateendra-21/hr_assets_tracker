@@ -1,17 +1,22 @@
 import { useEffect, useState, useRef } from "react";
+import ReturnAsset from "../Assets/ReturnAsset";
+import RepairAsset from "../Assets/RepairAsset";
 
 const EmployeeAsset = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const fetchedRef = useRef(false);
   const [statusFilterByCat, setStatusFilterByCat] = useState("all");
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
+  const [showRepairPopup, setShowRepairPopup] = useState(false);
 
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
     const userData = JSON.parse(sessionStorage.getItem("userData"));
-    const employeeId = userData?.employee_id;
+    const employeeId = userData?.id;
 
     console.log("Employee ID from sessionStorage:", employeeId);
 
@@ -35,6 +40,39 @@ const EmployeeAsset = () => {
         setLoading(false);
       });
   }, []);
+
+  const handleReturnClick = (asset) => {
+    setSelectedAsset(asset);
+    setShowReturnPopup(true);
+  };
+
+  const handleRepairClick = (asset) => {
+    setSelectedAsset(asset);
+    setShowRepairPopup(true);
+  };
+
+  const handleAssetUpdated = () => {
+    // Refresh the asset list after an update
+    fetchedRef.current = false;
+    setLoading(true);
+    
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const employeeId = userData?.id;
+    
+    fetch(`http://127.0.0.1:8000/asset-allocations/assetbyempid/${employeeId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
+      .then((result) => {
+        setData(result);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching data:", err);
+        setLoading(false);
+      });
+  };
 
   if (loading) {
     return <p className="p-3">Loading assets...</p>;
@@ -194,9 +232,20 @@ const EmployeeAsset = () => {
                           <small>{item.asset?.cable_type || "-"}</small>
                         </td>
                         <td>
-                          <button className="btn btn-dark btn-sm">
-                            Return
-                          </button>
+                          <div className="d-flex gap-1 justify-content-center">
+                            <button 
+                              className="btn btn-dark btn-sm" 
+                              onClick={() => handleReturnClick(item.asset)}
+                            >
+                              Return
+                            </button>
+                            <button 
+                              className="btn btn-warning btn-sm" 
+                              onClick={() => handleRepairClick(item.asset)}
+                            >
+                              Repair
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -206,6 +255,21 @@ const EmployeeAsset = () => {
           )}
         </div>
       </div>
+    {showReturnPopup && (
+      <ReturnAsset
+        asset={selectedAsset}
+        onClose={() => setShowReturnPopup(false)}
+        onAssetUpdated={handleAssetUpdated}
+      />
+    )}
+
+    {showRepairPopup && (
+      <RepairAsset
+        asset={selectedAsset}
+        onClose={() => setShowRepairPopup(false)}
+        onAssetUpdated={handleAssetUpdated}
+      />
+    )}
     </main>
   );
 };

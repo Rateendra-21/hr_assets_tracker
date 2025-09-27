@@ -89,11 +89,12 @@ def get_allocations_by_employee(employee_id: int, db: Session = Depends(get_db))
     allocations = db.query(AssetAllocation).options(
         joinedload(AssetAllocation.asset) 
     ).filter(
-        AssetAllocation.employee_id == employee_id
+        AssetAllocation.employee_id == employee_id,
+        AssetAllocation.return_date.is_(None)  # Only show assets that haven't been returned
     ).all()
 
     if not allocations:
-        raise HTTPException(status_code=404, detail="No allocations found for this employee")
+        return []  # Return empty list instead of 404 error when no allocations found
 
     return allocations
 

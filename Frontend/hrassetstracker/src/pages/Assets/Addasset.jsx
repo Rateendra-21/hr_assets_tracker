@@ -420,7 +420,7 @@ const AddAsset = ({ onClose, onAssetSaved }) => {
 
               {activeTab === "upload" && (
                 <div className="text-center text-muted ">
-                 <UploadAssetsCSV></UploadAssetsCSV>
+                 <UploadAssetsCSV onClose={onClose} onAssetsUploaded={onAssetSaved}></UploadAssetsCSV>
                 </div>
               )}
             </div>

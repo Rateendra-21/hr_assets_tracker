@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Edit, Eye, QrCode, Trash2, LayoutGrid, Table } from "lucide-react";
+import { Edit, Eye, QrCode, Trash2, LayoutGrid, Table,  RotateCcw, User2, User2Icon } from "lucide-react";
 import Qrcode from "./Qrcode";
 import AssetDetails from "./AssetDetails";
 import EditAsset from "./EditAsset";
 import EwasteAsset from "./EwasteAsset";
+import RepairAsset from "./RepairAsset";
+import ReturnAsset from "./ReturnAsset";
 
 const AssetList = ({ reloadAssets }) => {
   const [assets, setAssets] = useState([]);
@@ -18,6 +20,8 @@ const AssetList = ({ reloadAssets }) => {
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showEwastePopup, setShowEwastePopup] = useState(false);
+  const [showRepairPopup, setShowRepairPopup] = useState(false);
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
 
   const handleQrClick = (asset) => {
     setSelectedAsset(asset);
@@ -100,6 +104,16 @@ const AssetList = ({ reloadAssets }) => {
   const handleEwasteClick = (asset) => {
     setSelectedAsset(asset);
     setShowEwastePopup(true);
+  };
+  
+  const handleRepairClick = (asset) => {
+    setSelectedAsset(asset);
+    setShowRepairPopup(true);
+  };
+  
+  const handleReturnClick = (asset) => {
+    setSelectedAsset(asset);
+    setShowReturnPopup(true);
   };
 
   return (
@@ -231,6 +245,26 @@ const AssetList = ({ reloadAssets }) => {
                       </div>
 
                       <div className="mt-auto d-flex justify-content-end flex-wrap gap-2">
+                        {asset.status === "assigned" && (
+                          <button
+                            className="btn btn-outline-primary btn-sm d-flex align-items-center"
+                            onClick={() => handleReturnClick(asset)}
+                            title="Return Asset"
+                          >
+                            <RotateCcw size={14} className="me-1" />
+                            Return
+                          </button>
+                        )}
+                        {asset.status === "available" && (
+                          <button
+                            className="btn btn-outline-warning btn-sm d-flex align-items-center"
+                            onClick={() => handleRepairClick(asset)}
+                            title="Send for Repair"
+                          >
+                            <User2 size={14} className="me-1" />
+                            Repair
+                          </button>
+                        )}
                         <button
                           className="btn btn-outline-dark btn-sm d-flex align-items-center"
                           onClick={() => handleQrClick(asset)}
@@ -353,6 +387,24 @@ const AssetList = ({ reloadAssets }) => {
                           </small>
                         </td>
                         <td className="d-flex justify-content-center flex-wrap gap-1">
+                          {asset.status === "assigned" && (
+                            <button
+                              className="btn btn-outline-primary btn-sm d-flex align-items-center"
+                              onClick={() => handleReturnClick(asset)}
+                              title="Return Asset"
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                          )}
+                          {asset.status === "available" && (
+                            <button
+                              className="btn btn-outline-warning btn-sm d-flex align-items-center"
+                              onClick={() => handleRepairClick(asset)}
+                              title="Send for Repair"
+                            >
+                              <User2Icon size={14} />
+                            </button>
+                          )}
                           <button
                             className="btn btn-dark btn-sm d-flex align-items-center"
                             onClick={() => handleQrClick(asset)}
@@ -419,6 +471,30 @@ const AssetList = ({ reloadAssets }) => {
           asset={selectedAsset}
           onClose={handleCloseEdit}
           onSave={handleSaveEdit}
+        />
+      )}
+ 
+      {selectedAsset && showEwastePopup && (
+        <EwasteAsset
+          asset={selectedAsset}
+          onClose={() => setShowEwastePopup(false)}
+          onUpdated={fetchAssets}
+        />
+      )}
+       
+      {selectedAsset && showRepairPopup && (
+        <RepairAsset
+          asset={selectedAsset}
+          onClose={() => setShowRepairPopup(false)}
+          onUpdated={fetchAssets}
+        />
+      )}
+       
+      {selectedAsset && showReturnPopup && (
+        <ReturnAsset
+          asset={selectedAsset}
+          onClose={() => setShowReturnPopup(false)}
+          onUpdated={fetchAssets}
         />
       )}
 

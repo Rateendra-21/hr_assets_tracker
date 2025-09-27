@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
-const EwasteAsset = ({ asset, onClose, onUpdated }) => {
+const ReturnAsset = ({ asset, onClose, onUpdated }) => {
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -15,35 +15,24 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
     setRemarks(value);
   };
 
-  // Save remarks and mark as E-Waste
+  // Save remarks and return asset
   const handleSave = async () => {
-    // Validation
-    if (!remarks.trim()) {
-      toast.error("Remarks cannot be empty.");
-      return;
-    }
-    if (remarks.startsWith(" ")) {
-      toast.error("Remarks cannot start with a space.");
-      return;
-    }
-
     try {
       setSaving(true);
-      const res = await fetch(
-        `http://127.0.0.1:8000/assets/ewaste/${asset.id}?remarks=${encodeURIComponent(
-          remarks
-        )}`,
-        {
-          method: "PUT",
-        }
-      );
+const res = await fetch(
+  `http://127.0.0.1:8000/assets/return-asset?asset_id=${asset.id}${remarks ? `&remarks=${encodeURIComponent(remarks)}` : ''}`,
+  {
+    method: "POST",
+  }
+);
+
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.detail || "Failed to update asset.");
+        throw new Error(data.detail || "Failed to return asset.");
       }
 
-      toast.success("Asset marked as E-Waste successfully!");
+      toast.success("Asset returned successfully!");
 
       // Notify parent to refresh AssetList
       if (onUpdated) onUpdated();
@@ -52,12 +41,7 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
       onClose();
     } catch (err) {
       console.error(err);
-      // Display the specific error message from the backend
-      if (err.message && err.message.includes("currently assigned")) {
-        toast.error("Cannot mark as e-waste: Asset is currently assigned to an employee. Please return the asset first.");
-      } else {
-        toast.error(err.message || "Failed to mark asset as E-Waste.");
-      }
+      toast.error(err.message || "Failed to return asset.");
     } finally {
       setSaving(false);
     }
@@ -88,36 +72,36 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
         }}
       >
         <h5 style={{ fontWeight: "500", color: "black" }}>
-          Mark Asset as E-Waste
+          Return Asset
         </h5>
         <span className="d-block mt-2 mb-3" style={{ fontWeight: "500" }}>
           Asset Name: {asset.asset_name}
         </span>
 
-        <small className="d-block mt-2 text-muted">Remarks:</small>
+        <small className="d-block mt-2 text-muted">Remarks (Optional):</small>
         <textarea
           className="form-control mt-1"
           rows="4"
-          placeholder="Enter remarks for e-waste"
+          placeholder="Enter any remarks about the asset condition"
           value={remarks}
           onChange={handleRemarksChange}
           style={{ resize: "none" }}
         />
 
-        <div className="mt-3 d-flex justify-content-end gap-2">
+        <div className="d-flex justify-content-end gap-2 mt-3">
           <button
-            className="btn btn-outline-dark"
+            className="btn btn-outline-secondary"
             onClick={onClose}
             disabled={saving}
           >
             Cancel
           </button>
           <button
-            className="btn btn-dark"
+            className="btn btn-primary"
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Saving..." : "Mark as E-Waste"}
+            {saving ? "Processing..." : "Return Asset"}
           </button>
         </div>
       </div>
@@ -125,4 +109,4 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
   );
 };
 
-export default EwasteAsset;
+export default ReturnAsset;

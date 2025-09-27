@@ -87,6 +87,7 @@ def create_admin(request: AdminCreateRequest, db: Session = Depends(get_db)):
         password=auto_password,
         is_admin=True,
         is_active=True,
+        role="ADMIN",
         working_status="active",
         created_at=datetime.now(),
     )
