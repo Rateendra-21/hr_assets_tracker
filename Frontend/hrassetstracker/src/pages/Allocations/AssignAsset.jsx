@@ -1,22 +1,21 @@
+import { Cross, RemoveFormatting, User, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { toast } from "react-hot-toast";
 
-const AssignAsset = ({ assets, onClose, onSave }) => {
-  const [employeeId, setEmployeeId] = useState(""); // store selected employee_id
+const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
+  const [employeeId, setEmployeeId] = useState("");
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [makeAdmin, setMakeAdmin] = useState(false); // New state for admin checkbox
 
-  // Fetch employees on component mount
   useEffect(() => {
     const fetchEmployees = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://127.0.0.1:8000/employees/");
+        const response = await fetch(
+          "http://127.0.0.1:8000/employees/getemployee"
+        );
         const data = await response.json();
 
-        // Filter active employees
         const activeEmployees = Array.isArray(data)
           ? data.filter((emp) => emp.is_active === true)
           : [];
@@ -33,130 +32,63 @@ const AssignAsset = ({ assets, onClose, onSave }) => {
     fetchEmployees();
   }, []);
 
-  // Handle select change
   const handleEmployeeChange = (e) => {
     setEmployeeId(e.target.value);
-    console.log("Selected employee ID:", e.target.value);
   };
-
-  // Handle admin checkbox change
-  const handleAdminChange = (e) => {
-    setMakeAdmin(e.target.checked);
-  };
-
-  
-
-
-// const handleSubmit = async () => {
-//   if (!employeeId) {
-//     alert("Please select an employee!");
-//     return;
-//   }
-
-//   if (assets.length === 0) {
-//     alert("No assets selected!");
-//     return;
-//   }
-
-//   const selectedEmployee = employees.find(emp => emp.employee_id === parseInt(employeeId));
-//   console.log("Selected Employee:", selectedEmployee);
-
-//   const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
-//   const allocatedBy = userData.fullname || "Admin"; 
-
-//   setSubmitting(true);
-
-//   try {
-//     const allocations = assets.map(asset => ({
-//       asset_id: asset.id,
-//       employee_id: parseInt(employeeId),
-//       allocated_by: allocatedBy, // Send as string
-//     }));
-
-//     // Fixed API endpoint URL to match backend route
-//     const response = await fetch("http://127.0.0.1:8000/asset_allocations/bulk", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify(allocations),
-//     });
-//     const result = await response.json();
-
-//     // Just log the payload
-//     console.log("Payload to send:", allocations);
-
-//     // Optional: show alert to verify
-//     alert(`Payload ready for submission: ${JSON.stringify(allocations, null, 2)}`);
-
-//     // If you have an onSave function you still want to call
-//     onSave(employeeId);
-
-//   } catch (error) {
-//     console.error("Error in asset allocation process:", error);
-//     alert("An unexpected error occurred during asset allocation");
-//   } finally {
-//     setSubmitting(false);
-//   }
-// };
-
-
-
 
   const handleSubmit = async () => {
-  if (!employeeId) {
-    alert("Please select an employee!");
-    return;
-  }
-
-  if (assets.length === 0) {
-    alert("No assets selected!");
-    return;
-  }
-
-  const selectedEmployee = employees.find(emp => emp.employee_id === parseInt(employeeId));
-  console.log("Selected Employee:", selectedEmployee);
-
-  const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
-  const allocatedBy = userData.fullname || "Admin"; 
-
-  setSubmitting(true);
-
-  try {
-    // Prepare allocations payload
-    const allocations = assets.map(asset => ({
-      asset_id: asset.id,
-      employee_id: parseInt(employeeId),
-      allocated_by: allocatedBy,
-      // status: "assigned" 
-    }));
-
-    // Backend endpoint
-    const response = await fetch("http://127.0.0.1:8000/asset-allocations/bulk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(allocations),
-    });
-
-    const result = await response.json();
-
-    console.log("Payload sent:", allocations);
-    console.log("API response:", result);
-
-    if (result.errors > 0) {
-      alert(`Some allocations failed: ${JSON.stringify(result.error_details, null, 2)}`);
-    } else {
-      alert("Assets allocated successfully!");
+    if (!employeeId) {
+      alert("Please select an employee!");
+      return;
+    }
+    if (assets.length === 0) {
+      alert("No assets selected!");
+      return;
     }
 
-    onSave(employeeId); // optional post-save action
+    const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
+    const allocatedBy = userData.fullname || "Admin";
 
-  } catch (error) {
-    console.error("Error in asset allocation process:", error);
-    alert("An unexpected error occurred during asset allocation");
-  } finally {
-    setSubmitting(false);
-  }
-};
+    setSubmitting(true);
 
+    try {
+      const allocations = assets.map((asset) => ({
+        asset_id: asset.id,
+        employee_id: parseInt(employeeId),
+        allocated_by: allocatedBy,
+      }));
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/asset-allocations/bulk",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(allocations),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.errors > 0) {
+        alert(
+          `Some allocations failed: ${JSON.stringify(
+            result.error_details,
+            null,
+            2
+          )}`
+        );
+      } else {
+        alert("Assets allocated successfully!");
+      }
+
+      onSave(employeeId);
+    } catch (error) {
+      console.error("Error in asset allocation process:", error);
+      alert("An unexpected error occurred during asset allocation");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -176,34 +108,115 @@ const AssignAsset = ({ assets, onClose, onSave }) => {
                 className="btn-close"
                 onClick={onClose}
                 disabled={submitting}
-              ></button>
+              />
             </div>
 
             <div className="modal-body">
               {/* Selected Assets Summary */}
               <div className="mb-3">
-                <h6>Selected Assets ({assets.length})</h6>
-                <div className="table-responsive">
-                  <table className="table table-sm table-bordered">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Asset Name</th>
-                        <th>Category</th>
-                        <th>Serial Number</th>
-                        <th>Location</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {assets.map((asset) => (
-                        <tr key={asset.id}>
-                          <td>{asset.asset_name}</td>
-                          <td>{asset.category?.name || asset.category || "-"}</td>
-                          <td>{asset.serial_number || "-"}</td>
-                          <td>{asset.location?.locationname || asset.location || "-"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div
+                  className="rounded"
+                  style={{ border: "1px solid lightgrey" }}
+                >
+                  <div className="container-fluid p-0">
+                    {loading ? (
+                      <div className="text-center py-5">
+                        <small className="text-muted">Loading assets...</small>
+                      </div>
+                    ) : assets.length === 0 ? (
+                      <div
+                        className="text-center py-5 rounded"
+                        style={{ border: "1px solid lightgrey" }}
+                      >
+                        <small className="text-muted">No assets found</small>
+                      </div>
+                    ) : (
+                      <div
+                        className="table-responsive custom-scrollbar"
+                        style={{
+                          maxHeight: "450px",
+                          overflowY: "auto",
+                          padding: "10px",
+                        }}
+                      >
+                        <table className="table mb-0 align-middle text-center table-sm">
+                          <thead className="">
+                            <tr>
+                              <th>
+                                <small>Asset Name</small>
+                              </th>
+                              <th>
+                                <small>Category</small>
+                              </th>
+                              <th>
+                                <small>Serial Number</small>
+                              </th>
+                              <th>
+                                <small>Location</small>
+                              </th>
+                              <th>
+                                <small>Remove</small>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {assets.map((asset) => (
+                              <tr key={asset.id}>
+                                <td
+                                  className="text-truncate"
+                                  style={{ maxWidth: "150px" }}
+                                >
+                                  <small>{asset.asset_name}</small>
+                                </td>
+                                <td
+                                  className="text-truncate"
+                                  style={{ maxWidth: "120px" }}
+                                >
+                                  <small>
+                                    {asset.category?.name ||
+                                      asset.category ||
+                                      "-"}
+                                  </small>
+                                </td>
+                                <td
+                                  className="text-truncate"
+                                  style={{ maxWidth: "150px" }}
+                                >
+                                  <small>{asset.serial_number || "-"}</small>
+                                </td>
+                                <td
+                                  className="text-truncate"
+                                  style={{ maxWidth: "150px" }}
+                                >
+                                  <small>
+                                    {asset.location?.locationname ||
+                                      asset.location ||
+                                      "-"}
+                                  </small>
+                                </td>
+
+                                <td
+                                  className="text-center align-middle"
+                                  style={{ verticalAlign: "middle" }}
+                                >
+                                  <button
+                                    type="button"
+                                    style={{borderRadius: "50%", height: "25px", width: "25px", padding: "0"}}
+                                    className="btn btn-sm btn-danger "
+                                    onClick={() => onRemove(asset.id)}
+                                    disabled={submitting}
+                                    aria-label={`Remove ${asset.asset_name}`}
+                                  >
+                                    <X size={12} className="mt-0" style={{marginBottom:"3px"}}  />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -228,39 +241,28 @@ const AssignAsset = ({ assets, onClose, onSave }) => {
                   ))}
                 </select>
               </div>
-              
-              {/* Admin checkbox */}
-              {/* <div className="mb-3 form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="makeAdminCheck"
-                  checked={makeAdmin}
-                  onChange={handleAdminChange}
-                  disabled={loading || submitting}
-                />
-                <label className="form-check-label" htmlFor="makeAdminCheck">
-                  Make this employee an admin
-                </label>
-              </div> */}
 
               {/* Action buttons */}
               <div className="d-flex justify-content-end gap-2 mt-4">
-                <button 
-                  className="btn btn-outline-dark" 
+                <button
+                  className="btn btn-outline-dark"
                   onClick={onClose}
                   disabled={submitting}
                 >
                   Cancel
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-dark"
                   onClick={handleSubmit}
-                  disabled={!employeeId || submitting}
+                  disabled={!employeeId || submitting || assets.length === 0}
                 >
                   {submitting ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      />
                       Assigning Assets...
                     </>
                   ) : (
@@ -278,9 +280,3 @@ const AssignAsset = ({ assets, onClose, onSave }) => {
 };
 
 export default AssignAsset;
-
-
-
-
-
-

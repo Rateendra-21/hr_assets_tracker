@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
 const EditAsset = ({ asset, onClose, onSave }) => {
   if (!asset) return null;
@@ -96,6 +97,8 @@ const EditAsset = ({ asset, onClose, onSave }) => {
         throw new Error(errorData.detail || "Failed to update asset");
       }
 
+      toast.success("Asset updated successfully!");
+      
       const updatedAsset = await response.json();
       onSave(updatedAsset);
       onClose();

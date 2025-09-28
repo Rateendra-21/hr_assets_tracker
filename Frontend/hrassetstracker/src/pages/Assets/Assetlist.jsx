@@ -1,5 +1,17 @@
 import { useState, useEffect } from "react";
-import { Edit, Eye, QrCode, Trash2, LayoutGrid, Table,  RotateCcw, User2, User2Icon } from "lucide-react";
+import {
+  Edit,
+  Eye,
+  QrCode,
+  Trash2,
+  LayoutGrid,
+  Table,
+  RotateCcw,
+  User2,
+  User2Icon,
+  Wrench,
+  Shredder,
+} from "lucide-react";
 import Qrcode from "./Qrcode";
 import AssetDetails from "./AssetDetails";
 import EditAsset from "./EditAsset";
@@ -87,10 +99,15 @@ const AssetList = ({ reloadAssets }) => {
   }, [reloadAssets]);
 
   const filteredAssets = assets.filter((asset) => {
+    const searchLower = search.toLowerCase();
+
     const matchesSearch =
-      asset.asset_name.toLowerCase().includes(search.toLowerCase()) ||
-      asset.model.toLowerCase().includes(search.toLowerCase()) ||
-      asset.serial_number.toLowerCase().includes(search.toLowerCase());
+      asset.asset_name?.toLowerCase().includes(searchLower) ||
+      "" ||
+      asset.model?.toLowerCase().includes(searchLower) ||
+      "" ||
+      asset.serial_number?.toLowerCase().includes(searchLower) ||
+      "";
 
     const matchesStatus =
       statusFilter === "all" || asset.status === statusFilter;
@@ -105,12 +122,12 @@ const AssetList = ({ reloadAssets }) => {
     setSelectedAsset(asset);
     setShowEwastePopup(true);
   };
-  
+
   const handleRepairClick = (asset) => {
     setSelectedAsset(asset);
     setShowRepairPopup(true);
   };
-  
+
   const handleReturnClick = (asset) => {
     setSelectedAsset(asset);
     setShowReturnPopup(true);
@@ -143,9 +160,10 @@ const AssetList = ({ reloadAssets }) => {
             className="form-select form-select-sm w-100"
           >
             <option value="all">All Status</option>
-            <option value="available">Available</option>
-            <option value="assigned">Assigned</option>
-            <option value="e-waste">e-waste</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="ASSIGNED">Assigned</option>
+            <option value="IN_REPAIR">In Repair</option>
+            <option value="EWASTE">e-waste</option>
           </select>
         </div>
 
@@ -212,11 +230,15 @@ const AssetList = ({ reloadAssets }) => {
                         <h5 className="card-title mb-1">{asset.asset_name}</h5>
                         <span
                           className={`badge ${
-                            asset.status === "available"
-                              ? "bg-success"
-                              : asset.status === "assigned"
-                              ? "bg-dark"
-                              : "bg-danger"
+                            asset.status === "AVAILABLE"
+                              ? "bg-success" // green
+                              : asset.status === "ASSIGNED"
+                              ? "bg-dark" // black
+                              : asset.status === "IN_REPAIR"
+                              ? "bg-warning" // yellow
+                              : asset.status === "EWASTE"
+                              ? "bg-danger" // red
+                              : "bg-secondary" // fallback color for any other status
                           } rounded-pill`}
                         >
                           {asset.status}
@@ -255,14 +277,13 @@ const AssetList = ({ reloadAssets }) => {
                             Return
                           </button>
                         )}
-                        {asset.status === "available" && (
+                        {asset.status === "AVAILABLE" && (
                           <button
-                            className="btn btn-outline-warning btn-sm d-flex align-items-center"
+                            className="btn btn-warning btn-sm d-flex align-items-center"
                             onClick={() => handleRepairClick(asset)}
                             title="Send for Repair"
                           >
-                            <User2 size={14} className="me-1" />
-                            Repair
+                            <Wrench size={14} />
                           </button>
                         )}
                         <button
@@ -280,7 +301,7 @@ const AssetList = ({ reloadAssets }) => {
                           <Eye size={15} className="mb-1" />
                         </button>
 
-                        {asset.status === "available" && (
+                        {asset.status === "AVAILABLE" && (
                           <button
                             className="btn btn-dark btn-sm"
                             onClick={() => handleEditClick(asset)}
@@ -294,7 +315,7 @@ const AssetList = ({ reloadAssets }) => {
                             className="btn btn-outline-danger btn-sm"
                             onClick={() => handleEwasteClick(asset)}
                           >
-                            e-waste <Trash2 size={17} className="mb-1" />
+                            e-waste <Shredder size={17} className="mb-1" />
                           </button>
                         )}
                       </div>
@@ -307,9 +328,12 @@ const AssetList = ({ reloadAssets }) => {
         </div>
       </div>
 
-      <div style={{ display: viewMode === "table" ? "block" : "none" }}>
-        <div className="py-2 rounded" style={{ border: "1px solid lightgrey" }}>
-          <div className="container-fluid">
+      {viewMode === "table" && (
+        <div
+          className="shadow rounded"
+          style={{ border: "1px solid lightgrey" }}
+        >
+          <div className="container-fluid p-0">
             {loading ? (
               <div className="text-center py-5">
                 <small className="text-muted">Loading assets...</small>
@@ -326,12 +350,13 @@ const AssetList = ({ reloadAssets }) => {
                 className="table-responsive custom-scroll"
                 style={{
                   maxHeight: "300px",
-                  overflowY: "scroll",
-                  overflowX: "scroll",
+                  overflowY: "auto",
+                  overflowX: "auto",
+                  padding: "20px",
                 }}
               >
                 <table
-                  className="table table-bordered table-hover mb-0 align-middle text-center"
+                  className="table mb-0 align-middle text-center"
                   style={{ width: "100%", minWidth: "1200px" }}
                 >
                   <thead className="table">
@@ -372,71 +397,69 @@ const AssetList = ({ reloadAssets }) => {
                           <small>{asset.location?.locationname || "-"}</small>
                         </td>
                         <td>
-                          <small>
-                            <span
-                              className={`badge ${
-                                asset.status === "available"
-                                  ? "bg-success"
-                                  : asset.status === "assigned"
-                                  ? "bg-dark"
-                                  : "bg-danger"
-                              }`}
-                            >
-                              {asset.status}
-                            </span>
-                          </small>
+                          <span
+                            className={`badge ${
+                              asset.status === "AVAILABLE"
+                                ? "bg-success"
+                                : asset.status === "ASSIGNED"
+                                ? "bg-dark"
+                                : asset.status === "REPAIR"
+                                ? "bg-warning"
+                                : asset.status === "E-WASTE"
+                                ? "bg-danger"
+                                : "bg-secondary"
+                            }`}
+                          >
+                            <small>{asset.status}</small>
+                          </span>
                         </td>
-                        <td className="d-flex justify-content-center flex-wrap gap-1">
-                          {asset.status === "assigned" && (
-                            <button
-                              className="btn btn-outline-primary btn-sm d-flex align-items-center"
-                              onClick={() => handleReturnClick(asset)}
-                              title="Return Asset"
-                            >
-                              <RotateCcw size={14} />
-                            </button>
-                          )}
-                          {asset.status === "available" && (
-                            <button
-                              className="btn btn-outline-warning btn-sm d-flex align-items-center"
-                              onClick={() => handleRepairClick(asset)}
+
+                        <td className="d-flex justify-content-center gap-1 flex-wrap">
+                          {asset.status === "AVAILABLE" && (
+                            <span
+                              className="badge bg-warning text-dark d-flex align-items-center"
+                              style={{ cursor: "pointer" }}
                               title="Send for Repair"
+                              onClick={() => handleRepairClick(asset)}
                             >
-                              <User2Icon size={14} />
-                            </button>
+                              <Wrench size={14} color="black" />
+                            </span>
                           )}
-                          <button
-                            className="btn btn-dark btn-sm d-flex align-items-center"
+                          <span
+                            className="badge bg-dark d-flex align-items-center"
+                            style={{ cursor: "pointer" }}
                             onClick={() => handleQrClick(asset)}
+                            title="QR Code"
                           >
                             <QrCode size={14} />
-                            {/* <small>QR</small> */}
-                          </button>
-
-                          <button
-                            className="btn btn-dark btn-sm"
+                          </span>
+                          <span
+                            className="badge bg-dark d-flex align-items-center"
+                            style={{ cursor: "pointer" }}
                             onClick={() => handleViewClick(asset)}
+                            title="View"
                           >
                             <Eye size={14} />
-                          </button>
-
-                          {asset.status === "available" && (
-                            <button
-                              className="btn btn-dark btn-sm"
+                          </span>
+                          {asset.status === "AVAILABLE" && (
+                            <span
+                              className="badge bg-dark d-flex align-items-center"
+                              style={{ cursor: "pointer" }}
                               onClick={() => handleEditClick(asset)}
+                              title="Edit"
                             >
                               <Edit size={14} />
-                            </button>
+                            </span>
                           )}
-
-                          {asset.status !== "e-waste" && (
-                            <button
-                              className="btn btn-danger btn-sm d-flex align-items-center"
+                          {asset.status !== "EWASTE" && (
+                            <span
+                              className="badge bg-danger d-flex align-items-center"
+                              style={{ cursor: "pointer" }}
                               onClick={() => handleEwasteClick(asset)}
+                              title="Send to E-Waste"
                             >
-                              {/* <small className="me-1"></small> */}
-                              <Trash2 size={14} />
-                            </button>
+                              <Shredder size={14} />
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -447,7 +470,7 @@ const AssetList = ({ reloadAssets }) => {
             )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Modals */}
       {selectedAsset && showQrPopup && (
@@ -473,7 +496,7 @@ const AssetList = ({ reloadAssets }) => {
           onSave={handleSaveEdit}
         />
       )}
- 
+
       {selectedAsset && showEwastePopup && (
         <EwasteAsset
           asset={selectedAsset}
@@ -481,7 +504,7 @@ const AssetList = ({ reloadAssets }) => {
           onUpdated={fetchAssets}
         />
       )}
-       
+
       {selectedAsset && showRepairPopup && (
         <RepairAsset
           asset={selectedAsset}
@@ -489,7 +512,7 @@ const AssetList = ({ reloadAssets }) => {
           onUpdated={fetchAssets}
         />
       )}
-       
+
       {selectedAsset && showReturnPopup && (
         <ReturnAsset
           asset={selectedAsset}
