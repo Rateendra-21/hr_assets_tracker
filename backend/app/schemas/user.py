@@ -87,6 +87,14 @@ class AdminDeactivateRequest(BaseModel):
     employee_id: str
     remarks: Optional[str] = None
     
+class EmployeeUpdateRequest(BaseModel):
+    fullname: str
+    mobile_no: Optional[str]
+    email: Optional[str]
+    designation: Optional[str]
+    reporting_manager: Optional[str]
+    department_id: Optional[int]
+    location_id: Optional[int]
 
 
 class AdminCreateResponse(BaseModel):

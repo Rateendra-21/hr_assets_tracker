@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends 
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
@@ -124,4 +123,107 @@ async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depend
         "errors": errors,
     }
 
+
+
+
+
+
+
 #uodate employee by id
+from app.schemas.user import EmployeeUpdateRequest
+from datetime import datetime
+
+@router.put("/update/{employee_id}", response_model=dict)
+def update_employee(employee_id: str, request: EmployeeUpdateRequest, db: Session = Depends(get_db)):
+
+   
+    employee = db.query(User).filter(User.employee_id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    if request.email:
+        existing_email = db.query(User).filter(User.email == request.email, User.employee_id != employee_id).first()
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already in use by another employee")
+
+    if request.mobile_no:
+        existing_mobile = db.query(User).filter(User.mobile_no == request.mobile_no, User.employee_id != employee_id).first()
+        if existing_mobile:
+            raise HTTPException(status_code=400, detail="Mobile number already in use by another employee")
+
+
+    allowed_fields = [
+        "fullname", "mobile_no", "email", "designation",
+        "reporting_manager", "department_id", "location_id"
+    ]
+
+    for field in allowed_fields:
+        new_value = getattr(request, field)
+        if new_value is not None:
+            setattr(employee, field, new_value)
+
+    employee.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(employee)
+
+    return {
+        "message": f"Employee {employee.fullname} updated successfully",
+        "employee_id": employee.employee_id,
+        "updated_fields": {field: getattr(employee, field) for field in allowed_fields}
+    }
+
+
+# Employee Deactivate
+
+from app.schemas.user import UserResponse, EmployeeDeactivateRequest
+
+@router.put("/deactivate", response_model=dict)
+def deactivate_employee(request: EmployeeDeactivateRequest, db: Session = Depends(get_db)):
+    employee = db.query(User).filter(User.employee_id == request.employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    employee.is_active = False
+    employee.working_status = "Inactive"
+    employee.remarks = request.remarks
+    employee.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(employee)
+
+    return {
+        "message": f"Employee {employee.fullname} deactivated successfully",
+        "employee_id": employee.employee_id,
+        "is_active": employee.is_active,
+        "working_status": employee.working_status,
+        "remarks": employee.remarks,
+        "updated_at": employee.updated_at,
+    }
+
+
+# employee Activate
+
+
+from app.schemas.user import UserResponse, EmployeeActivateRequest
+@router.put("/activate", response_model=dict)
+def activate_employee(request: EmployeeActivateRequest, db: Session = Depends(get_db)):
+    employee = db.query(User).filter(User.employee_id == request.employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    employee.is_active = True  
+    employee.working_status = "Active"
+    employee.remarks = None
+    employee.updated_at = None
+
+    db.commit()
+    db.refresh(employee)
+
+    return {
+        "message": f"Employee {employee.fullname} activated successfully",
+        "employee_id": employee.employee_id,
+        "is_active": employee.is_active,
+        "working_status": employee.working_status,
+        "remarks": employee.remarks,
+        "updated_at": employee.updated_at,
+    }
