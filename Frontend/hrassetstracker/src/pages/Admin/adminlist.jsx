@@ -1,7 +1,8 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
-import { Trash2, User, LayoutGrid, Table} from "lucide-react";
+import { Trash2, User, LayoutGrid, Table, UserCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
 import AddAdminModal from "./AddAdminModal";
+
 
 const AdminList = forwardRef((props, ref) => {
   const [admins, setAdmins] = useState([]);
@@ -13,10 +14,13 @@ const AdminList = forwardRef((props, ref) => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://127.0.0.1:8000/admin/admin/admindata");
-      const data = (await res.json()).filter(user => user.role === "admin");
-      setAdmins(data);
-      setFilteredAdmins(data);
+      const res = await fetch("http://127.0.0.1:8000/admin/admindata");
+      if (!res.ok) throw new Error("Failed to fetch admin data");
+      const data = await res.json();
+      const admins = data.filter((user) => user.role === "ADMIN");
+
+      setAdmins(admins);
+      setFilteredAdmins(admins);
     } catch (err) {
       console.error("Error fetching admin data:", err);
     } finally {
@@ -48,29 +52,29 @@ const AdminList = forwardRef((props, ref) => {
     }
   }, [search, admins]);
 
-  const handleToggleAdmin = async (employee_id) => {
-    if (!window.confirm("Are you sure you want to toggle this admin?")) return;
+  const handleToggleAdmin = async (employee_id, isActive) => {
+  const action = isActive ? "deactivate" : "activate";
 
-    try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/admin/admin/deactivateadmin",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ employee_id }),
-        }
-      );
+  if (!window.confirm(`Are you sure you want to ${action} this admin?`)) return;
 
-      if (!response.ok) throw new Error("Failed to toggle admin");
+  const url = `http://127.0.0.1:8000/admin/${action}/${employee_id}`;
 
-      const data = await response.json();
-      toast.success(data.message);
-      fetchAdmins();
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong while toggling the admin.");
-    }
-  };
+  try {
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) throw new Error(`Failed to ${action} admin`);
+
+    const data = await response.json();
+    toast.success(data.message);
+    fetchAdmins();
+  } catch (error) {
+    console.error(error);
+    alert(`Something went wrong while trying to ${action} the admin.`);
+  }
+};
+
 
   if (loading) return <p>Loading admin data...</p>;
 
@@ -128,6 +132,8 @@ const AdminList = forwardRef((props, ref) => {
         </div>
       </div>
 
+      {/* grid view  */}
+
       <div style={{ display: viewMode === "grid" ? "block" : "none" }}>
         <div
           className="w-100 custom-scroll py-3"
@@ -158,8 +164,12 @@ const AdminList = forwardRef((props, ref) => {
                             {admin.department?.departmentname}
                           </h6>
                         </div>
-                        <span className="badge bg-dark rounded-pill">
-                          {admin.is_admin ? "Active" : "Inactive"}
+                        <span
+                          className={`badge rounded-pill ${
+                            admin.is_active ? "bg-dark" : "bg-danger"
+                          }`}
+                        >
+                          {admin.is_active ? "Active" : "Inactive"}
                         </span>
                       </div>
 
@@ -184,11 +194,17 @@ const AdminList = forwardRef((props, ref) => {
 
                       <div className="mt-auto d-flex gap-2 justify-content-end">
                         <button
-                          className="btn btn-danger btn-sm d-flex align-items-center"
-                          onClick={() => handleToggleAdmin(admin.employee_id)}
+                          className={`btn btn-sm d-flex align-items-center ${
+                            admin.is_active ? "btn-danger" : "btn-success"
+                          }`}
+                          onClick={() =>
+                            handleToggleAdmin(
+                              admin.employee_id,
+                              admin.is_active
+                            )
+                          }
                         >
-                          <Trash2 size={18} className="mx-2" />{" "}
-                          {admin.is_admin ? "Deactivate" : "Activate"}
+                          {admin.is_active ? "Deactivate" : "Activate"}
                         </button>
                       </div>
                     </div>
@@ -201,117 +217,121 @@ const AdminList = forwardRef((props, ref) => {
       </div>
 
       {/* Table view  */}
-      <div style={{ display: viewMode === "table" ? "block" : "none" }}>
-        <div>
-          <div>
-            <div className="container-fluid">
-              {filteredAdmins.length === 0 ? (
-                <div
-              className="text-center py-5 rounded"
-              style={{ border: "1px solid lightgrey" }}
-            >
-              <span className="text-muted">No admin users found</span>
-            </div>
-              ) : (
-                <div
-                  className="table-responsive custom-scroll"
-                  style={{
-                    maxHeight: "500px",
-                    overflowY: "scroll",
-                    overflowX: "scroll",
-                  }}
+      <div className="shadow rounded" style={{ border: "1px solid lightgrey" }}>
+        {viewMode === "table" && (
+          <div className="container-fluid p-0">
+            {filteredAdmins.length === 0 ? (
+              <div
+                className="text-center py-5 rounded"
+                style={{ border: "1px solid lightgrey" }}
+              >
+                <span className="text-muted">No admin users found</span>
+              </div>
+            ) : (
+              <div
+                className="table-responsive custom-scroll"
+                style={{
+                  maxHeight: "500px",
+                  overflowY: "auto",
+                  overflowX: "auto",
+                  padding: "20px",
+                }}
+              >
+                <table
+                  className="table  mb-0 align-middle text-center"
+                  style={{ width: "100%", minWidth: "1200px" }}
                 >
-                  <table
-                    className="table table-bordered table-hover mb-0 align-middle text-center"
-                    style={{ width: "100%", minWidth: "1200px" }}
-                  >
-                    <thead className="table">
-                      <tr>
-                        <th>
-                          <small>Emp ID</small>
-                        </th>
-                        <th>
-                          <small>Name</small>
-                        </th>
-
-                        <th>
-                          <small>Location</small>
-                        </th>
-
-                        <th>
-                          <small>Mobile</small>
-                        </th>
-
-                        <th>
-                          <small>Email</small>
-                        </th>
-
-                        <th>
-                          <small>Designation</small>
-                        </th>
-                        <th>
-                          <small>Department</small>
-                        </th>
-
-                        <th>
-                          <small>Actions</small>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAdmins.map((admin, index) => (
-                        <tr key={index}>
-                          <td>
-                            <small>{admin.employee_id}</small>
-                          </td>
-
-                          <td>
-                            <small>{admin.fullname}</small>
-                          </td>
-
-                          <td>
-                            <small>{admin.location?.locationname || "-"}</small>
-                          </td>
-
-                          <td>
-                            <small>{admin.mobile_no}</small>
-                          </td>
-                          <td>
-                            <small>{admin.email}</small>
-                          </td>
-
-                          <td>
-                            <small>{admin.designation || "-"}</small>
-                          </td>
-                          <td>
-                            <small>
-                              {admin.department?.departmentname || "-"}
+                  <thead className="table">
+                    <tr>
+                      <th>
+                        <small>Emp ID</small>
+                      </th>
+                      <th>
+                        <small>Name</small>
+                      </th>
+                      <th>
+                        <small>Location</small>
+                      </th>
+                      <th>
+                        <small>Mobile</small>
+                      </th>
+                      <th>
+                        <small>Email</small>
+                      </th>
+                      <th>
+                        <small>Designation</small>
+                      </th>
+                      <th>
+                        <small>Department</small>
+                      </th>
+                      <th>
+                        <small>Status</small>
+                      </th>
+                      <th>
+                        <small>Actions</small>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAdmins.map((admin, index) => (
+                      <tr key={index}>
+                        <td>
+                          <small>{admin.employee_id}</small>
+                        </td>
+                        <td>
+                          <small>{admin.fullname}</small>
+                        </td>
+                        <td>
+                          <small>{admin.location?.locationname || "-"}</small>
+                        </td>
+                        <td>
+                          <small>{admin.mobile_no}</small>
+                        </td>
+                        <td>
+                          <small>{admin.email}</small>
+                        </td>
+                        <td>
+                          <small>{admin.designation || "-"}</small>
+                        </td>
+                        <td>
+                          <small>
+                            {admin.department?.departmentname || "-"}
+                          </small>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              admin.is_active ? "bg-success" : "bg-danger"
+                            }`}
+                          >
+                            {admin.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td className="d-flex justify-content-center">
+                          <button
+                            className={`btn btn-sm d-flex align-items-center ${
+                              admin.is_active ? "btn-danger" : "btn-success"
+                            }`}
+                            onClick={() =>
+                              handleToggleAdmin(
+                                admin.employee_id,
+                                admin.is_active
+                              )
+                            }
+                          >
+                            <small className="me-1">
+                              {admin.is_active ? "Deactivate" : "Activate"}
                             </small>
-                          </td>
-
-                          <td>
-                            <button
-                              className={`btn btn-sm d-flex align-items-center ${
-                                admin.is_admin ? "btn-danger" : "btn-success"
-                              }`}
-                              onClick={() =>
-                                handleToggleAdmin(admin.employee_id)
-                              }
-                            >
-                              <small className="me-1">
-                                {admin.is_admin ? "Deactivate" : "Activate"}
-                              </small>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

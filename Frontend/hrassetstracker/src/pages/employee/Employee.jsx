@@ -12,7 +12,7 @@ const Employee = () => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://127.0.0.1:8000/employees/");
+      const res = await fetch("http://127.0.0.1:8000/employees/getemployee");
       const data = await res.json();
       setEmployees(data);
     } catch (err) {
@@ -36,6 +36,7 @@ const Employee = () => {
       "location_id",
       "mobile_no",
       "reporting_manager",
+      "employee_type"
     ];
     const csvContent = [csvHeaders.join(",")].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

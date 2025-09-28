@@ -2,14 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.controllers import (
     user_controller,
-    employee_controller,
-    admin_controller,
     department_controller,
     location_controller,
-    asset_controller,
-    asset_allocation_controller,
-    repair_request_controller,
-    asset_lifecycle_controller
+    employee_controller
 )
 
 
@@ -24,7 +19,6 @@ origins = [
     "http://127.0.0.1:5173",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "*"  # Allow all origins temporarily for testing
 ]
 
 app.add_middleware(
@@ -35,15 +29,15 @@ app.add_middleware(
     allow_headers=["*"]
 )
 # Include routers
-app.include_router(admin_controller.router, prefix="/admin")
-app.include_router(user_controller.router, tags=["login"])
+# app.include_router(admin_controller.router, prefix="/admin")
+app.include_router(user_controller.router, tags=["user"])
 app.include_router(employee_controller.router)
 app.include_router(department_controller.router)
 app.include_router(location_controller.router)
-app.include_router(asset_controller.router)
-app.include_router(asset_allocation_controller.router)
-app.include_router(repair_request_controller.router, tags=["repairs"])
-app.include_router(asset_lifecycle_controller.router, tags=["lifecycle"])
+# app.include_router(asset_controller.router)
+# app.include_router(asset_allocation_controller.router)
+# app.include_router(repair_request_controller.router, tags=["repairs"])
+# app.include_router(asset_lifecycle_controller.router, tags=["lifecycle"])
 
 
 

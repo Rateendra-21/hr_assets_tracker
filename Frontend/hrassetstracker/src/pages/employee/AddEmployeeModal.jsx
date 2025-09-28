@@ -79,7 +79,10 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
 
       case "employeeId":
       case "designation":
-        if (!value) return `${name === "employeeId" ? "Employee ID" : "Designation"} is required`;
+        if (!value)
+          return `${
+            name === "employeeId" ? "Employee ID" : "Designation"
+          } is required`;
         if (/^\s/.test(value)) return "Cannot start with space";
         break;
 
@@ -91,7 +94,10 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
 
       case "department":
       case "workLocation":
-        if (!value) return `${name === "department" ? "Department" : "Work Location"} is required`;
+        if (!value)
+          return `${
+            name === "department" ? "Department" : "Work Location"
+          } is required`;
         break;
 
       default:
@@ -145,11 +151,27 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
         return;
       }
 
-      toast.success(data.message);
+      // Calculate how many were successfully added (not duplicates or errors)
+      const addedCount =
+        data.added?.length ||
+        0 ||
+        // Fallback: If API only gives message, try to infer from existing structure
+        (data.message && !data.duplicates?.length && !data.errors?.length
+          ? 1
+          : 0);
+
+      // Only show success toast if at least one record was inserted
+      if (addedCount > 0) {
+        toast.success(
+          data.message || `${addedCount} employee(s) added successfully`
+        );
+      }
 
       if (data.duplicates?.length > 0) {
         toast.error(
-          `Skipped ${data.duplicates.length} duplicates: ${data.duplicates.join(", ")}`
+          `Skipped ${data.duplicates.length} duplicates: ${data.duplicates.join(
+            ", "
+          )}`
         );
       }
 
@@ -180,16 +202,15 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
         email: formData.email,
         employee_id: formData.employeeId,
         designation: formData.designation,
-        location_id: formData.workLocation ? parseInt(formData.workLocation) : null,
+        location_id: formData.workLocation,
         reporting_manager: formData.reportingManager,
-        employee_type: "employee", // fixed value
-        username: formData.email, // same as email
-        department_id: formData.department ? parseInt(formData.department) : null,
-        password: "string", // backend will override
-        
+        employee_type: "Full-Time",
+        username: formData.email,
+        department_id: formData.department,
+        role: "EMPLOYEE",
       };
 
-      const url = "http://127.0.0.1:8000/employees/addemployee";
+      const url = "http://127.0.0.1:8000/employees/createemployee";
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -247,18 +268,30 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
               <div
                 onClick={() => setActiveTab("manual")}
                 className={`w-50 px-3 py-2 text-center fw-semibold ${
-                  activeTab === "manual" ? "bg-white text-dark shadow" : "text-muted"
+                  activeTab === "manual"
+                    ? "bg-white text-dark shadow"
+                    : "text-muted"
                 }`}
-                style={{ cursor: "pointer", transition: "0.3s", minWidth: "120px" }}
+                style={{
+                  cursor: "pointer",
+                  transition: "0.3s",
+                  minWidth: "120px",
+                }}
               >
                 Manual Entry
               </div>
               <div
                 onClick={() => setActiveTab("upload")}
                 className={`w-50 px-3 py-2 text-center fw-semibold ${
-                  activeTab === "upload" ? "bg-white text-dark shadow" : "text-muted"
+                  activeTab === "upload"
+                    ? "bg-white text-dark shadow"
+                    : "text-muted"
                 }`}
-                style={{ cursor: "pointer", transition: "0.3s", minWidth: "120px" }}
+                style={{
+                  cursor: "pointer",
+                  transition: "0.3s",
+                  minWidth: "120px",
+                }}
               >
                 CSV Upload
               </div>
@@ -266,7 +299,13 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
 
             {/* Manual Entry */}
             {activeTab === "manual" && (
-              <div style={{ height: "390px", overflowY: "auto", padding: "0 10px" }}>
+              <div
+                style={{
+                  height: "390px",
+                  overflowY: "auto",
+                  padding: "0 10px",
+                }}
+              >
                 <form onSubmit={onSubmit} className="row g-3">
                   {/* Full Name */}
                   <div className="col-md-6">
@@ -276,7 +315,9 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     <input
                       type="text"
                       name="fullName"
-                      className={`form-control ${errors.fullName ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.fullName ? "is-invalid" : ""
+                      }`}
                       value={formData.fullName}
                       onChange={handleChange}
                     />
@@ -293,13 +334,17 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     <input
                       type="text"
                       name="mobileNumber"
-                      className={`form-control ${errors.mobileNumber ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.mobileNumber ? "is-invalid" : ""
+                      }`}
                       value={formData.mobileNumber}
                       onChange={handleChange}
                       maxLength={10}
                     />
                     {errors.mobileNumber && (
-                      <div className="invalid-feedback">{errors.mobileNumber}</div>
+                      <div className="invalid-feedback">
+                        {errors.mobileNumber}
+                      </div>
                     )}
                   </div>
 
@@ -311,11 +356,15 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     <input
                       type="email"
                       name="email"
-                      className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.email ? "is-invalid" : ""
+                      }`}
                       value={formData.email}
                       onChange={handleChange}
                     />
-                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    {errors.email && (
+                      <div className="invalid-feedback">{errors.email}</div>
+                    )}
                   </div>
 
                   {/* Employee ID */}
@@ -326,12 +375,16 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     <input
                       type="text"
                       name="employeeId"
-                      className={`form-control ${errors.employeeId ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.employeeId ? "is-invalid" : ""
+                      }`}
                       value={formData.employeeId}
                       onChange={handleChange}
                     />
                     {errors.employeeId && (
-                      <div className="invalid-feedback">{errors.employeeId}</div>
+                      <div className="invalid-feedback">
+                        {errors.employeeId}
+                      </div>
                     )}
                   </div>
 
@@ -343,12 +396,16 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     <input
                       type="text"
                       name="designation"
-                      className={`form-control ${errors.designation ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.designation ? "is-invalid" : ""
+                      }`}
                       value={formData.designation}
                       onChange={handleChange}
                     />
                     {errors.designation && (
-                      <div className="invalid-feedback">{errors.designation}</div>
+                      <div className="invalid-feedback">
+                        {errors.designation}
+                      </div>
                     )}
                   </div>
 
@@ -359,7 +416,9 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     </label>
                     <select
                       name="department"
-                      className={`form-select ${errors.department ? "is-invalid" : ""}`}
+                      className={`form-select ${
+                        errors.department ? "is-invalid" : ""
+                      }`}
                       value={formData.department}
                       onChange={handleChange}
                     >
@@ -371,7 +430,9 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                       ))}
                     </select>
                     {errors.department && (
-                      <div className="invalid-feedback">{errors.department}</div>
+                      <div className="invalid-feedback">
+                        {errors.department}
+                      </div>
                     )}
                   </div>
 
@@ -382,7 +443,9 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     </label>
                     <select
                       name="workLocation"
-                      className={`form-select ${errors.workLocation ? "is-invalid" : ""}`}
+                      className={`form-select ${
+                        errors.workLocation ? "is-invalid" : ""
+                      }`}
                       value={formData.workLocation}
                       onChange={handleChange}
                     >
@@ -394,7 +457,9 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                       ))}
                     </select>
                     {errors.workLocation && (
-                      <div className="invalid-feedback">{errors.workLocation}</div>
+                      <div className="invalid-feedback">
+                        {errors.workLocation}
+                      </div>
                     )}
                   </div>
 
@@ -413,7 +478,9 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                       onChange={handleChange}
                     />
                     {errors.reportingManager && (
-                      <div className="invalid-feedback">{errors.reportingManager}</div>
+                      <div className="invalid-feedback">
+                        {errors.reportingManager}
+                      </div>
                     )}
                   </div>
 
@@ -441,8 +508,8 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                   <FileSpreadsheet className="text-dark" size={40} />
                   <h6 className="mt-2">Upload CSV File</h6>
                   <p className="text-muted">
-                    Upload a CSV file with employee data. Make sure to use the provided
-                    template.
+                    Upload a CSV file with employee data. Make sure to use the
+                    provided template.
                   </p>
                   <input
                     type="file"
@@ -475,9 +542,3 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
 };
 
 export default AddEmployeeModal;
-
-
-
-
-
-

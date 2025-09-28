@@ -319,27 +319,31 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
         </div>
       </div>
 
-      <div style={{ display: viewMode === "table" ? "block" : "none" }}>
-        <div className="py-2 rounded" style={{ border: "1px solid lightgrey" }}>
-          <div className="container-fluid">
+      {viewMode === "table" && (
+        <div
+          className="shadow rounded"
+          style={{ border: "1px solid lightgrey" }}
+        >
+          <div className="container-fluid p-0">
             {filteredEmployees.length === 0 ? (
               <div
                 className="text-center py-5 rounded"
                 style={{ border: "1px solid lightgrey" }}
               >
-                <small className="text-muted">No employees found</small>
+                <span className="text-muted">No employees found</span>
               </div>
             ) : (
               <div
                 className="table-responsive custom-scroll"
                 style={{
                   maxHeight: "500px",
-                  overflowY: "scroll",
-                  overflowX: "scroll",
+                  overflowY: "auto",
+                  overflowX: "auto",
+                  padding: "20px",
                 }}
               >
                 <table
-                  className="table table-bordered table-hover mb-0 align-middle text-center"
+                  className="table mb-0 align-middle text-center"
                   style={{ width: "100%", minWidth: "1200px" }}
                 >
                   <thead className="table">
@@ -398,18 +402,16 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
                           <small>{emp.department?.departmentname || "-"}</small>
                         </td>
                         <td>
-                          <small>
-                            <span
-                              className={`badge ${
-                                emp.is_active ? "bg-success" : "bg-danger"
-                              }`}
-                            >
-                              {emp.is_active ? "Active" : "Inactive"}
-                            </span>
-                          </small>
+                          <span
+                            className={`badge ${
+                              emp.is_active ? "bg-success" : "bg-danger"
+                            }`}
+                          >
+                            {emp.is_active ? "Active" : "Inactive"}
+                          </span>
                         </td>
-                        <td>
-                          {emp.is_active === 1 || emp.is_active === true ? (
+                        <td className="d-flex justify-content-center">
+                          {emp.is_active ? (
                             <button
                               className="btn btn-danger btn-sm me-1"
                               onClick={() => handleDeactivateClick(emp)}
@@ -429,13 +431,13 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
                             className="btn btn-dark btn-sm me-1"
                             onClick={() => handleView(emp)}
                           >
-                            <Eye size={16}/>
+                            <Eye size={16} />
                           </button>
                           <button
                             className="btn btn-dark text-light btn-sm"
                             onClick={() => handleEditClick(emp)}
                           >
-                            <Edit size={16}/>
+                            <Edit size={16} />
                           </button>
                         </td>
                       </tr>
@@ -446,7 +448,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
             )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Modals */}
       {showDeactivateModal && selectedEmployee && (

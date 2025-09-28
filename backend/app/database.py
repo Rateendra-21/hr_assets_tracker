@@ -6,7 +6,7 @@ import os
 os.makedirs(os.path.dirname(os.path.abspath(__file__)) + "/../data", exist_ok=True)
 
 # Use SQLite instead of MySQL
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@localhost/asset_management"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@localhost/HR_Asset_Tracker_New"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

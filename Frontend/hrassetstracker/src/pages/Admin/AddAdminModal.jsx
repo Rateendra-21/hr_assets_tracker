@@ -93,13 +93,12 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
         designation: formData.designation,
         location_id: formData.workLocation,
         reporting_manager: formData.reportingManager,
-        employee_type: "admin",
+        employee_type: "Full-Time",
         username: formData.email,
         department_id: formData.department,
-        password: "defaultPassword123",
-        role: "admin",
+        role: "ADMIN",
       };
-      const url = "http://127.0.0.1:8000/admin/admin/createadmin";
+      const url = "http://127.0.0.1:8000/createadmin";
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,6 +121,9 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
       alert(err.message || "Something went wrong!");
     }
   };
+
+  
+
 
   const renderLabel = (label) => (
     <label className="form-label">
