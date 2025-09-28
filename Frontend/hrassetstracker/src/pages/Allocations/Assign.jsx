@@ -260,56 +260,74 @@ const Assign = () => {
                 )}
 
                 {/* Table View */}
-                {viewMode === "table" && (
-                  <div className="shadow rounded" style={{ border: "1px solid lightgrey" }}>
-                    <div className="table-responsive custom-scroll" style={{ maxHeight: "500px", overflow: "auto", padding: "20px" }}>
-                      <table className="table mb-0 align-middle text-center">
-                        <thead className="table">
-                          <tr>
-                            <th>Select</th>
-                            <th>Asset Name</th>
-                            <th>Category</th>
-                            <th>Location</th>
-                            <th>Registered Date</th>
-                            <th>Manufacturer</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredAssets.map((asset) => {
-                            const formattedDate = asset.register_date
-                              ? new Date(asset.register_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                              : "-";
-                            return (
-                              <tr
-                                key={asset.id}
-                                className={selectedAssets.some((a) => a.id === asset.id) ? "table-primary" : ""}
-                                style={{ cursor: "pointer" }}
-                                onClick={() => handleAssetSelect(asset)}
-                              >
-                                <td className="d-flex justify-content-center align-items-center">
-                                  <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    checked={selectedAssets.some((a) => a.id === asset.id)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={() => handleAssetSelect(asset)}
-                                  />
-                                </td>
-                                <td>{asset.asset_name}</td>
-                                <td>{asset.category || "-"}</td>
-                                <td>{asset.location?.locationname || "-"}</td>
-                                <td>{formattedDate}</td>
-                                <td>{asset.manufacturer || "-"}</td>
-                                <td>{asset.status || "-"}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+
+                  {viewMode === "table" && (
+  <div className="shadow rounded" style={{ border: "1px solid lightgrey" }}>
+    <div
+      className="table-responsive custom-scroll"
+      style={{ maxHeight: "500px", overflow: "auto", padding: "20px" }}
+    >
+
+        <table className="table table-sm mb-0 align-middle text-center">
+  <thead >
+    <tr>
+      <th><small>Select</small></th>
+      <th><small>Asset Name</small></th>
+      <th><small>Category</small></th>
+      <th><small>Location</small></th>
+      <th><small>Registered Date</small></th>
+      <th><small>Manufacturer</small></th>
+      <th><small>Status</small></th>
+    </tr>
+  </thead>
+  <tbody>
+    {filteredAssets.map((asset) => {
+      const formattedDate = asset.register_date
+        ? new Date(asset.register_date).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "-";
+      const isSelected = selectedAssets.some((a) => a.id === asset.id);
+
+      return (
+        <tr
+          key={asset.id}
+          className={isSelected ? "table-primary" : ""}
+          style={{ cursor: "pointer" }}
+          onClick={() => handleAssetSelect(asset)}
+        >
+          <td className="text-center">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => handleAssetSelect(asset)}
+              onClick={(e) => e.stopPropagation()}
+              style={{ transform: "scale(0.9)" }} // shrink checkbox slightly
+            />
+          </td>
+          <td><small>{asset.asset_name}</small></td>
+          <td><small>{asset.category || "-"}</small></td>
+          <td><small>{asset.location?.locationname || "-"}</small></td>
+          <td><small>{formattedDate}</small></td>
+          <td><small>{asset.manufacturer || "-"}</small></td>
+          <td><small>{asset.status || "-"}</small></td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+
+
+
+    </div>
+  </div>
+)}
+
+
+
               </>
             )}
           </div>
