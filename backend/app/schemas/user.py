@@ -86,6 +86,9 @@ class AdminCreateRequest(BaseModel):
 class AdminDeactivateRequest(BaseModel):
     employee_id: str
     remarks: Optional[str] = None
+
+class EmployeeActivateRequest(BaseModel):
+    employee_id: str
     
 class EmployeeUpdateRequest(BaseModel):
     fullname: str
