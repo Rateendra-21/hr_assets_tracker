@@ -5,27 +5,31 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Prevent modal close when clicking inside
   const handleModalClick = (e) => e.stopPropagation();
 
-  // Handle textarea input
   const handleRemarksChange = (e) => {
     const value = e.target.value;
-    if (value.length === 1 && value === " ") return; // prevent starting with space
+    if (value.length === 1 && value === " ") return;
     setRemarks(value);
   };
 
-  // Save remarks and return asset
   const handleSave = async () => {
+    const payload = {
+      allocation_id: asset.allocation_id,
+      notes: remarks || "",
+    };
+
+    console.log("Return Asset Payload:", payload);
+
     try {
       setSaving(true);
-const res = await fetch(
-  `http://127.0.0.1:8000/assets/return-asset?asset_id=${asset.id}${remarks ? `&remarks=${encodeURIComponent(remarks)}` : ''}`,
-  {
-    method: "POST",
-  }
-);
-
+      const res = await fetch("http://127.0.0.1:8000/return-asset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) {
         const data = await res.json();
@@ -34,13 +38,10 @@ const res = await fetch(
 
       toast.success("Asset returned successfully!");
 
-      // Notify parent to refresh AssetList
       if (onUpdated) onUpdated();
-
-      // Close modal
       onClose();
     } catch (err) {
-      console.error(err);
+      console.error("Return Asset Error:", err);
       toast.error(err.message || "Failed to return asset.");
     } finally {
       setSaving(false);
@@ -71,9 +72,7 @@ const res = await fetch(
           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         }}
       >
-        <h5 style={{ fontWeight: "500", color: "black" }}>
-          Return Asset
-        </h5>
+        <h5 style={{ fontWeight: "500", color: "black" }}>Return Asset</h5>
         <span className="d-block mt-2 mb-3" style={{ fontWeight: "500" }}>
           Asset Name: {asset.asset_name}
         </span>
