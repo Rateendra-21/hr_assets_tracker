@@ -13,4 +13,4 @@ class Location(Base):
 
     #---------------------------------------
     # assets = relationship("Asset", back_populates="location")
-    # assets = relationship("Asset", back_populates="location")
+    assets = relationship("Asset", back_populates="location")

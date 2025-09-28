@@ -30,6 +30,6 @@ class Asset(Base):
 
     # relationships
     location = relationship("Location", back_populates="assets")
-    lifecycle_events = relationship("AssetLifecycle", back_populates="asset")
-    current_allocation = relationship("AssetAllocation", back_populates="asset", uselist=False)
+    # lifecycle_events = relationship("AssetLifecycle", back_populates="asset")
+    # current_allocation = relationship("AssetAllocation", back_populates="asset", uselist=False)
 
