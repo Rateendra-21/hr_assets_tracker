@@ -1,5 +1,6 @@
 import { Cross, RemoveFormatting, User, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 
 const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
   const [employeeId, setEmployeeId] = useState("");
@@ -38,39 +39,42 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
 
   const handleSubmit = async () => {
     if (!employeeId) {
-      alert("Please select an employee!");
+      toast.error("Please select an employee!");
       return;
     }
     if (assets.length === 0) {
-      alert("No assets selected!");
+      toast.error("No assets selected!");
       return;
     }
 
     const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
-    const allocatedBy = userData.fullname || "Admin";
+    const userId = userData.user.id || 1; // default to 1 if not in session
+
+    // Prepare payload
+    const payload = {
+      employee_id: parseInt(employeeId),
+      asset_ids: assets.map((asset) => asset.id),
+      user_id: userId,
+    };
+
+    console.log("Prepared payload for API:", payload);
 
     setSubmitting(true);
-
     try {
-      const allocations = assets.map((asset) => ({
-        asset_id: asset.id,
-        employee_id: parseInt(employeeId),
-        allocated_by: allocatedBy,
-      }));
-
       const response = await fetch(
-        "http://127.0.0.1:8000/asset-allocations/bulk",
+        "http://127.0.0.1:8000/assignasset",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(allocations),
+          body: JSON.stringify(payload),
         }
       );
 
       const result = await response.json();
+      console.log("API response:", result);
 
       if (result.errors > 0) {
-        alert(
+        toast.error(
           `Some allocations failed: ${JSON.stringify(
             result.error_details,
             null,
@@ -78,13 +82,13 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
           )}`
         );
       } else {
-        alert("Assets allocated successfully!");
+        toast.success("Assets allocated successfully!");
       }
 
       onSave(employeeId);
     } catch (error) {
       console.error("Error in asset allocation process:", error);
-      alert("An unexpected error occurred during asset allocation");
+      toast.error("An unexpected error occurred during asset allocation");
     } finally {
       setSubmitting(false);
     }
@@ -201,13 +205,22 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
                                 >
                                   <button
                                     type="button"
-                                    style={{borderRadius: "50%", height: "25px", width: "25px", padding: "0"}}
+                                    style={{
+                                      borderRadius: "50%",
+                                      height: "25px",
+                                      width: "25px",
+                                      padding: "0",
+                                    }}
                                     className="btn btn-sm btn-danger "
                                     onClick={() => onRemove(asset.id)}
                                     disabled={submitting}
                                     aria-label={`Remove ${asset.asset_name}`}
                                   >
-                                    <X size={12} className="mt-0" style={{marginBottom:"3px"}}  />
+                                    <X
+                                      size={12}
+                                      className="mt-0"
+                                      style={{ marginBottom: "3px" }}
+                                    />
                                   </button>
                                 </td>
                               </tr>
