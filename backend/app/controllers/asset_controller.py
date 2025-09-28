@@ -96,7 +96,7 @@ def get_asset_counts(db: Session = Depends(get_db)):
         "location_counts": {loc if loc else "Unknown": count for loc, count in location_counts}
     }
 
-
+# update asset details
 
 @router.put("/updateasset/{asset_id}", response_model=AssetResponse)
 def update_asset(asset_id: int, asset: AssetCreate, db: Session = Depends(get_db)):
