@@ -277,7 +277,8 @@ const AssetList = ({ reloadAssets }) => {
                             Return
                           </button>
                         )}
-                        {asset.status === "AVAILABLE" && (
+                        {(asset.status === "AVAILABLE" ||
+                          asset.status === "REPAIR_REQUESTED") && (
                           <button
                             className="btn btn-warning btn-sm d-flex align-items-center"
                             onClick={() => handleRepairClick(asset)}
@@ -286,6 +287,7 @@ const AssetList = ({ reloadAssets }) => {
                             <Wrench size={14} />
                           </button>
                         )}
+
                         <button
                           className="btn btn-outline-dark btn-sm d-flex align-items-center"
                           onClick={() => handleQrClick(asset)}
@@ -310,7 +312,7 @@ const AssetList = ({ reloadAssets }) => {
                           </button>
                         )}
 
-                        {asset.status !== "e-waste" && (
+                        {asset.status !== "EWASTE" && (
                           <button
                             className="btn btn-outline-danger btn-sm"
                             onClick={() => handleEwasteClick(asset)}
@@ -415,7 +417,22 @@ const AssetList = ({ reloadAssets }) => {
                         </td>
 
                         <td className="d-flex justify-content-center gap-1 flex-wrap">
-                          {asset.status === "AVAILABLE" && (
+                          {/* Return Asset */}
+                          {asset.status === "assigned" && (
+                            <span
+                              className="badge bg-primary d-flex align-items-center"
+                              style={{ cursor: "pointer" }}
+                              title="Return Asset"
+                              onClick={() => handleReturnClick(asset)}
+                            >
+                              <RotateCcw size={14} className="me-1" />
+                              Return
+                            </span>
+                          )}
+
+                          {/* Send for Repair */}
+                          {(asset.status === "AVAILABLE" ||
+                            asset.status === "REPAIR_REQUESTED") && (
                             <span
                               className="badge bg-warning text-dark d-flex align-items-center"
                               style={{ cursor: "pointer" }}
@@ -425,6 +442,8 @@ const AssetList = ({ reloadAssets }) => {
                               <Wrench size={14} color="black" />
                             </span>
                           )}
+
+                          {/* QR Code */}
                           <span
                             className="badge bg-dark d-flex align-items-center"
                             style={{ cursor: "pointer" }}
@@ -433,6 +452,8 @@ const AssetList = ({ reloadAssets }) => {
                           >
                             <QrCode size={14} />
                           </span>
+
+                          {/* View */}
                           <span
                             className="badge bg-dark d-flex align-items-center"
                             style={{ cursor: "pointer" }}
@@ -441,6 +462,8 @@ const AssetList = ({ reloadAssets }) => {
                           >
                             <Eye size={14} />
                           </span>
+
+                          {/* Edit */}
                           {asset.status === "AVAILABLE" && (
                             <span
                               className="badge bg-dark d-flex align-items-center"
@@ -451,6 +474,8 @@ const AssetList = ({ reloadAssets }) => {
                               <Edit size={14} />
                             </span>
                           )}
+
+                          {/* Send to E-Waste */}
                           {asset.status !== "EWASTE" && (
                             <span
                               className="badge bg-danger d-flex align-items-center"

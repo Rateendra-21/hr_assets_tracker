@@ -6,7 +6,8 @@ from app.controllers import (
     location_controller,
     employee_controller,
     asset_controller,
-    asset_allocation_controller
+    asset_allocation_controller,
+    repair_request_controller
 )
 
 
@@ -38,7 +39,7 @@ app.include_router(department_controller.router)
 app.include_router(location_controller.router)
 app.include_router(asset_controller.router)
 app.include_router(asset_allocation_controller.router)
-# app.include_router(repair_request_controller.router, tags=["repairs"])
+app.include_router(repair_request_controller.router)
 # app.include_router(asset_lifecycle_controller.router, tags=["lifecycle"])
 
 

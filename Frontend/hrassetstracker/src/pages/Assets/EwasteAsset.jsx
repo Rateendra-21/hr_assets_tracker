@@ -16,8 +16,8 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
   };
 
   // Save remarks and mark as E-Waste
+
   const handleSave = async () => {
-    // Validation
     if (!remarks.trim()) {
       toast.error("Remarks cannot be empty.");
       return;
@@ -29,12 +29,26 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
 
     try {
       setSaving(true);
+
+      const user_id = JSON.parse(sessionStorage.getItem("userData"))?.user?.id
+      // Create payload object
+      const payload = {
+        asset_id: asset.id,
+        user_id: user_id,
+        remarks: remarks,
+      };
+
+      // Log payload to console
+      console.log("Payload being sent to API:", payload);
+
       const res = await fetch(
-        `http://127.0.0.1:8000/assets/ewaste/${asset.id}?remarks=${encodeURIComponent(
-          remarks
-        )}`,
+        `http://127.0.0.1:8000/mark-ewaste`,
         {
-          method: "PUT",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         }
       );
 
@@ -45,16 +59,14 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
 
       toast.success("Asset marked as E-Waste successfully!");
 
-      // Notify parent to refresh AssetList
       if (onUpdated) onUpdated();
-
-      // Close modal
       onClose();
     } catch (err) {
       console.error(err);
-      // Display the specific error message from the backend
       if (err.message && err.message.includes("currently assigned")) {
-        toast.error("Cannot mark as e-waste: Asset is currently assigned to an employee. Please return the asset first.");
+        toast.error(
+          "Cannot mark as e-waste: Asset is currently assigned to an employee. Please return the asset first."
+        );
       } else {
         toast.error(err.message || "Failed to mark asset as E-Waste.");
       }

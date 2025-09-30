@@ -1,48 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 const RepairAsset = ({ asset, onClose, onUpdated }) => {
   const [issueDescription, setIssueDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [assetId, setAssetId] = useState(null);
 
-  // Prevent modal close when clicking inside
+  useEffect(() => {
+    if (asset) {
+      console.log("Modal opened with asset:", asset.asset_id); // use asset_id
+    }
+  }, [asset]);
+
   const handleModalClick = (e) => e.stopPropagation();
 
-  // Handle textarea input
   const handleDescriptionChange = (e) => {
     const value = e.target.value;
-    if (value.length === 1 && value === " ") return; // prevent starting with space
+    if (value.length === 1 && value === " ") return;
     setIssueDescription(value);
   };
 
-  // Save issue description and create repair request
   const handleSave = async () => {
-    // Validation
     if (!issueDescription.trim()) {
       toast.error("Issue description cannot be empty.");
       return;
     }
-    if (issueDescription.startsWith(" ")) {
-      toast.error("Issue description cannot start with a space.");
+
+    if (!asset || !asset.asset_id) {
+      toast.error("Asset data not available.");
       return;
     }
 
+    const payload = {
+      asset_id: asset.asset_id,
+      requested_by: JSON.parse(sessionStorage.getItem("userData"))?.user?.id,
+      issue_description: issueDescription.trim(),
+    };
+
     try {
       setSaving(true);
-      
-      const res = await fetch(
-        `http://127.0.0.1:8000/repair-requests/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            asset_id: asset.id,
-            issue_description: issueDescription
-          }),
-        }
-      );
+
+      const res = await fetch(`http://127.0.0.1:8000/repair-requests/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) {
         const data = await res.json();
@@ -51,11 +53,11 @@ const RepairAsset = ({ asset, onClose, onUpdated }) => {
 
       toast.success("Asset sent for repair successfully!");
 
-      // Notify parent to refresh AssetList
+      // ONLY call onUpdated(), which handles closing the popup and refreshing table
       if (onUpdated) onUpdated();
 
-      // Close modal
-      onClose();
+      // REMOVE onClose() here
+      // onClose();
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Failed to create repair request.");
@@ -88,9 +90,7 @@ const RepairAsset = ({ asset, onClose, onUpdated }) => {
           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         }}
       >
-        <h5 style={{ fontWeight: "500", color: "black" }}>
-          Send Asset for Repair
-        </h5>
+        <h5 style={{ fontWeight: "500", color: "black" }}>Repair Request</h5>
         <span className="d-block mt-2 mb-3" style={{ fontWeight: "500" }}>
           Asset Name: {asset.asset_name}
         </span>
@@ -107,14 +107,14 @@ const RepairAsset = ({ asset, onClose, onUpdated }) => {
 
         <div className="d-flex justify-content-end gap-2 mt-3">
           <button
-            className="btn btn-outline-secondary"
+            className="btn btn-outline-dark"
             onClick={onClose}
             disabled={saving}
           >
             Cancel
           </button>
           <button
-            className="btn btn-primary"
+            className="btn btn-dark"
             onClick={handleSave}
             disabled={saving || !issueDescription.trim()}
           >

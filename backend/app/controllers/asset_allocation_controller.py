@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Any
 from datetime import datetime
-
 from app.database import get_db
 from app.models.asset import Asset
 from app.models.asset_allocation import AssetAllocation, AssetAllocationStatus
@@ -14,6 +13,7 @@ from app.schemas.asset_allocation import (
     AssignedAssetResponse,
     ReturnAssetRequest
 )
+from app.schemas.repair_requests import EwasteRequest
 
 router = APIRouter(
     tags=["asset-allocations"]
@@ -76,14 +76,16 @@ def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depe
 def get_assigned_assets(db: Session = Depends(get_db)):
     """
     Get all assigned assets with employee and allocator details
+    (only when asset.status == ASSIGNED)
     """
     allocations = (
         db.query(AssetAllocation)
+        .join(Asset, Asset.id == AssetAllocation.asset_id)
         .options(
             joinedload(AssetAllocation.asset),
             joinedload(AssetAllocation.asset).joinedload(Asset.location),
         )
-        .filter(AssetAllocation.status == AssetAllocationStatus.ASSIGNED)
+        .filter(Asset.status == AssetAllocationStatus.ASSIGNED)  # <-- filter on Asset table
         .all()
     )
 
@@ -98,7 +100,7 @@ def get_assigned_assets(db: Session = Depends(get_db)):
                 asset_id=alloc.asset.id,
                 asset_name=alloc.asset.asset_name,
                 category=alloc.asset.category,
-                status=alloc.status.value if hasattr(alloc.status, "value") else alloc.status,
+                status=alloc.asset.status.value if hasattr(alloc.asset.status, "value") else alloc.asset.status,
                 employee_id=employee.id if employee else alloc.employee_id,
                 employee_name=employee.fullname if employee else "-",
                 allocated_by=allocator.id if allocator else alloc.allocated_by,
@@ -110,6 +112,7 @@ def get_assigned_assets(db: Session = Depends(get_db)):
         )
 
     return response
+
 
 # ---------------------------
 # Return Asset
@@ -156,3 +159,85 @@ def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db)) -> 
     db.refresh(allocation)
 
     return {"message": "Asset returned successfully", "allocation_id": allocation.id}
+
+
+
+@router.get("/assigned/{employee_id}", response_model=List[AssignedAssetResponse])
+def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_db)):
+   
+    allocations = (
+        db.query(AssetAllocation)
+        .join(Asset, Asset.id == AssetAllocation.asset_id)
+        .options(joinedload(AssetAllocation.asset).joinedload(Asset.location))
+        .filter(
+            AssetAllocation.employee_id == employee_id,
+            AssetAllocation.status == AssetAllocationStatus.ASSIGNED  # Only active assigned allocations
+        )
+        .all()
+    )
+
+    if not allocations:
+        raise HTTPException(status_code=404, detail="No assigned assets found for this employee")
+
+    response = []
+    for alloc in allocations:
+        employee = db.query(User).filter(User.id == alloc.employee_id).first()
+        allocator = db.query(User).filter(User.id == alloc.allocated_by).first()
+
+        response.append(
+            AssignedAssetResponse(
+                allocation_id=alloc.id,
+                asset_id=alloc.asset.id if alloc.asset else None,
+                asset_name=alloc.asset.asset_name if alloc.asset else "-",
+                category=alloc.asset.category if alloc.asset else "-",
+                status=alloc.asset.status.value if hasattr(alloc.asset.status, "value") else alloc.asset.status,
+                employee_id=employee.id if employee else alloc.employee_id,
+                employee_name=employee.fullname if employee else "-",
+                allocated_by=allocator.id if allocator else alloc.allocated_by,
+                allocated_by_name=allocator.fullname if allocator else "-",
+                allocation_date=alloc.allocation_date,
+                designation=employee.designation if employee else None,
+                manufacturer=alloc.asset.manufacturer if alloc.asset else None,
+            )
+        )
+
+    return response
+
+
+# ---------------------------
+# Mark Asset as E-Waste
+# ---------------------------
+
+@router.post("/mark-ewaste")
+def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db)):
+
+    asset = db.query(Asset).filter(Asset.id == payload.asset_id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    if asset.status == "ASSIGNED":  
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot mark asset as E-WASTE while it is assigned",
+        )
+
+    asset.status = "EWASTE"  
+    db.add(asset)
+
+    lifecycle_event = AssetLifecycleEvent(
+        asset_id=asset.id,
+        event_type="EWASTE",
+        remarks=payload.remarks,
+        user_id=payload.user_id,
+        event_date=datetime.utcnow()
+    )
+    db.add(lifecycle_event)
+
+    db.commit()
+    db.refresh(asset)
+
+    return {"message": "Asset marked as E-WASTE successfully", "asset_id": asset.id, "status": asset.status}
+
+
+
+

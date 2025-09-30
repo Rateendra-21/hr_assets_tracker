@@ -1,89 +1,67 @@
 import { useEffect, useState, useRef } from "react";
-import ReturnAsset from "../Assets/ReturnAsset";
 import RepairAsset from "../Assets/RepairAsset";
 
 const EmployeeAsset = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef(false);
-  const [statusFilterByCat, setStatusFilterByCat] = useState("all");
   const [selectedAsset, setSelectedAsset] = useState(null);
-  const [showReturnPopup, setShowReturnPopup] = useState(false);
   const [showRepairPopup, setShowRepairPopup] = useState(false);
+  const [statusFilterByCat, setStatusFilterByCat] = useState("all");
+  const fetchedRef = useRef(false);
+
+  const employeeId = JSON.parse(sessionStorage.getItem("userData"))?.user?.id;
+
+  const fetchAssignedAssets = async () => {
+    if (!employeeId) return;
+
+    try {
+      setLoading(true);
+      const res = await fetch(`http://127.0.0.1:8000/assigned/${employeeId}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const result = await res.json();
+      // Remove EWASTE assets
+      const filteredData = result.filter((asset) => asset.status !== "EWASTE");
+      setData(filteredData);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
-
-    const userData = JSON.parse(sessionStorage.getItem("userData"));
-    const employeeId = userData?.id;
-
-    console.log("Employee ID from sessionStorage:", employeeId);
-
-    if (!employeeId) {
-      console.error("No employee_id found in sessionStorage");
-      setLoading(false);
-      return;
+    if (!fetchedRef.current) {
+      fetchedRef.current = true;
+      fetchAssignedAssets();
     }
-
-    fetch(`http://127.0.0.1:8000/asset-allocations/assetbyempid/${employeeId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        return res.json();
-      })
-      .then((result) => {
-        setData(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching data:", err);
-        setLoading(false);
-      });
   }, []);
-
-  const handleReturnClick = (asset) => {
-    setSelectedAsset(asset);
-    setShowReturnPopup(true);
-  };
 
   const handleRepairClick = (asset) => {
     setSelectedAsset(asset);
     setShowRepairPopup(true);
   };
 
+  // UPDATED: called after repair request is submitted
   const handleAssetUpdated = () => {
-    // Refresh the asset list after an update
-    fetchedRef.current = false;
-    setLoading(true);
-    
-    const userData = JSON.parse(sessionStorage.getItem("userData"));
-    const employeeId = userData?.id;
-    
-    fetch(`http://127.0.0.1:8000/asset-allocations/assetbyempid/${employeeId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        return res.json();
-      })
-      .then((result) => {
-        setData(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching data:", err);
-        setLoading(false);
-      });
+    fetchAssignedAssets(); // refresh table data
+    setShowRepairPopup(false); // close popup
   };
 
   if (loading) {
     return <p className="p-3">Loading assets...</p>;
   }
 
+  // Filtered data based on category
+  const filteredData = data.filter(
+    (item) => statusFilterByCat === "all" || item.category === statusFilterByCat
+  );
+
   return (
     <main className="flex-grow-1">
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center p-2 p-md-3 border-bottom">
-        <h4 className="fw-bold" style={{ marginBottom: "12px" }}>
-          My Asset
+        <h4 className="fw-bold " style={{ marginBottom: "13px" }}>
+          My Assets
         </h4>
       </div>
 
@@ -120,39 +98,29 @@ const EmployeeAsset = () => {
       </div>
 
       {/* Table */}
-      <div
-        className="p-2 py-3 mx-3 mt-4 rounded"
-        style={{ border: "1px solid lightgrey" }}
-      >
-        <div className="container-fluid">
-          {data.filter(
-            (item) =>
-              statusFilterByCat === "all" ||
-              item.asset?.category === statusFilterByCat
-          ).length === 0 ? (
-            <div className="text-center py-5 rounded border">
-              <small className="text-muted">No assigned assets found</small>
-            </div>
-          ) : (
+      <div className="py-4 px-1 mx-3 rounded">
+        <div
+          className="shadow rounded"
+          style={{ border: "1px solid lightgrey" }}
+        >
+          <div className="container-fluid p-0">
             <div
               className="table-responsive custom-scroll"
               style={{
                 maxHeight: "500px",
                 overflowY: "auto",
                 overflowX: "auto",
+                padding: filteredData.length > 0 ? "20px" : "0px",
               }}
             >
               <table
-                className="table table-bordered mb-0 align-middle text-center"
-                style={{ width: "max-content", minWidth: "100%" }}
+                className="table mb-0 align-middle text-center"
+                style={{ width: "100%", minWidth: "1200px" }}
               >
-                <thead>
+                <thead className="table">
                   <tr>
                     <th>
                       <small>Sr. No</small>
-                    </th>
-                    <th>
-                      <small>Allocated By</small>
                     </th>
                     <th>
                       <small>Asset Name</small>
@@ -161,25 +129,16 @@ const EmployeeAsset = () => {
                       <small>Category</small>
                     </th>
                     <th>
-                      <small>Model</small>
-                    </th>
-                    <th>
-                      <small>Serial No</small>
+                      <small>Allocation Date</small>
                     </th>
                     <th>
                       <small>Manufacturer</small>
                     </th>
                     <th>
-                      <small>Location</small>
+                      <small>Allocated By</small>
                     </th>
                     <th>
-                      <small>Power Output</small>
-                    </th>
-                    <th>
-                      <small>Connector Type</small>
-                    </th>
-                    <th>
-                      <small>Cable Type</small>
+                      <small>Status</small>
                     </th>
                     <th>
                       <small>Action</small>
@@ -187,89 +146,86 @@ const EmployeeAsset = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data
-                    .filter(
-                      (item) =>
-                        statusFilterByCat === "all" ||
-                        item.asset?.category === statusFilterByCat
-                    )
-                    .map((item, index) => (
-                      <tr key={item.id || index}>
-                        <td>
-                          <small>{index + 1}</small>
-                        </td>{" "}
-                        {/* Serial Number */}
-                        <td>
-                          <small>{item.allocated_by || "-"}</small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.asset_name || "-"}</small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.category || "-"}</small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.model || "-"}</small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.serial_number || "-"}</small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.manufacturer || "-"}</small>
-                        </td>
-                        <td>
-                          <small>
-                            {item.asset?.location?.locationname || "-"}
-                          </small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.power_output || "-"}</small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.connector_type || "-"}</small>
-                        </td>
-                        <td>
-                          <small>{item.asset?.cable_type || "-"}</small>
-                        </td>
-                        <td>
-                          <div className="d-flex gap-1 justify-content-center">
-                            <button 
-                              className="btn btn-dark btn-sm" 
-                              onClick={() => handleReturnClick(item.asset)}
-                            >
-                              Return
-                            </button>
-                            <button 
-                              className="btn btn-warning btn-sm" 
-                              onClick={() => handleRepairClick(item.asset)}
-                            >
-                              Repair
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                  {filteredData.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-5">
+                        <span className="text-muted">
+                          No assigned assets found
+                        </span>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredData.map((item, index) => {
+                      const allocationDate = item.allocation_date
+                        ? new Date(item.allocation_date).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )
+                        : "-";
+
+                      return (
+                        <tr key={item.allocation_id || index}>
+                          <td>
+                            <small>{index + 1}</small>
+                          </td>
+                          <td>
+                            <small>{item.asset_name || "-"}</small>
+                          </td>
+                          <td>
+                            <small>{item.category || "-"}</small>
+                          </td>
+                          <td>
+                            <small>{allocationDate}</small>
+                          </td>
+                          <td>
+                            <small>{item.manufacturer || "-"}</small>
+                          </td>
+                          <td>
+                            <small>{item.allocated_by_name || "-"}</small>
+                          </td>
+                          <td>
+                            <small>{item.status}</small>
+                          </td>
+                          <td className="d-flex justify-content-center">
+                            {item.status === "ASSIGNED" ? (
+                              <span
+                                className="badge bg-dark text-light"
+                                style={{
+                                  cursor: "pointer",
+                                  padding: "0.5em 0.8em",
+                                  fontSize: "0.85em",
+                                }}
+                                onClick={() => handleRepairClick(item)}
+                              >
+                                <small>Report Repair</small>
+                              </span>
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
+          </div>
         </div>
       </div>
-    {showReturnPopup && (
-      <ReturnAsset
-        asset={selectedAsset}
-        onClose={() => setShowReturnPopup(false)}
-        onAssetUpdated={handleAssetUpdated}
-      />
-    )}
 
-    {showRepairPopup && (
-      <RepairAsset
-        asset={selectedAsset}
-        onClose={() => setShowRepairPopup(false)}
-        onAssetUpdated={handleAssetUpdated}
-      />
-    )}
+      {/* Repair Asset Popup */}
+      {showRepairPopup && (
+        <RepairAsset
+          asset={selectedAsset}
+          onClose={() => setShowRepairPopup(false)}
+          onUpdated={handleAssetUpdated} // <--- REFRESH TABLE AND CLOSE POPUP
+        />
+      )}
     </main>
   );
 };

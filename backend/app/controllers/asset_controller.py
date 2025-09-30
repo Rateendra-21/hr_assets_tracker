@@ -5,12 +5,16 @@ from app.database import get_db
 from app.models.asset import Asset
 from app.schemas.asset import AssetCreate, AssetResponse
 from datetime import datetime
+from app.models.asset import Asset
+from app.models.location import Location
+from sqlalchemy import func
 
 from app.models.user import User
 from app.schemas.asset import AssetResponse
 from app.schemas.user import UserResponse
 import csv
 import io
+from app.models.asset_lifecycle_event import AssetLifecycleEvent
 
 router = APIRouter(
     prefix="/assets",
@@ -57,9 +61,7 @@ def get_asset(asset_id: int, db: Session = Depends(get_db)):
 
 # get all the count 
 
-from app.models.asset import Asset
-from app.models.location import Location
-from sqlalchemy import func
+
 @router.get("/counts")
 @router.get("/counts")
 def get_asset_counts(db: Session = Depends(get_db)):
@@ -229,3 +231,10 @@ def upload_assets_csv(file: UploadFile, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Uploaded CSV file does not contain any valid asset data.")
 
     return saved_assets
+
+
+
+
+
+
+
