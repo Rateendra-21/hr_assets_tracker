@@ -12,6 +12,8 @@ class AssetEventType(PyEnum):
     REPAIR_COMPLETED = "REPAIR_COMPLETED"
     RETURNED = "RETURNED"
     EWASTE = "EWASTE"
+    ACCEPTED = "ACCEPTED"   # new status for acceptance
+    DECLINED = "DECLINED" 
 
 class AssetLifecycleEvent(Base):
     __tablename__ = "asset_lifecycle_events"

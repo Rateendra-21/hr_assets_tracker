@@ -7,6 +7,7 @@ import enum
 class AssetAllocationStatus(str, enum.Enum):
     ASSIGNED = "ASSIGNED"
     RETURNED = "RETURNED"
+    ALLOCATED = "ALLOCATED"
 
 class AssetAllocation(Base):
     __tablename__ = "asset_allocations"
@@ -17,7 +18,7 @@ class AssetAllocation(Base):
     allocated_by = Column(Integer, nullable=False)
     allocation_date = Column(DateTime, default=datetime.utcnow)
     return_date = Column(DateTime, nullable=True)
-    status = Column(Enum(AssetAllocationStatus), default=AssetAllocationStatus.ASSIGNED)
+    status = Column(Enum(AssetAllocationStatus), default=AssetAllocationStatus.ALLOCATED)
     notes = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

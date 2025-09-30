@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import AddAdminModal from "./AddAdminModal";
 import AdminList from "./adminlist";
 
@@ -39,27 +39,22 @@ const Admin = () => {
         </h4>
       </div>
 
-      <div className="py-4 px-3 px-md-4" style={{ backgroundColor: "#F9FAFB" }}>
-        <div className="row align-items-center">
-          {/* Title and subtitle */}
-          <div className="col-12 col-md-10 mb-3 mb-md-0">
-            <h5 className="fw-bold mb-1">Manage Admins</h5>
-            <span className="text-muted">
-              Add and manage admin users for your organization
-            </span>
-          </div>
+      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
+        <div className="d-flex flex-column mb-2 mb-md-0">
+          <h5 className="text-dark fw-bold mb-1"> <User size={17}/> Manage Admins</h5>
+          <small className="text-muted">
+            Add and manage admin users for your organization
+          </small>
+        </div>
 
-          {/* Add Admin Button */}
-          <div className="col-12 col-md-2 d-flex justify-content-md-end">
-            <button
-              className="btn btn-dark d-flex align-items-center"
-              style={{ width: "auto" }}
-              onClick={() => setShowModal(true)}
-            >
-              <Plus size={18} className="me-2" />
-              Add Admin
-            </button>
-          </div>
+        <div>
+          <button
+            className="btn btn-dark btn-sm d-flex align-items-center"
+            onClick={() => setShowModal(true)}
+          >
+            <Plus size={16} className="me-2" />
+            Add Admin
+          </button>
         </div>
       </div>
 

@@ -1,50 +1,129 @@
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session , joinedload
 from app.database import get_db
-from app.models.repair_requests import RepairRequest
-from app.models.asset import Asset
 from app.models.asset_lifecycle_event import AssetLifecycleEvent
 from app.schemas.repair_requests import RepairRequestCreate, RepairRequestResponse
-from datetime import datetime
-from typing import List
 from app.schemas.repair_requests import RepairRequestWithUserResponse
+from fastapi import UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
+from sqlalchemy.orm import Session
+from typing import List
+from datetime import datetime
+from app.models.repair_requests import RepairRequest
+from app.models.repair_request_images import RepairRequestImage
+from app.models.asset import Asset
+from app.models.user import User
+from app.models.asset_lifecycle_event import AssetLifecycleEvent  
 
 router = APIRouter(prefix="/repair-requests", tags=["Repair Requests"])
 
-@router.post("/", response_model=RepairRequestResponse)
-def create_repair_request(payload: RepairRequestCreate, db: Session = Depends(get_db)):
-    
-    asset = db.query(Asset).filter(Asset.id == payload.asset_id).first()
+
+@router.post("/")
+async def create_repair_request(
+    asset_id: int = Form(...),
+    requested_by: int = Form(...),
+    issue_description: str = Form(...),
+    images: List[UploadFile] = File([]),
+    db: Session = Depends(get_db),
+):
+    asset = db.query(Asset).filter(Asset.id == asset_id).first()
+    user = db.query(User).filter(User.id == requested_by).first()
+
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
+    user_role = user.role.value if user.role else "EMPLOYEE"
+
+    if user_role in ["SUPER_ADMIN", "ADMIN"]:
+        repair_status = "IN_REPAIR"
+        asset_status = "IN_REPAIR"
+        event_type = "IN_REPAIR"
+    else:
+        repair_status = "PENDING"
+        asset_status = "REPAIR_REQUESTED"
+        event_type = "REPAIR_REQUESTED"
 
     repair_request = RepairRequest(
-        asset_id=payload.asset_id,
-        requested_by=payload.requested_by,
-        issue_description=payload.issue_description,
-        status="PENDING",
-        request_date=datetime.utcnow()
+        asset_id=asset_id,
+        requested_by=requested_by,
+        issue_description=issue_description,
+        status=repair_status,
+        request_date=datetime.utcnow(),
     )
     db.add(repair_request)
 
-    # Update asset status
-    asset.status = "REPAIR_REQUESTED"
-    
+    asset.status = asset_status
 
-    # Create asset lifecycle event
+    # Add lifecycle event
     lifecycle_event = AssetLifecycleEvent(
         asset_id=asset.id,
-        event_type="REPAIR_REQUESTED",
-        remarks=f"Repair requested: {payload.issue_description}",
-        user_id=payload.requested_by
+        event_type=event_type,
+        remarks=f"Repair requested: {issue_description}",
+        user_id=requested_by,
+        event_date=datetime.utcnow()
     )
     db.add(lifecycle_event)
 
     db.commit()
     db.refresh(repair_request)
 
-    return repair_request
+    for image in images:
+        image_data = await image.read()
+        repair_image = RepairRequestImage(
+            repair_request_id=repair_request.id,
+            image_data=image_data,
+            filename=image.filename,
+            uploaded_at=datetime.utcnow(),
+        )
+        db.add(repair_image)
+
+    db.commit()
+
+    return {
+        "id": repair_request.id,
+        "asset_id": repair_request.asset_id,
+        "requested_by": repair_request.requested_by,
+        "issue_description": repair_request.issue_description,
+        "status": repair_request.status,
+        "request_date": repair_request.request_date,
+    }
+
+
+
+# @router.post("/", response_model=RepairRequestResponse)
+# def create_repair_request(payload: RepairRequestCreate, db: Session = Depends(get_db)):
+    
+#     asset = db.query(Asset).filter(Asset.id == payload.asset_id).first()
+#     if not asset:
+#         raise HTTPException(status_code=404, detail="Asset not found")
+
+
+#     repair_request = RepairRequest(
+#         asset_id=payload.asset_id,
+#         requested_by=payload.requested_by,
+#         issue_description=payload.issue_description,
+#         status="PENDING",
+#         request_date=datetime.utcnow()
+#     )
+#     db.add(repair_request)
+
+#     # Update asset status
+#     asset.status = "REPAIR_REQUESTED"
+    
+
+#     # Create asset lifecycle event
+#     lifecycle_event = AssetLifecycleEvent(
+#         asset_id=asset.id,
+#         event_type="REPAIR_REQUESTED",
+#         remarks=f"Repair requested: {payload.issue_description}",
+#         user_id=payload.requested_by
+#     )
+#     db.add(lifecycle_event)
+
+#     db.commit()
+#     db.refresh(repair_request)
+
+#     return repair_request
 
 
 
@@ -86,7 +165,6 @@ def approve_repair_request(request_id: int, approved_by: int, db: Session = Depe
 
 @router.get("/pending", response_model=List[RepairRequestWithUserResponse])
 def get_pending_repair_requests(db: Session = Depends(get_db)):
-
     repair_requests = (
         db.query(RepairRequest)
         .options(
@@ -126,26 +204,21 @@ def get_pending_repair_requests(db: Session = Depends(get_db)):
 
 
 
-from app.models.repair_requests import RepairRequest
-
 @router.post("/{request_id}/approve")
 def approve_repair_request(request_id: int, db: Session = Depends(get_db), user_id: int = 0):
-    # Fetch repair request
+
     repair_request = db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
     if not repair_request:
         raise HTTPException(status_code=404, detail="Repair request not found")
 
-    # Update repair request status
     repair_request.status = "APPROVED"
     repair_request.approved_by = user_id
     repair_request.approved_date = datetime.utcnow()
 
-    # Update asset status to IN_REPAIR
+
     asset = db.query(Asset).filter(Asset.id == repair_request.asset_id).first()
     if asset:
         asset.status = "IN_REPAIR"
-
-    # Create lifecycle event
     lifecycle_event = AssetLifecycleEvent(
         asset_id=repair_request.asset_id,
         event_type="IN_REPAIR",

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
+import { Clock } from "lucide-react";
 
 const RepairRequests = () => {
   const [repairRequests, setRepairRequests] = useState([]);
@@ -73,20 +74,22 @@ const RepairRequests = () => {
         </h4>
       </div>
 
-      <div className="py-3 px-2 px-md-4" style={{ backgroundColor: "#F9FAFB" }}>
-        <div className="row align-items-center mb-3">
-          <div className="col mb-2 mb-md-0">
-            <h5 className="fw-bold mb-1">Pending Requests</h5>
-            <span className="text-muted">
-              Approve or decline pending asset repair requests
-            </span>
-          </div>
+      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
+        {/* Left Section */}
+        <div className="d-flex flex-column mb-2 mb-md-0">
+          <h5 className="text-dark fw-bold mb-1">
+            <Clock size={17} className="me-2" />
+            Pending Requests
+          </h5>
+          <small className="text-muted">
+            Approve or decline pending asset repair requests
+          </small>
         </div>
       </div>
 
       <div
-        className="shadow rounded mx-3 mt-4"
-        style={{ border: "1px solid lightgrey" }}
+        className="shadow rounded mx-4 mt-4"
+        
       >
         <div className="container-fluid p-0">
           {loading ? (

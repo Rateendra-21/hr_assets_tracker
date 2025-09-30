@@ -90,8 +90,8 @@ const AdminList = forwardRef((props, ref) => {
           padding: "8px 12px",
         }}
       >
-        {/* Search Box */}
-        <div className="col-12 col-md-11  py-2">
+     
+        <div className="col-12 col-md-11 py-2">
           <div className="position-relative">
             <User
               className="position-absolute text-muted"
@@ -109,12 +109,12 @@ const AdminList = forwardRef((props, ref) => {
               onChange={(e) => setSearch(e.target.value)}
               className="form-control ps-5 form-control-sm mb-2"
               placeholder="Search admins..."
-              // style={{ height: "36px" }}
+          
             />
           </div>
         </div>
 
-        {/* Icons on Right */}
+       
         <div className="col-12 col-md-1 py-2  d-flex justify-content-md-end gap-2">
           <button
             className="btn btn-dark btn-sm mb-2"
@@ -217,7 +217,7 @@ const AdminList = forwardRef((props, ref) => {
       </div>
 
       {/* Table view  */}
-      <div className="shadow rounded" style={{ border: "1px solid lightgrey" }}>
+      <div className="shadow rounded" >
         {viewMode === "table" && (
           <div className="container-fluid p-0">
             {filteredAdmins.length === 0 ? (

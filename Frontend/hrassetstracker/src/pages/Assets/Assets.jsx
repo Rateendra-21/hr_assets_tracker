@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus , Box } from "lucide-react";
 import Assetlist from "./Assetlist";
 import Addasset from "./Addasset";
 
@@ -25,25 +25,33 @@ const Assets = () => {
       </div>
 
       {/* Management Section */}
-      <div className="py-4 px-4" style={{ backgroundColor: "#F9FAFB" }}>
-        <div className="row align-items-center mb-3">
-          <div className="col-12 col-md-6 mb-2 mb-md-0">
-            <h5 className="fw-bold mb-1">Asset Management</h5>
-            <span className="text-muted d-block">
-              Register and manage company assets
-            </span>
-          </div>
-          <div className="col-12 col-md-6 d-flex justify-content-md-end gap-2">
-            <button
-              className="btn btn-dark d-flex align-items-center w-auto w-md-auto"
-              onClick={openAddAssetModal}
-            >
-              <Plus size={18} className="me-2" />
-              Register Assets
-            </button>
-          </div>
-        </div>
-      </div>
+      
+
+
+      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
+  {/* Left Section */}
+  <div className="d-flex flex-column mb-2 mb-md-0">
+    <h5 className="text-dark fw-bold mb-1">
+      <Box size={17} className="me-2" />
+      Asset Management
+    </h5>
+    <small className="text-muted">
+      Register and manage company assets
+    </small>
+  </div>
+
+  {/* Right Section */}
+  <div className="d-flex gap-2">
+    <button
+      className="btn btn-dark btn-sm d-flex align-items-center"
+      onClick={openAddAssetModal}
+    >
+      <Plus size={16} className="me-2" />
+      Register Assets
+    </button>
+  </div>
+</div>
+
 
       {/* Asset List */}
       <div className="px-1">

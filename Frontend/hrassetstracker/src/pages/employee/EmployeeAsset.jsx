@@ -1,11 +1,16 @@
 import { useEffect, useState, useRef } from "react";
 import RepairAsset from "../Assets/RepairAsset";
+import DeclineAssetPopup from "./DeclineAssetPopup"; 
+import { toast } from "react-hot-toast";
+import { Folder } from "lucide-react";
+
 
 const EmployeeAsset = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showRepairPopup, setShowRepairPopup] = useState(false);
+  const [showDeclinePopup, setShowDeclinePopup] = useState(false);
   const [statusFilterByCat, setStatusFilterByCat] = useState("all");
   const fetchedRef = useRef(false);
 
@@ -13,13 +18,11 @@ const EmployeeAsset = () => {
 
   const fetchAssignedAssets = async () => {
     if (!employeeId) return;
-
     try {
       setLoading(true);
       const res = await fetch(`http://127.0.0.1:8000/assigned/${employeeId}`);
       if (!res.ok) throw new Error("Failed to fetch");
       const result = await res.json();
-      // Remove EWASTE assets
       const filteredData = result.filter((asset) => asset.status !== "EWASTE");
       setData(filteredData);
     } catch (err) {
@@ -41,17 +44,71 @@ const EmployeeAsset = () => {
     setShowRepairPopup(true);
   };
 
-  // UPDATED: called after repair request is submitted
+  const handleAcceptClick = async (item) => {
+    const payload = {
+      allocation_id: item.allocation_id,
+      action: "accept",
+      user_id: employeeId,
+    };
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/allocation/action", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to accept asset");
+
+      toast.success("Asset accepted successfully!");
+      fetchAssignedAssets();
+    } catch (error) {
+      toast.error("Error accepting asset: " + error.message);
+    }
+  };
+
+  const handleDeclineClick = (item) => {
+    setSelectedAsset(item);
+    setShowDeclinePopup(true);
+  };
+
+  const submitDecline = async (remarks) => {
+    if (!remarks.trim()) {
+      toast.error("Please enter remarks for decline.");
+      return;
+    }
+
+    const payload = {
+      allocation_id: selectedAsset.allocation_id,
+      action: "decline",
+      user_id: employeeId,
+      remarks,
+    };
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/allocation/action", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to decline asset");
+
+      setShowDeclinePopup(false);
+      fetchAssignedAssets();
+      toast.success("Asset declined successfully!");
+    } catch (error) {
+      toast.error("Error declining asset: " + error.message);
+    }
+  };
+
   const handleAssetUpdated = () => {
-    fetchAssignedAssets(); // refresh table data
-    setShowRepairPopup(false); // close popup
+    fetchAssignedAssets();
+    setShowRepairPopup(false);
   };
 
   if (loading) {
     return <p className="p-3">Loading assets...</p>;
   }
 
-  // Filtered data based on category
   const filteredData = data.filter(
     (item) => statusFilterByCat === "all" || item.category === statusFilterByCat
   );
@@ -66,20 +123,22 @@ const EmployeeAsset = () => {
       </div>
 
       {/* Subtitle */}
-      <div className="py-3 px-2 px-md-4" style={{ backgroundColor: "#F9FAFB" }}>
-        <div className="row align-items-center mb-3">
-          <div className="col mb-2 mb-md-0">
-            <h5 className="fw-bold mb-1">My Assets</h5>
-            <span className="text-muted">
-              View and manage your allocated company assets
-            </span>
-          </div>
-        </div>
-      </div>
+      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
+  {/* Left Section */}
+  <div className="d-flex flex-column mb-2 mb-md-0">
+    <h5 className="text-dark fw-bold mb-1">
+      <Folder size={17} className="me-2" />
+      My Assets
+    </h5>
+    <small className="text-muted">
+      View and manage your allocated company assets
+    </small>
+  </div>
+</div>
 
       {/* Filter Dropdown */}
       <div
-        className="p-2 py-3 mx-3 mt-4 rounded d-flex justify-content-end"
+        className="p-2 mx-4 py-3 mt-4 rounded d-flex justify-content-end"
         style={{ border: "1px solid lightgrey" }}
       >
         <div className="col-md-3">
@@ -190,7 +249,7 @@ const EmployeeAsset = () => {
                           <td>
                             <small>{item.status}</small>
                           </td>
-                          <td className="d-flex justify-content-center">
+                          <td className="d-flex justify-content-center gap-2">
                             {item.status === "ASSIGNED" ? (
                               <span
                                 className="badge bg-dark text-light"
@@ -203,6 +262,33 @@ const EmployeeAsset = () => {
                               >
                                 <small>Report Repair</small>
                               </span>
+                            ) : item.status === "ALLOCATED" ? (
+                              <>
+                                <span
+                                  className="badge bg-success text-light"
+                                  style={{
+                                    cursor: "pointer",
+                                    padding: "0.4em 0.8em",
+                                    fontSize: "0.85em",
+                                  }}
+                                  onClick={() => handleAcceptClick(item)}
+                                  title="Accept"
+                                >
+                                  <small>✓</small>
+                                </span>
+                                <span
+                                  className="badge bg-danger text-light"
+                                  style={{
+                                    cursor: "pointer",
+                                    padding: "0.4em 0.8em",
+                                    fontSize: "0.85em",
+                                  }}
+                                  onClick={() => handleDeclineClick(item)}
+                                  title="Decline"
+                                >
+                                  <small>✗</small>
+                                </span>
+                              </>
                             ) : (
                               <span>-</span>
                             )}
@@ -223,7 +309,17 @@ const EmployeeAsset = () => {
         <RepairAsset
           asset={selectedAsset}
           onClose={() => setShowRepairPopup(false)}
-          onUpdated={handleAssetUpdated} // <--- REFRESH TABLE AND CLOSE POPUP
+          onUpdated={handleAssetUpdated}
+        />
+      )}
+
+      {/* Decline Asset Popup */}
+      {showDeclinePopup && (
+        <DeclineAssetPopup
+          show={showDeclinePopup}
+          onClose={() => setShowDeclinePopup(false)}
+          onSubmit={submitDecline}
+          asset={selectedAsset}
         />
       )}
     </main>

@@ -138,7 +138,7 @@ const AssetList = ({ reloadAssets }) => {
       {/* Search & Filter */}
 
       <div
-        className="py-3 px-3 mb-3 row g-2"
+        className="py-3 mx-2 px-3 mb-3 mt-2 row g-2"
         style={{ border: "1px solid lightgrey", borderRadius: "8px" }}
       >
         {/* Search Input */}
@@ -202,7 +202,7 @@ const AssetList = ({ reloadAssets }) => {
       <div style={{ display: viewMode === "grid" ? "block" : "none" }}>
         {/* Asset Cards */}
         <div
-          className="w-100 custom-scroll py-3"
+          className="w-100 custom-scroll py-3 mx-2"
           style={{
             maxWidth: "1100px",
             maxHeight: "330px",
@@ -332,7 +332,7 @@ const AssetList = ({ reloadAssets }) => {
 
       {viewMode === "table" && (
         <div
-          className="shadow rounded"
+          className="shadow rounded mx-2"
           style={{ border: "1px solid lightgrey" }}
         >
           <div className="container-fluid p-0">

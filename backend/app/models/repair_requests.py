@@ -10,6 +10,7 @@ class RepairRequestStatus(str, enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
+    IN_REPAIR = "IN_REPAIR"
 
 class RepairRequest(Base):
     __tablename__ = "repair_requests"
@@ -33,3 +34,10 @@ class RepairRequest(Base):
     requester = relationship("User", foreign_keys=[requested_by], backref="repair_requests_created")
     assigned_user = relationship("User", foreign_keys=[assigned_to], backref="repair_requests_assigned")
     approver = relationship("User", foreign_keys=[approved_by], backref="repair_requests_approved")
+    
+
+    images = relationship(
+        "RepairRequestImage",
+        back_populates="repair_request",
+        cascade="all, delete-orphan"
+    )

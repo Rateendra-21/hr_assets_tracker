@@ -75,7 +75,7 @@ const Assign = () => {
   return (
     <main className="flex-grow-1">
       {/* Header with toggle buttons */}
-      <div className="d-flex align-items-center justify-content-between mb-2 rounded p-3 bg-light">
+      {/* <div className="d-flex align-items-center justify-content-between mb-1 rounded p-2 bg-light">
         <div className="d-flex flex-column">
           <h5 className="text-dark d-flex align-items-center">
             <Box className="me-2 text-muted" size={20} />
@@ -88,6 +88,51 @@ const Assign = () => {
 
         <div>
           <div className="btn-group" role="group" aria-label="View toggle">
+            <button
+              type="button"
+              className={`btn btn-sm rounded-start ${
+                activeView === "assigned"
+                  ? "btn-dark text-white"
+                  : "btn-outline-dark"
+              }`}
+              onClick={() => setActiveView("assigned")}
+            >
+              Assigned Asset
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm rounded-end ${
+                activeView === "assign"
+                  ? "btn-dark text-white"
+                  : "btn-outline-dark"
+              }`}
+              onClick={() => setActiveView("assign")}
+            >
+              Assign Asset
+            </button>
+          </div>
+        </div>
+      </div> */}
+
+      <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 rounded p-3 bg-light shadow-sm">
+        {/* Left Section */}
+        <div className="d-flex flex-column mb-2 mb-md-0">
+          <h5 className="text-dark d-flex align-items-center mb-1">
+            <Box className="me-2 text-muted" size={20} />
+            Allocations
+          </h5>
+          <small className="text-muted">
+            Select assets using checkboxes and assign them to an employee
+          </small>
+        </div>
+
+        {/* Right Section */}
+        <div>
+          <div
+            className="btn-group w-100 w-md-auto"
+            role="group"
+            aria-label="View toggle"
+          >
             <button
               type="button"
               className={`btn btn-sm rounded-start ${

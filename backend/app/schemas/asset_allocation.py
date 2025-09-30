@@ -6,6 +6,7 @@ from enum import Enum
 class AllocationStatus(str, Enum):
     ASSIGNED = "ASSIGNED"
     RETURNED = "RETURNED"
+    ALLOCATED = "ALLOCATED"
 
 class AssetAllocationResponse(BaseModel):
     id: int
@@ -25,7 +26,13 @@ class BulkAssetAllocationRequest(BaseModel):
 
 class ReturnAssetRequest(BaseModel):
     allocation_id: int
-    notes: Optional[str] = None  # Remarks or notes while returning
+    notes: Optional[str] = None  
+
+class AllocationActionRequest(BaseModel):
+    allocation_id: int
+    action: str  # "accept" or "decline"
+    user_id: int
+    remarks: str = None  # optional remarks from frontend
 
 
 class AssignedAssetResponse(BaseModel):
@@ -41,10 +48,6 @@ class AssignedAssetResponse(BaseModel):
     allocation_date: datetime
     designation: Optional[str] = None
     manufacturer: Optional[str] = None
-   
-
-    # return_date: datetime | None
-    # notes: str | None
 
     class Config:
         orm_mode = True

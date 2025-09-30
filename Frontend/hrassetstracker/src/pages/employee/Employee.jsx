@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Plus } from "lucide-react";
+import { Download, Plus, User } from "lucide-react";
 import EmployeeList from "../employee/Employeelist";
 import AddEmployeeModal from "../employee/AddEmployeeModal";
 
@@ -36,7 +36,7 @@ const Employee = () => {
       "location_id",
       "mobile_no",
       "reporting_manager",
-      "employee_type"
+      "employee_type",
     ];
     const csvContent = [csvHeaders.join(",")].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -51,39 +51,41 @@ const Employee = () => {
 
   return (
     <main className="flex-grow-1">
-  
       <div className="d-flex justify-content-between align-items-center p-2 p-md-3 border-bottom">
-        <h4 className="fw-bold" style={{marginBottom:"12px"}}>Employee</h4>
+        <h4 className="fw-bold" style={{ marginBottom: "12px" }}>
+          Employee
+        </h4>
       </div>
 
-      <div className="py-3 px-2 px-md-4" style={{ backgroundColor: "#F9FAFB" }}>
-        <div className="row align-items-center mb-3">
-          <div className="col mb-2 mb-md-0">
-            <h5 className="fw-bold mb-1">Employee Management</h5>
-            <span className="text-muted">
-              Add and manage employees in your organization
-            </span>
-          </div>
+      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
 
-          <div className="col-auto d-flex gap-2">
-            <button
-              className="btn btn-white d-flex align-items-center"
-              style={{ border: "1px solid black", fontSize: "0.85rem" }} // smaller text
-              onClick={downloadCSVTemplate}
-            >
-              <Download size={16} className="me-1" /> {/* smaller icon too */}
-              Download Template
-            </button>
+        <div className="d-flex flex-column mb-2 mb-md-0">
+          <h5 className="text-dark fw-bold mb-1">
+            <User size={17} className="me-2" />
+            Employee Management
+          </h5>
+          <small className="text-muted">
+            Add and manage employees in your organization
+          </small>
+        </div>
 
-            <button
-              className="btn btn-dark d-flex align-items-center"
-              style={{ fontSize: "0.85rem" }} // smaller text
-              onClick={() => setShowModal(true)}
-            >
-              <Plus size={16} className="me-1" /> {/* smaller icon too */}
-              Add Employee
-            </button>
-          </div>
+
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-dark btn-sm d-flex align-items-center"
+            onClick={downloadCSVTemplate}
+          >
+            <Download size={16} className="me-2" />
+            Download Template
+          </button>
+
+          <button
+            className="btn btn-dark btn-sm d-flex align-items-center"
+            onClick={() => setShowModal(true)}
+          >
+            <Plus size={16} className="me-2" />
+            Add Employee
+          </button>
         </div>
       </div>
 

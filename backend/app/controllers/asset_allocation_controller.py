@@ -11,45 +11,23 @@ from app.schemas.asset_allocation import (
     BulkAssetAllocationRequest,
     AssetAllocationResponse,
     AssignedAssetResponse,
-    ReturnAssetRequest
+    ReturnAssetRequest,
+    AllocationActionRequest
 )
 from app.schemas.repair_requests import EwasteRequest
 from pydantic import BaseModel
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.email_config import conf
+from sqlalchemy import or_
 
 router = APIRouter(
     tags=["asset-allocations"]
 )
 
-# class ManualEmailRequest(BaseModel):
-#     email: str
-#     subject: str = "Notification from Asset Tracker"
-#     body: str = "This is a notification email."
-
-# @router.post("/send-manual-email")
-# async def send_manual_email(payload: ManualEmailRequest):
-#     fm = FastMail(conf)
-
-#     message = MessageSchema(
-#         subject=payload.subject,
-#         recipients=[payload.email],
-#         body=payload.body,
-#         subtype="plain"
-#     )
-
-#     try:
-#         await fm.send_message(message)
-#         return {"message": f"Email sent successfully to {payload.email}"}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Failed to send email: {e}")
 
 
 @router.post("/assignasset", response_model=List[AssetAllocationResponse])
 async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db)):
-    """
-    Assign multiple assets to a single employee.
-    """
     employee_id = payload.employee_id
     asset_ids = payload.asset_ids
     user_id = payload.user_id  
@@ -63,14 +41,16 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
     
     allocations = []
 
+    assigned_time = datetime.now()
+
     for asset_id in asset_ids:
         asset = db.query(Asset).filter(Asset.id == asset_id).first()
         if not asset:
             raise HTTPException(status_code=404, detail=f"Asset {asset_id} not found")
-        if asset.status == "ASSIGNED":
+        if asset.status == "ALLOCATED":
             raise HTTPException(status_code=400, detail=f"Asset {asset_id} is already assigned")
 
-        asset.status = "ASSIGNED"
+        asset.status = "ALLOCATED"
         db.add(asset)
 
         allocation = AssetAllocation(
@@ -92,14 +72,54 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
 
     db.commit()
 
-    # Send email notification
+    # Format assigned_time string
+    formatted_time = assigned_time.strftime("%d-%b-%Y %I:%M %p")
+
+    # Create HTML table rows for assigned assets with assigned time
+    table_rows = ""
+    for a in allocations:
+        asset = a.asset
+        table_rows += f"""
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">{asset.asset_name or "-"}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{asset.category or "-"}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{asset.manufacturer or "-"}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{asset.serial_number or "-"}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{asset.model or "-"}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{formatted_time}</td>
+        </tr>
+        """
+
+    email_body = f"""
+    <div style="font-family: Arial, sans-serif; color: #333;">
+        <p>Dear {employee.fullname},</p>
+        <p>You have been assigned the following assets:</p>
+        <table style="border-collapse: collapse; width: 100%; max-width: 700px;">
+            <thead style="background-color: #f2f2f2;">
+                <tr>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Asset Name</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Category</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Manufacturer</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Serial Number</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Model</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Assigned Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {table_rows}
+            </tbody>
+        </table>
+        <p>Please kindly collect the assigned asset(s) and mark them as accepted by logging into your portal account.</p>
+        <p>Regards,<br>Asset Management Team</p>
+    </div>
+    """
+
     fm = FastMail(conf)
     message = MessageSchema(
         subject="Asset Assigned Notification",
         recipients=[employee.email],
-        body=f"Dear {employee.fullname},\n\nYou have been assigned the following asset(s): "
-             f"{', '.join(str(a.asset_id) for a in allocations)}.",
-        subtype="plain"
+        body=email_body,
+        subtype="html"
     )
 
     await fm.send_message(message)
@@ -109,64 +129,11 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
 
 
 # ---------------------------
-# Bulk Asset Allocation
-# ---------------------------
-# @router.post("/assignasset", response_model=List[AssetAllocationResponse])
-# def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db)):
-#     """
-#     Assign multiple assets to a single employee.
-#     """
-#     employee_id = payload.employee_id
-#     asset_ids = payload.asset_ids
-#     user_id = payload.user_id  
-
-#     if not asset_ids:
-#         raise HTTPException(status_code=400, detail="No asset IDs provided")
-
-#     allocations = []
-
-#     for asset_id in asset_ids:
-#         asset = db.query(Asset).filter(Asset.id == asset_id).first()
-#         if not asset:
-#             raise HTTPException(status_code=404, detail=f"Asset {asset_id} not found")
-#         if asset.status == "ASSIGNED":
-#             raise HTTPException(status_code=400, detail=f"Asset {asset_id} is already assigned")
-
-#         # Update asset status
-#         asset.status = "ASSIGNED"
-#         db.add(asset)
-
-#         # Create allocation record
-#         allocation = AssetAllocation(
-#             asset_id=asset_id,
-#             employee_id=employee_id,
-#             allocated_by=user_id
-#         )
-#         db.add(allocation)
-#         db.flush()
-#         allocations.append(allocation)
-
-#         # Create lifecycle event
-#         event = AssetLifecycleEvent(
-#             asset_id=asset_id,
-#             event_type=AssetEventType.ALLOCATED,
-#             user_id=user_id,
-#             remarks=f"Allocated to employee {employee_id}"
-#         )
-#         db.add(event)
-
-#     db.commit()
-#     return allocations
-
-# ---------------------------
 # Assigned Assets Fetch
 # ---------------------------
 @router.get("/assigned", response_model=List[AssignedAssetResponse])
 def get_assigned_assets(db: Session = Depends(get_db)):
-    """
-    Get all assigned assets with employee and allocator details
-    (only when asset.status == ASSIGNED)
-    """
+    
     allocations = (
         db.query(AssetAllocation)
         .join(Asset, Asset.id == AssetAllocation.asset_id)
@@ -174,8 +141,12 @@ def get_assigned_assets(db: Session = Depends(get_db)):
             joinedload(AssetAllocation.asset),
             joinedload(AssetAllocation.asset).joinedload(Asset.location),
         )
-        .filter(Asset.status == AssetAllocationStatus.ASSIGNED)  # <-- filter on Asset table
-        .all()
+      
+
+      .filter(or_(
+    Asset.status == AssetAllocationStatus.ASSIGNED, 
+    Asset.status == AssetAllocationStatus.ALLOCATED
+))
     )
 
     response = []
@@ -250,7 +221,7 @@ def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db)) -> 
     return {"message": "Asset returned successfully", "allocation_id": allocation.id}
 
 
-
+#  Get assigned asset id using employee id
 @router.get("/assigned/{employee_id}", response_model=List[AssignedAssetResponse])
 def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_db)):
    
@@ -260,7 +231,10 @@ def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_
         .options(joinedload(AssetAllocation.asset).joinedload(Asset.location))
         .filter(
             AssetAllocation.employee_id == employee_id,
-            AssetAllocation.status == AssetAllocationStatus.ASSIGNED  # Only active assigned allocations
+            or_(
+                AssetAllocation.status == AssetAllocationStatus.ASSIGNED,
+                AssetAllocation.status == AssetAllocationStatus.ALLOCATED
+            )
         )
         .all()
     )
@@ -330,3 +304,40 @@ def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db)):
 
 
 
+@router.patch("/allocation/action")
+def allocation_action(payload: AllocationActionRequest, db: Session = Depends(get_db)):
+    allocation = db.query(AssetAllocation).filter(AssetAllocation.id == payload.allocation_id).first()
+    if not allocation:
+        raise HTTPException(status_code=404, detail="Allocation not found")
+    asset = db.query(Asset).filter(Asset.id == allocation.asset_id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    if payload.action.lower() == "accept":
+        asset.status = "ASSIGNED"
+        allocation.status = AssetAllocationStatus.ASSIGNED
+
+        event = AssetLifecycleEvent(
+            asset_id=asset.id,
+            event_type=AssetEventType.ACCEPTED,
+            user_id=payload.user_id,
+            remarks=f"Asset assignment accepted by employee {allocation.employee_id}"
+        )
+
+    elif payload.action.lower() == "decline":
+        asset.status = "AVAILABLE"  # asset is now free
+        allocation.status = AssetAllocationStatus.RETURNED  # allocation marked returned
+
+        event = AssetLifecycleEvent(
+            asset_id=asset.id,
+            event_type=AssetEventType.DECLINED,
+            user_id=payload.user_id,
+            remarks=payload.remarks or f"Asset assignment declined by employee {allocation.employee_id}"
+        )
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action. Use 'accept' or 'decline'")
+
+    db.add(event)
+    db.commit()
+    db.refresh(allocation)
+    return {"message": f"Asset assignment {payload.action}ed", "allocation": allocation}

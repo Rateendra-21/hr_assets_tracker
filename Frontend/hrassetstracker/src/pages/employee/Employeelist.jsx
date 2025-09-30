@@ -149,7 +149,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
         style={{ border: "1px solid lightgrey", borderRadius: "8px" }}
       >
         <div className="row g-2 align-items-center">
-          {/* Search input */}
+         
           <div className="col-12 col-md-7 position-relative">
             <User
               className="position-absolute text-muted"
@@ -169,7 +169,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
             />
           </div>
 
-          {/* Status Dropdown */}
+  
           <div className="col-9 col-md-4">
             <select
               value={statusFilter}
