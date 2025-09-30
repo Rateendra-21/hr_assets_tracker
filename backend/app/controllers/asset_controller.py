@@ -63,7 +63,6 @@ def get_asset(asset_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/counts")
-@router.get("/counts")
 def get_asset_counts(db: Session = Depends(get_db)):
     """
     Returns counts of assets grouped by category, status, location, and total count

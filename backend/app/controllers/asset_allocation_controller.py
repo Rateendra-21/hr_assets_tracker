@@ -14,16 +14,39 @@ from app.schemas.asset_allocation import (
     ReturnAssetRequest
 )
 from app.schemas.repair_requests import EwasteRequest
+from pydantic import BaseModel
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from app.email_config import conf
 
 router = APIRouter(
     tags=["asset-allocations"]
 )
 
-# ---------------------------
-# Bulk Asset Allocation
-# ---------------------------
+# class ManualEmailRequest(BaseModel):
+#     email: str
+#     subject: str = "Notification from Asset Tracker"
+#     body: str = "This is a notification email."
+
+# @router.post("/send-manual-email")
+# async def send_manual_email(payload: ManualEmailRequest):
+#     fm = FastMail(conf)
+
+#     message = MessageSchema(
+#         subject=payload.subject,
+#         recipients=[payload.email],
+#         body=payload.body,
+#         subtype="plain"
+#     )
+
+#     try:
+#         await fm.send_message(message)
+#         return {"message": f"Email sent successfully to {payload.email}"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Failed to send email: {e}")
+
+
 @router.post("/assignasset", response_model=List[AssetAllocationResponse])
-def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db)):
+async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db)):
     """
     Assign multiple assets to a single employee.
     """
@@ -34,6 +57,10 @@ def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depe
     if not asset_ids:
         raise HTTPException(status_code=400, detail="No asset IDs provided")
 
+    employee = db.query(User).filter(User.id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
     allocations = []
 
     for asset_id in asset_ids:
@@ -43,11 +70,9 @@ def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depe
         if asset.status == "ASSIGNED":
             raise HTTPException(status_code=400, detail=f"Asset {asset_id} is already assigned")
 
-        # Update asset status
         asset.status = "ASSIGNED"
         db.add(asset)
 
-        # Create allocation record
         allocation = AssetAllocation(
             asset_id=asset_id,
             employee_id=employee_id,
@@ -57,7 +82,6 @@ def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depe
         db.flush()
         allocations.append(allocation)
 
-        # Create lifecycle event
         event = AssetLifecycleEvent(
             asset_id=asset_id,
             event_type=AssetEventType.ALLOCATED,
@@ -67,7 +91,72 @@ def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depe
         db.add(event)
 
     db.commit()
+
+    # Send email notification
+    fm = FastMail(conf)
+    message = MessageSchema(
+        subject="Asset Assigned Notification",
+        recipients=[employee.email],
+        body=f"Dear {employee.fullname},\n\nYou have been assigned the following asset(s): "
+             f"{', '.join(str(a.asset_id) for a in allocations)}.",
+        subtype="plain"
+    )
+
+    await fm.send_message(message)
+
     return allocations
+
+
+
+# ---------------------------
+# Bulk Asset Allocation
+# ---------------------------
+# @router.post("/assignasset", response_model=List[AssetAllocationResponse])
+# def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db)):
+#     """
+#     Assign multiple assets to a single employee.
+#     """
+#     employee_id = payload.employee_id
+#     asset_ids = payload.asset_ids
+#     user_id = payload.user_id  
+
+#     if not asset_ids:
+#         raise HTTPException(status_code=400, detail="No asset IDs provided")
+
+#     allocations = []
+
+#     for asset_id in asset_ids:
+#         asset = db.query(Asset).filter(Asset.id == asset_id).first()
+#         if not asset:
+#             raise HTTPException(status_code=404, detail=f"Asset {asset_id} not found")
+#         if asset.status == "ASSIGNED":
+#             raise HTTPException(status_code=400, detail=f"Asset {asset_id} is already assigned")
+
+#         # Update asset status
+#         asset.status = "ASSIGNED"
+#         db.add(asset)
+
+#         # Create allocation record
+#         allocation = AssetAllocation(
+#             asset_id=asset_id,
+#             employee_id=employee_id,
+#             allocated_by=user_id
+#         )
+#         db.add(allocation)
+#         db.flush()
+#         allocations.append(allocation)
+
+#         # Create lifecycle event
+#         event = AssetLifecycleEvent(
+#             asset_id=asset_id,
+#             event_type=AssetEventType.ALLOCATED,
+#             user_id=user_id,
+#             remarks=f"Allocated to employee {employee_id}"
+#         )
+#         db.add(event)
+
+#     db.commit()
+#     return allocations
 
 # ---------------------------
 # Assigned Assets Fetch

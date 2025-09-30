@@ -24,3 +24,5 @@ class AssetAllocation(Base):
 
     # Relationships
     asset = relationship("Asset", backref="allocations")
+
+
