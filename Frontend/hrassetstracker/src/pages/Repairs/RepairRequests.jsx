@@ -1,10 +1,24 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { Clock } from "lucide-react";
+import { CircleCheck, Clock, CircleX, Image } from "lucide-react";
+import ImageModal from "./ImageModal";
+import ApproveRepairPopup from "./ApproveRepairRequest";
+import RejectRepairRequest from "./RejectRepairRequest";
 
 const RepairRequests = () => {
   const [repairRequests, setRepairRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRequestData, setSelectedRequestData] = useState(null);
+
+  // Modal state
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+
+  const [showApprovePopup, setShowApprovePopup] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
+
+  const [showRejectPopup, setShowRejectPopup] = useState(false);
+  const [selectedRejectData, setSelectedRejectData] = useState(null);
 
   useEffect(() => {
     fetchPendingRequests();
@@ -13,30 +27,19 @@ const RepairRequests = () => {
   const userData = JSON.parse(sessionStorage.getItem("userData"));
   const isEmployee = userData.user?.role === "EMPLOYEE";
 
-  console.log("Data", isEmployee);
-
   const fetchPendingRequests = async () => {
     setLoading(true);
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/repair-requests/pending`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { method: "GET", headers: { "Content-Type": "application/json" } }
       );
-
       if (!response.ok) throw new Error("Failed to fetch pending requests");
-
       const data = await response.json();
-
-      // Set data even if empty
       setRepairRequests(data || []);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load pending repair requests"); // only on fetch/network error
+      toast.error("Failed to load pending repair requests");
     } finally {
       setLoading(false);
     }
@@ -46,11 +49,9 @@ const RepairRequests = () => {
     try {
       const url = `http://127.0.0.1:8000/repair-requests/${id}/${action.toLowerCase()}`;
       const response = await fetch(url, { method: "POST" });
-
       if (!response.ok) throw new Error("Failed to update request");
-
       toast.success(`Request ${action} successfully`);
-      fetchPendingRequests(); // refresh table
+      fetchPendingRequests();
     } catch (err) {
       console.error(err);
       toast.error("Failed to update request");
@@ -66,6 +67,25 @@ const RepairRequests = () => {
     });
   };
 
+  const openImageModal = (images) => {
+    if (!images || images.length === 0) {
+      toast.error("No images available for this request");
+      return;
+    }
+    setSelectedImages(images);
+    setShowModal(true);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImages([]);
+    setShowModal(false);
+  };
+
+  const handleApproveClick = (id) => {
+    setSelectedRequestId(id);
+    setShowApprovePopup(true);
+  };
+
   return (
     <main className="flex-grow-1">
       <div className="d-flex justify-content-between align-items-center p-2 p-md-3 border-bottom">
@@ -75,7 +95,6 @@ const RepairRequests = () => {
       </div>
 
       <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
-        {/* Left Section */}
         <div className="d-flex flex-column mb-2 mb-md-0">
           <h5 className="text-dark fw-bold mb-1">
             <Clock size={17} className="me-2" />
@@ -87,16 +106,11 @@ const RepairRequests = () => {
         </div>
       </div>
 
-      <div
-        className="shadow rounded mx-4 mt-4"
-        
-      >
+      <div className="shadow rounded mx-4 mt-4">
         <div className="container-fluid p-0">
           {loading ? (
             <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
+              <div className="spinner-border text-primary" role="status" />
             </div>
           ) : repairRequests.length === 0 ? (
             <div
@@ -108,12 +122,7 @@ const RepairRequests = () => {
           ) : (
             <div
               className="table-responsive custom-scroll"
-              style={{
-                maxHeight: "500px",
-                overflowY: "auto",
-                overflowX: "auto",
-                padding: "20px",
-              }}
+              style={{ maxHeight: "500px", overflowY: "auto", padding: "20px" }}
             >
               <table
                 className="table mb-0 align-middle text-center"
@@ -191,20 +200,31 @@ const RepairRequests = () => {
                       <td>
                         <small>{req.status}</small>
                       </td>
-
                       {!isEmployee && (
                         <td className="d-flex gap-2 justify-content-center">
                           <button
-                            className="btn btn-success btn-sm"
-                            onClick={() => handleAction(req.id, "APPROVED")}
+                            className="btn btn-success d-flex align-items-center"
+                            onClick={() => {
+                              setSelectedRequestData(req);
+                              setShowApprovePopup(true);
+                            }}
                           >
-                            <small>Approve</small>
+                            <CircleCheck size={16} />
                           </button>
                           <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleAction(req.id, "REJECTED")}
+                            className="btn btn-danger d-flex align-items-center"
+                            onClick={() => {
+                              setSelectedRejectData(req);
+                              setShowRejectPopup(true);
+                            }}
                           >
-                            <small>Decline</small>
+                            <CircleX size={16} />
+                          </button>
+                          <button
+                            className="btn btn-dark d-flex align-items-center"
+                            onClick={() => openImageModal(req.images)}
+                          >
+                            <Image size={16} />
                           </button>
                         </td>
                       )}
@@ -216,6 +236,33 @@ const RepairRequests = () => {
           )}
         </div>
       </div>
+
+      {/* {reject the repair request} */}
+      {showRejectPopup && selectedRejectData && (
+        <RejectRepairRequest
+          requestData={selectedRejectData} // pass row data
+          rejectedBy={userData.user.id}
+          onClose={() => setShowRejectPopup(false)}
+          onRejected={fetchPendingRequests}
+        />
+      )}
+
+      {/* {approve the repair request} */}
+      {showApprovePopup && selectedRequestData && (
+        <ApproveRepairPopup
+          requestData={selectedRequestData} // entire row
+          approvedBy={userData.user.id}
+          onClose={() => setShowApprovePopup(false)}
+          onApproved={fetchPendingRequests}
+        />
+      )}
+
+      {/* Image Modal */}
+      <ImageModal
+        images={selectedImages}
+        show={showModal}
+        onClose={closeImageModal}
+      />
     </main>
   );
 };

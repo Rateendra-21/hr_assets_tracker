@@ -267,18 +267,7 @@ const AssetList = ({ reloadAssets }) => {
                       </div>
 
                       <div className="mt-auto d-flex justify-content-end flex-wrap gap-2">
-                        {asset.status === "assigned" && (
-                          <button
-                            className="btn btn-outline-primary btn-sm d-flex align-items-center"
-                            onClick={() => handleReturnClick(asset)}
-                            title="Return Asset"
-                          >
-                            <RotateCcw size={14} className="me-1" />
-                            Return
-                          </button>
-                        )}
-                        {(asset.status === "AVAILABLE" ||
-                          asset.status === "REPAIR_REQUESTED") && (
+                        {asset.status === "AVAILABLE" && (
                           <button
                             className="btn btn-warning btn-sm d-flex align-items-center"
                             onClick={() => handleRepairClick(asset)}
@@ -312,7 +301,11 @@ const AssetList = ({ reloadAssets }) => {
                           </button>
                         )}
 
-                        {asset.status !== "EWASTE" && (
+                        {[
+                          "AVAILABLE",
+                          "IN_REPAIR",
+                          "REPAIR_REQUESTED",
+                        ].includes(asset.status) && (
                           <button
                             className="btn btn-outline-danger btn-sm"
                             onClick={() => handleEwasteClick(asset)}
@@ -417,22 +410,7 @@ const AssetList = ({ reloadAssets }) => {
                         </td>
 
                         <td className="d-flex justify-content-center gap-1 flex-wrap">
-                          {/* Return Asset */}
-                          {asset.status === "assigned" && (
-                            <span
-                              className="badge bg-primary d-flex align-items-center"
-                              style={{ cursor: "pointer" }}
-                              title="Return Asset"
-                              onClick={() => handleReturnClick(asset)}
-                            >
-                              <RotateCcw size={14} className="me-1" />
-                              Return
-                            </span>
-                          )}
-
-                          {/* Send for Repair */}
-                          {(asset.status === "AVAILABLE" ||
-                            asset.status === "REPAIR_REQUESTED") && (
+                          {asset.status === "AVAILABLE" && (
                             <span
                               className="badge bg-warning text-dark d-flex align-items-center"
                               style={{ cursor: "pointer" }}
@@ -443,7 +421,6 @@ const AssetList = ({ reloadAssets }) => {
                             </span>
                           )}
 
-                          {/* QR Code */}
                           <span
                             className="badge bg-dark d-flex align-items-center"
                             style={{ cursor: "pointer" }}
@@ -453,7 +430,6 @@ const AssetList = ({ reloadAssets }) => {
                             <QrCode size={14} />
                           </span>
 
-                          {/* View */}
                           <span
                             className="badge bg-dark d-flex align-items-center"
                             style={{ cursor: "pointer" }}
@@ -463,7 +439,6 @@ const AssetList = ({ reloadAssets }) => {
                             <Eye size={14} />
                           </span>
 
-                          {/* Edit */}
                           {asset.status === "AVAILABLE" && (
                             <span
                               className="badge bg-dark d-flex align-items-center"
@@ -475,8 +450,11 @@ const AssetList = ({ reloadAssets }) => {
                             </span>
                           )}
 
-                          {/* Send to E-Waste */}
-                          {asset.status !== "EWASTE" && (
+                          {[
+                            "AVAILABLE",
+                            "IN_REPAIR",
+                            "REPAIR_REQUESTED",
+                          ].includes(asset.status) && (
                             <span
                               className="badge bg-danger d-flex align-items-center"
                               style={{ cursor: "pointer" }}
@@ -533,8 +511,15 @@ const AssetList = ({ reloadAssets }) => {
       {selectedAsset && showRepairPopup && (
         <RepairAsset
           asset={selectedAsset}
-          onClose={() => setShowRepairPopup(false)}
-          onUpdated={fetchAssets}
+          onClose={() => {
+            setShowRepairPopup(false);
+            setSelectedAsset(null);
+          }}
+          onUpdated={() => {
+            fetchAssets();
+            setShowRepairPopup(false);
+            setSelectedAsset(null);
+          }}
         />
       )}
 

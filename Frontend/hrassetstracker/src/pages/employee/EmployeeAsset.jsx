@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import RepairAsset from "../Assets/RepairAsset";
 import DeclineAssetPopup from "./DeclineAssetPopup"; 
 import { toast } from "react-hot-toast";
-import { Folder } from "lucide-react";
+import { CircleCheck, Folder, ThumbsDown, ThumbsUp, Wrench , Undo2, Circle, CircleX } from "lucide-react";
 
 
 const EmployeeAsset = () => {
@@ -71,34 +71,63 @@ const EmployeeAsset = () => {
     setShowDeclinePopup(true);
   };
 
+  // const submitDecline = async (remarks) => {
+  //   if (!remarks.trim()) {
+  //     toast.error("Please enter remarks for decline.");
+  //     return;
+  //   }
+  //   const payload = {
+  //     allocation_id: selectedAsset.allocation_id,
+  //     action: "decline",
+  //     user_id: employeeId,
+  //     remarks,
+  //   };
+
+  //   try {
+  //     const res = await fetch("http://127.0.0.1:8000/allocation/action", {
+  //       method: "PATCH",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(payload),
+  //     });
+  //     if (!res.ok) throw new Error("Failed to decline asset");
+
+  //     setShowDeclinePopup(false);
+  //     fetchAssignedAssets();
+  //     toast.success("Asset declined successfully!");
+  //     fetchAssignedAssets();
+  //   } catch (error) {
+  //     toast.error("Error declining asset: " + error.message);
+  //   }
+  // };
+
   const submitDecline = async (remarks) => {
-    if (!remarks.trim()) {
-      toast.error("Please enter remarks for decline.");
-      return;
-    }
-
-    const payload = {
-      allocation_id: selectedAsset.allocation_id,
-      action: "decline",
-      user_id: employeeId,
-      remarks,
-    };
-
-    try {
-      const res = await fetch("http://127.0.0.1:8000/allocation/action", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Failed to decline asset");
-
-      setShowDeclinePopup(false);
-      fetchAssignedAssets();
-      toast.success("Asset declined successfully!");
-    } catch (error) {
-      toast.error("Error declining asset: " + error.message);
-    }
+  if (!remarks.trim()) {
+    toast.error("Please enter remarks for decline.");
+    return;
+  }
+  const payload = {
+    allocation_id: selectedAsset.allocation_id,
+    action: "decline",
+    user_id: employeeId,
+    remarks,
   };
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/allocation/action", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Failed to decline asset");
+
+    toast.success("Asset declined successfully!"); // show success toast first
+    setShowDeclinePopup(false); // close the popup
+    await fetchAssignedAssets(); // fetch fresh data and wait for completion to trigger UI update
+  } catch (error) {
+    toast.error("Error declining asset: " + error.message);
+  }
+};
+
 
   const handleAssetUpdated = () => {
     fetchAssignedAssets();
@@ -154,6 +183,8 @@ const EmployeeAsset = () => {
             <option value="Charger">Charger</option>
           </select>
         </div>
+        
+      
       </div>
 
       {/* Table */}
@@ -249,45 +280,41 @@ const EmployeeAsset = () => {
                           <td>
                             <small>{item.status}</small>
                           </td>
+
                           <td className="d-flex justify-content-center gap-2">
                             {item.status === "ASSIGNED" ? (
-                              <span
-                                className="badge bg-dark text-light"
-                                style={{
-                                  cursor: "pointer",
-                                  padding: "0.5em 0.8em",
-                                  fontSize: "0.85em",
-                                }}
-                                onClick={() => handleRepairClick(item)}
-                              >
-                                <small>Report Repair</small>
-                              </span>
+                              <>
+                                <button
+                                  className="btn btn-sm btn-dark"
+                                  onClick={() => handleRepairClick(item)}
+                                  title="Report Repair"
+                                >
+                                  <Wrench size={16} className="mb-1" /> 
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-secondary"
+                                  onClick={() => handleReturnClick(item)}
+                                  title="Return"
+                                >
+                                  <Undo2 size={16} className="mb-1" />
+                                </button>
+                              </>
                             ) : item.status === "ALLOCATED" ? (
                               <>
-                                <span
-                                  className="badge bg-success text-light"
-                                  style={{
-                                    cursor: "pointer",
-                                    padding: "0.4em 0.8em",
-                                    fontSize: "0.85em",
-                                  }}
+                                <button
+                                  className="btn btn-sm btn-success"
                                   onClick={() => handleAcceptClick(item)}
                                   title="Accept"
                                 >
-                                  <small>✓</small>
-                                </span>
-                                <span
-                                  className="badge bg-danger text-light"
-                                  style={{
-                                    cursor: "pointer",
-                                    padding: "0.4em 0.8em",
-                                    fontSize: "0.85em",
-                                  }}
+                                  <CircleCheck size={16} className="mb-1" />
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
                                   onClick={() => handleDeclineClick(item)}
                                   title="Decline"
                                 >
-                                  <small>✗</small>
-                                </span>
+                                  <CircleX size={16} className="mb-1" />
+                                </button>
                               </>
                             ) : (
                               <span>-</span>
@@ -327,3 +354,9 @@ const EmployeeAsset = () => {
 };
 
 export default EmployeeAsset;
+
+
+
+
+
+

@@ -1,21 +1,28 @@
+from datetime import datetime
+from typing import List
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.asset_lifecycle_event import AssetLifecycleEvent
-from app.schemas.repair_requests import RepairRequestCreate, RepairRequestResponse
-from app.schemas.repair_requests import RepairRequestWithUserResponse
-from fastapi import UploadFile, File
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
-from sqlalchemy.orm import Session
-from typing import List
-from datetime import datetime
+from app.models.asset import Asset
 from app.models.repair_requests import RepairRequest
 from app.models.repair_request_images import RepairRequestImage
-from app.models.asset import Asset
 from app.models.user import User
-from app.models.asset_lifecycle_event import AssetLifecycleEvent  
+from app.schemas.repair_requests import (
+    RepairRequestCreate,
+    RepairRequestResponse,
+    RepairRequestWithUserResponse,
+)
+from app.schemas.repair_request_image import RepairRequestImageResponse
+import base64
+from app.models.asset_allocation import AssetAllocation
+from app.schemas.repair_requests import RepairRequestResponse
+
+from app.models.repair_requests import RepairRequest, RepairRequestStatus
 
 router = APIRouter(prefix="/repair-requests", tags=["Repair Requests"])
 
-
+# crete reapair request 
 @router.post("/")
 async def create_repair_request(
     asset_id: int = Form(...),
@@ -90,81 +97,66 @@ async def create_repair_request(
 
 
 
-# @router.post("/", response_model=RepairRequestResponse)
-# def create_repair_request(payload: RepairRequestCreate, db: Session = Depends(get_db)):
-    
-#     asset = db.query(Asset).filter(Asset.id == payload.asset_id).first()
-#     if not asset:
-#         raise HTTPException(status_code=404, detail="Asset not found")
-
-
-#     repair_request = RepairRequest(
-#         asset_id=payload.asset_id,
-#         requested_by=payload.requested_by,
-#         issue_description=payload.issue_description,
-#         status="PENDING",
-#         request_date=datetime.utcnow()
-#     )
-#     db.add(repair_request)
-
-#     # Update asset status
-#     asset.status = "REPAIR_REQUESTED"
-    
-
-#     # Create asset lifecycle event
-#     lifecycle_event = AssetLifecycleEvent(
-#         asset_id=asset.id,
-#         event_type="REPAIR_REQUESTED",
-#         remarks=f"Repair requested: {payload.issue_description}",
-#         user_id=payload.requested_by
-#     )
-#     db.add(lifecycle_event)
-
-#     db.commit()
-#     db.refresh(repair_request)
-
-#     return repair_request
-
-
-
-
 # Approve a repair request (Admin)
-@router.put("/approve/{request_id}")
-def approve_repair_request(request_id: int, approved_by: int, db: Session = Depends(get_db)):
-    # 1. Get the repair request
-    request = db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
-    if not request:
+@router.put("/approve/{request_id}", response_model=RepairRequestResponse)
+def approve_repair_request(
+    request_id: int,
+    approved_by: int = Form(..., description="Admin user ID approving the request"),
+    vendor_name: str = Form(..., description="Vendor assigned for repair"),
+    db: Session = Depends(get_db),
+):
+    # Fetch repair request
+    repair_request = db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
+    if not repair_request:
         raise HTTPException(status_code=404, detail="Repair request not found")
 
-    # 2. Update repair request
-    request.status = "APPROVED"
-    request.approved_by = approved_by
-    request.approved_date = datetime.utcnow()
-    
-    # 3. Update asset status
-    request.asset.status = "UNDER_REPAIR"
+    if repair_request.status != RepairRequestStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Repair request is not pending approval")
 
-    # 4. Create asset lifecycle event for approval
+    # Update repair request status and audit fields
+    repair_request.status = RepairRequestStatus.APPROVED
+    repair_request.approved_by = approved_by
+    repair_request.approved_date = datetime.utcnow()
+    repair_request.updated_at = datetime.utcnow()
+
+    # Update asset status to IN_REPAIR
+    asset = repair_request.asset
+    asset.status = "IN_REPAIR"
+
+    # Update asset allocation status to IN_REPAIR
+    asset_allocation = (
+        db.query(AssetAllocation)
+        .filter(
+            AssetAllocation.asset_id == asset.id,
+            AssetAllocation.employee_id == repair_request.requested_by
+        )
+        .first()
+    )
+    if asset_allocation:
+        asset_allocation.status = "IN_REPAIR"
+        asset_allocation.updated_at = datetime.utcnow()
+
+    # Log lifecycle event with vendor detail
     lifecycle_event = AssetLifecycleEvent(
-        asset_id=request.asset.id,
+        asset_id=asset.id,
         event_type="REPAIR_APPROVED",
-        remarks=f"Repair request approved by user {approved_by}",
+        event_date=datetime.utcnow(),
         user_id=approved_by,
-        event_date=datetime.utcnow()
+        remarks=f"Repair approved and assigned to vendor: {vendor_name}",
+        vendor_name=vendor_name,
+        created_at=datetime.utcnow()
     )
     db.add(lifecycle_event)
 
-    # 5. Commit changes
     db.commit()
-    db.refresh(request)
+    db.refresh(repair_request)
 
-    return request
+    return repair_request
 
-
-
-
+#get pending repair request
 @router.get("/pending", response_model=List[RepairRequestWithUserResponse])
 def get_pending_repair_requests(db: Session = Depends(get_db)):
+    # Query repair requests and eagerly load related models + images
     repair_requests = (
         db.query(RepairRequest)
         .options(
@@ -172,11 +164,13 @@ def get_pending_repair_requests(db: Session = Depends(get_db)):
             joinedload(RepairRequest.requester),
             joinedload(RepairRequest.assigned_user),
             joinedload(RepairRequest.approver),
+            joinedload(RepairRequest.images),  # ✅ load images
         )
         .filter(RepairRequest.status == "PENDING")
         .all()
     )
 
+    # Map repair requests to response schema including images
     response = [
         RepairRequestWithUserResponse(
             id=req.id,
@@ -195,39 +189,79 @@ def get_pending_repair_requests(db: Session = Depends(get_db)):
             requested_user=req.requester,
             assigned_user=req.assigned_user,
             approved_user=req.approver,
+            images=[
+                RepairRequestImageResponse(
+                    id=img.id,
+                    filename=img.filename,
+                    uploaded_at=img.uploaded_at,
+                    image_base64=base64.b64encode(img.image_data).decode('utf-8') if img.image_data else None
+
+                )
+                for img in req.images
+            ],
         )
         for req in repair_requests
     ]
 
-    return response  # empty list if no records
+    return response
 
 
 
+# reject the repair request 
 
-@router.post("/{request_id}/approve")
-def approve_repair_request(request_id: int, db: Session = Depends(get_db), user_id: int = 0):
-
+@router.put("/reject/{request_id}", response_model=RepairRequestResponse)
+def reject_repair_request(
+    request_id: int,
+    rejected_by: int = Form(..., description="Admin user ID rejecting the request"),
+    remark: str = Form(..., description="Remark for rejection"),
+    db: Session = Depends(get_db),
+):
+    # Fetch repair request
     repair_request = db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
     if not repair_request:
         raise HTTPException(status_code=404, detail="Repair request not found")
 
-    repair_request.status = "APPROVED"
-    repair_request.approved_by = user_id
-    repair_request.approved_date = datetime.utcnow()
+    if repair_request.status != RepairRequestStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Repair request is not pending approval")
 
+    # Update repair request status, audit fields, and resolution notes/date
+    repair_request.status = RepairRequestStatus.REJECTED
+    repair_request.approved_by = rejected_by  # or rejected_by field if different
+    repair_request.approved_date = datetime.utcnow()  # or use rejection date field
+    repair_request.resolution_notes = remark
+    repair_request.resolution_date = datetime.utcnow()
+    repair_request.updated_at = datetime.utcnow()
 
-    asset = db.query(Asset).filter(Asset.id == repair_request.asset_id).first()
-    if asset:
-        asset.status = "IN_REPAIR"
+    # Update asset status to ASSIGNED
+    asset = repair_request.asset
+    asset.status = "ASSIGNED"
+
+    # Update asset allocation status to ASSIGNED
+    asset_allocation = (
+        db.query(AssetAllocation)
+        .filter(
+            AssetAllocation.asset_id == asset.id,
+            AssetAllocation.employee_id == repair_request.requested_by
+        )
+        .first()
+    )
+    if asset_allocation:
+        asset_allocation.status = "ASSIGNED"
+        asset_allocation.updated_at = datetime.utcnow()
+
+    # Log lifecycle event with rejection detail
     lifecycle_event = AssetLifecycleEvent(
-        asset_id=repair_request.asset_id,
-        event_type="IN_REPAIR",
-        remarks=f"Repair approved for request {repair_request.id}",
-        user_id=user_id
+        asset_id=asset.id,
+        event_type="REJECTED",
+        event_date=datetime.utcnow(),
+        user_id=rejected_by,
+        remarks=remark,
+        created_at=datetime.utcnow()
     )
     db.add(lifecycle_event)
 
     db.commit()
     db.refresh(repair_request)
 
-    return {"message": "Repair request approved successfully", "repair_request_id": repair_request.id}
+    return repair_request
+

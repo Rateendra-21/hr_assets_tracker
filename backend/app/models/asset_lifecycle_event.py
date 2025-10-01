@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum, Text
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum, Text, String
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -25,6 +25,7 @@ class AssetLifecycleEvent(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     remarks = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    vendor_name = Column(String(100), nullable=True)
 
     asset = relationship("Asset")
     user = relationship("User")

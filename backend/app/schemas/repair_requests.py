@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Optional
 from enum import Enum
 from app.schemas.user import UserResponse
+from typing import List
+from app.schemas.repair_request_image import RepairRequestImageResponse
 
 # Enum for status
 class RepairRequestStatus(str, Enum):
@@ -56,13 +58,6 @@ class EwasteRequest(BaseModel):
     remarks: str
 
 
-
-
-
-
-
-
-
 # -------------------------------------------------
 
 
@@ -85,6 +80,7 @@ class RepairRequestWithUserResponse(BaseModel):
     requested_user: Optional[UserResponse] = None
     assigned_user: Optional[UserResponse] = None
     approved_user: Optional[UserResponse] = None
+    images: List[RepairRequestImageResponse] = []
 
     class Config:
         orm_mode = True
