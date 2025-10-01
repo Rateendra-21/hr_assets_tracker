@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { CircleCheck, Clock, CircleX, Image } from "lucide-react";
+import { CircleCheck, Clock, CircleX, Image, Clock1 } from "lucide-react";
 import ImageModal from "./ImageModal";
 import ApproveRepairPopup from "./ApproveRepairRequest";
 import RejectRepairRequest from "./RejectRepairRequest";
@@ -19,6 +19,8 @@ const RepairRequests = () => {
 
   const [showRejectPopup, setShowRejectPopup] = useState(false);
   const [selectedRejectData, setSelectedRejectData] = useState(null);
+
+  const [activeView, setActiveView] = useState("requsted"); 
 
   useEffect(() => {
     fetchPendingRequests();
@@ -94,15 +96,50 @@ const RepairRequests = () => {
         </h4>
       </div>
 
+    
+
       <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
+       
         <div className="d-flex flex-column mb-2 mb-md-0">
-          <h5 className="text-dark fw-bold mb-1">
-            <Clock size={17} className="me-2" />
+          <h5 className="text-dark d-flex align-items-center mb-1">
+            <Clock className="me-2 text-muted" size={20} />
             Pending Requests
           </h5>
           <small className="text-muted">
-            Approve or decline pending asset repair requests
+           Approve or decline pending asset repair requests
           </small>
+        </div>
+
+        
+        <div>
+          <div
+            className="btn-group w-100 w-md-auto"
+            role="group"
+            aria-label="View toggle"
+          >
+            <button
+              type="button"
+              className={`btn btn-sm rounded-start ${
+                activeView === "requsted"
+                  ? "btn-dark text-white"
+                  : "btn-outline-dark"
+              }`}
+              onClick={() => setActiveView("requsted")}
+            >
+              Repair Requsted
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm rounded-end ${
+                activeView === "inrepair"
+                  ? "btn-dark text-white"
+                  : "btn-outline-dark"
+              }`}
+              onClick={() => setActiveView("inrepair")}
+            >
+              In Repair
+            </button>
+          </div>
         </div>
       </div>
 

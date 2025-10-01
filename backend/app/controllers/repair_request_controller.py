@@ -98,6 +98,63 @@ async def create_repair_request(
 
 
 # Approve a repair request (Admin)
+# @router.put("/approve/{request_id}", response_model=RepairRequestResponse)
+# def approve_repair_request(
+#     request_id: int,
+#     approved_by: int = Form(..., description="Admin user ID approving the request"),
+#     vendor_name: str = Form(..., description="Vendor assigned for repair"),
+#     db: Session = Depends(get_db),
+# ):
+#     # Fetch repair request
+#     repair_request = db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
+#     if not repair_request:
+#         raise HTTPException(status_code=404, detail="Repair request not found")
+
+#     if repair_request.status != RepairRequestStatus.PENDING:
+#         raise HTTPException(status_code=400, detail="Repair request is not pending approval")
+
+#     # Update repair request status and audit fields
+#     repair_request.status = RepairRequestStatus.APPROVED
+#     repair_request.approved_by = approved_by
+#     repair_request.approved_date = datetime.utcnow()
+#     repair_request.updated_at = datetime.utcnow()
+
+#     # Update asset status to IN_REPAIR
+#     asset = repair_request.asset
+#     asset.status = "IN_REPAIR"
+
+#     # Update asset allocation status to IN_REPAIR
+#     asset_allocation = (
+#         db.query(AssetAllocation)
+#         .filter(
+#             AssetAllocation.asset_id == asset.id,
+#             AssetAllocation.employee_id == repair_request.requested_by
+#         )
+#         .first()
+#     )
+#     if asset_allocation:
+#         asset_allocation.status = "IN_REPAIR"
+#         asset_allocation.updated_at = datetime.utcnow()
+
+#     # Log lifecycle event with vendor detail
+#     lifecycle_event = AssetLifecycleEvent(
+#         asset_id=asset.id,
+#         event_type="REPAIR_APPROVED",
+#         event_date=datetime.utcnow(),
+#         user_id=approved_by,
+#         remarks=f"Repair approved and assigned to vendor: {vendor_name}",
+#         vendor_name=vendor_name,
+#         created_at=datetime.utcnow()
+#     )
+#     db.add(lifecycle_event)
+
+#     db.commit()
+#     db.refresh(repair_request)
+
+#     return repair_request
+
+
+
 @router.put("/approve/{request_id}", response_model=RepairRequestResponse)
 def approve_repair_request(
     request_id: int,
@@ -136,8 +193,8 @@ def approve_repair_request(
         asset_allocation.status = "IN_REPAIR"
         asset_allocation.updated_at = datetime.utcnow()
 
-    # Log lifecycle event with vendor detail
-    lifecycle_event = AssetLifecycleEvent(
+    # Log lifecycle event: REPAIR_APPROVED
+    repair_approved_event = AssetLifecycleEvent(
         asset_id=asset.id,
         event_type="REPAIR_APPROVED",
         event_date=datetime.utcnow(),
@@ -146,12 +203,27 @@ def approve_repair_request(
         vendor_name=vendor_name,
         created_at=datetime.utcnow()
     )
-    db.add(lifecycle_event)
+    db.add(repair_approved_event)
+
+    # Log lifecycle event: IN_REPAIR
+    in_repair_event = AssetLifecycleEvent(
+        asset_id=asset.id,
+        event_type="IN_REPAIR",
+        event_date=datetime.utcnow(),
+        user_id=approved_by,
+        remarks=f"Asset is now in repair under vendor: {vendor_name}",
+        vendor_name=vendor_name,
+        created_at=datetime.utcnow()
+    )
+    db.add(in_repair_event)
 
     db.commit()
     db.refresh(repair_request)
 
     return repair_request
+
+
+
 
 #get pending repair request
 @router.get("/pending", response_model=List[RepairRequestWithUserResponse])
@@ -249,7 +321,7 @@ def reject_repair_request(
         asset_allocation.status = "ASSIGNED"
         asset_allocation.updated_at = datetime.utcnow()
 
-    # Log lifecycle event with rejection detail
+    
     lifecycle_event = AssetLifecycleEvent(
         asset_id=asset.id,
         event_type="REJECTED",
