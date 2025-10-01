@@ -14,6 +14,7 @@ class AssetEventType(PyEnum):
     EWASTE = "EWASTE"
     ACCEPTED = "ACCEPTED"   # new status for acceptance
     DECLINED = "DECLINED" 
+    REJECTED ="REJECTED"
 
 class AssetLifecycleEvent(Base):
     __tablename__ = "asset_lifecycle_events"
@@ -29,3 +30,7 @@ class AssetLifecycleEvent(Base):
 
     asset = relationship("Asset")
     user = relationship("User")
+
+       # ✅ relationships
+    asset = relationship("Asset", back_populates="lifecycle_events")
+    user = relationship("User", back_populates="lifecycle_events")

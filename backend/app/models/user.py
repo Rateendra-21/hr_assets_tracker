@@ -37,3 +37,4 @@ class User(Base):
     department = relationship("Department", back_populates="users")
     location = relationship("Location", back_populates="users")
 
+    lifecycle_events = relationship("AssetLifecycleEvent", back_populates="user")
