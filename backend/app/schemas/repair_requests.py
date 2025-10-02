@@ -84,3 +84,27 @@ class RepairRequestWithUserResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+
+
+class EmployeeInfo(BaseModel):
+    id: int
+    fullname: str
+    email: str
+    employee_id: str
+
+    class Config:
+        orm_mode = True
+
+class AssetInRepairResponse(BaseModel):
+    asset_id: int
+    asset_name: str
+    issue_description: str
+    category:str
+    manufacturer : str
+    requested_user: EmployeeInfo
+   
+
+    class Config:
+        orm_mode = True

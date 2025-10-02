@@ -8,6 +8,11 @@ class AssetAllocationStatus(str, enum.Enum):
     ASSIGNED = "ASSIGNED"
     RETURNED = "RETURNED"
     ALLOCATED = "ALLOCATED"
+    IN_REPAIR = "IN_REPAI"
+    REPAIRED = "REPAIRED"
+    RETURN_PENDING = "RETURN_PENDING"
+    RETURN_ACCEPTED = "RETURN_ACCEPTED"
+    RETURN_DECLINED = "RETURN_DECLINED"
 
 class AssetAllocation(Base):
     __tablename__ = "asset_allocations"

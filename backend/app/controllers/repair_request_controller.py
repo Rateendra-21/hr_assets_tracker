@@ -17,6 +17,8 @@ from app.schemas.repair_request_image import RepairRequestImageResponse
 import base64
 from app.models.asset_allocation import AssetAllocation
 from app.schemas.repair_requests import RepairRequestResponse
+from app.schemas.repair_requests import AssetInRepairResponse
+
 
 from app.models.repair_requests import RepairRequest, RepairRequestStatus
 
@@ -96,65 +98,6 @@ async def create_repair_request(
     }
 
 
-
-# Approve a repair request (Admin)
-# @router.put("/approve/{request_id}", response_model=RepairRequestResponse)
-# def approve_repair_request(
-#     request_id: int,
-#     approved_by: int = Form(..., description="Admin user ID approving the request"),
-#     vendor_name: str = Form(..., description="Vendor assigned for repair"),
-#     db: Session = Depends(get_db),
-# ):
-#     # Fetch repair request
-#     repair_request = db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
-#     if not repair_request:
-#         raise HTTPException(status_code=404, detail="Repair request not found")
-
-#     if repair_request.status != RepairRequestStatus.PENDING:
-#         raise HTTPException(status_code=400, detail="Repair request is not pending approval")
-
-#     # Update repair request status and audit fields
-#     repair_request.status = RepairRequestStatus.APPROVED
-#     repair_request.approved_by = approved_by
-#     repair_request.approved_date = datetime.utcnow()
-#     repair_request.updated_at = datetime.utcnow()
-
-#     # Update asset status to IN_REPAIR
-#     asset = repair_request.asset
-#     asset.status = "IN_REPAIR"
-
-#     # Update asset allocation status to IN_REPAIR
-#     asset_allocation = (
-#         db.query(AssetAllocation)
-#         .filter(
-#             AssetAllocation.asset_id == asset.id,
-#             AssetAllocation.employee_id == repair_request.requested_by
-#         )
-#         .first()
-#     )
-#     if asset_allocation:
-#         asset_allocation.status = "IN_REPAIR"
-#         asset_allocation.updated_at = datetime.utcnow()
-
-#     # Log lifecycle event with vendor detail
-#     lifecycle_event = AssetLifecycleEvent(
-#         asset_id=asset.id,
-#         event_type="REPAIR_APPROVED",
-#         event_date=datetime.utcnow(),
-#         user_id=approved_by,
-#         remarks=f"Repair approved and assigned to vendor: {vendor_name}",
-#         vendor_name=vendor_name,
-#         created_at=datetime.utcnow()
-#     )
-#     db.add(lifecycle_event)
-
-#     db.commit()
-#     db.refresh(repair_request)
-
-#     return repair_request
-
-
-
 @router.put("/approve/{request_id}", response_model=RepairRequestResponse)
 def approve_repair_request(
     request_id: int,
@@ -223,8 +166,6 @@ def approve_repair_request(
     return repair_request
 
 
-
-
 #get pending repair request
 @router.get("/pending", response_model=List[RepairRequestWithUserResponse])
 def get_pending_repair_requests(db: Session = Depends(get_db)):
@@ -278,9 +219,7 @@ def get_pending_repair_requests(db: Session = Depends(get_db)):
     return response
 
 
-
 # reject the repair request 
-
 @router.put("/reject/{request_id}", response_model=RepairRequestResponse)
 def reject_repair_request(
     request_id: int,
@@ -336,4 +275,41 @@ def reject_repair_request(
     db.refresh(repair_request)
 
     return repair_request
+
+# get data In_repair
+
+@router.get("/assets/in-repair", response_model=List[AssetInRepairResponse])
+def get_assets_in_repair(db: Session = Depends(get_db)):
+
+    results = (
+        db.query(RepairRequest)
+        .join(Asset, RepairRequest.asset_id == Asset.id)
+        .join(AssetAllocation, Asset.id == AssetAllocation.asset_id)
+        .options(joinedload(RepairRequest.asset))
+        .options(joinedload(RepairRequest.requester))
+        .filter(Asset.status == "IN_REPAIR")
+        .filter(AssetAllocation.status == "IN_REPAIR")
+        .filter(RepairRequest.status == RepairRequestStatus.APPROVED)
+        .all()
+    )
+
+    if not results:
+        raise HTTPException(status_code=404, detail="No approved assets currently in repair")
+
+
+    response = []
+    for r in results:
+        response.append({
+            "asset_id": r.asset.id,
+            "asset_name": r.asset.asset_name,
+            "issue_description": r.issue_description,
+            "requested_user": r.requester,
+            "category":r.asset.category,
+            "manufacturer":r.asset.manufacturer
+        })
+
+    return response
+
+
+
 

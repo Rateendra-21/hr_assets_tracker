@@ -15,6 +15,9 @@ class AssetEventType(PyEnum):
     ACCEPTED = "ACCEPTED"   # new status for acceptance
     DECLINED = "DECLINED" 
     REJECTED ="REJECTED"
+    RETURN_PENDING = "RETURN_PENDING"
+    RETURN_ACCEPTED = "RETURN_ACCEPTED"
+    RETURN_DECLINED = "RETURN_DECLINED"
 
 class AssetLifecycleEvent(Base):
     __tablename__ = "asset_lifecycle_events"
