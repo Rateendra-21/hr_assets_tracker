@@ -8,7 +8,8 @@ from app.controllers import (
     asset_controller,
     asset_allocation_controller,
     repair_request_controller,
-    asste_lifecycle_controler
+    asste_lifecycle_controler,
+    dashboard_controller   
 )
 
 
@@ -42,6 +43,8 @@ app.include_router(asset_controller.router)
 app.include_router(asset_allocation_controller.router)
 app.include_router(repair_request_controller.router)
 app.include_router(asste_lifecycle_controler.router)
+app.include_router(dashboard_controller.router)   # ⬅️ register here
+
 
 
 
