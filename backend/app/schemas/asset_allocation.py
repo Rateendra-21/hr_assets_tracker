@@ -7,6 +7,7 @@ class AllocationStatus(str, Enum):
     ASSIGNED = "ASSIGNED"
     RETURNED = "RETURNED"
     ALLOCATED = "ALLOCATED"
+    REPAIRED = "REPAIRED"
 
 class AssetAllocationResponse(BaseModel):
     id: int

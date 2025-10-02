@@ -11,6 +11,7 @@ class RepairRequestStatus(str, enum.Enum):
     COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
     IN_REPAIR = "IN_REPAIR"
+    REPAIRED = "REPAIRED"    
 
 class RepairRequest(Base):
     __tablename__ = "repair_requests"

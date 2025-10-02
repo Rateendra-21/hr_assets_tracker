@@ -278,6 +278,7 @@ def reject_repair_request(
 
 # get data In_repair
 
+
 @router.get("/assets/in-repair", response_model=List[AssetInRepairResponse])
 def get_assets_in_repair(db: Session = Depends(get_db)):
 
@@ -293,10 +294,6 @@ def get_assets_in_repair(db: Session = Depends(get_db)):
         .all()
     )
 
-    if not results:
-        raise HTTPException(status_code=404, detail="No approved assets currently in repair")
-
-
     response = []
     for r in results:
         response.append({
@@ -304,12 +301,113 @@ def get_assets_in_repair(db: Session = Depends(get_db)):
             "asset_name": r.asset.asset_name,
             "issue_description": r.issue_description,
             "requested_user": r.requester,
-            "category":r.asset.category,
-            "manufacturer":r.asset.manufacturer
+            "category": r.asset.category,
+            "manufacturer": r.asset.manufacturer
         })
 
+    # Simply return empty list if no results
     return response
 
 
 
+# mark the asset as repaired
 
+
+@router.put("/assets/mark-repaired/{asset_id}")
+def mark_asset_repaired(
+    asset_id: int,
+    remarks: str = Form(...),
+    user_id: int = Form(...),   # 👈 accept user_id also
+    db: Session = Depends(get_db)
+):
+    asset = db.query(Asset).filter(Asset.id == asset_id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    asset.status = "ASSIGNED"
+
+    allocation = db.query(AssetAllocation).filter(
+        AssetAllocation.asset_id == asset_id,
+        AssetAllocation.status == "IN_REPAIR"
+    ).first()
+    if allocation:
+        allocation.status = "ASSIGNED"
+
+    repair_request = db.query(RepairRequest).filter(
+        RepairRequest.asset_id == asset_id,
+        RepairRequest.status.in_(["APPROVED", "IN_REPAIR"])  # allow both
+    ).first()
+    if repair_request:
+        repair_request.status = "REPAIRED"
+        repair_request.resolution_notes = remarks
+        repair_request.resolution_date = datetime.utcnow()
+    else:
+        raise HTTPException(status_code=404, detail="Repair request not found")
+
+    lifecycle_event = AssetLifecycleEvent(
+        asset_id=asset_id,
+        event_type="REPAIR_COMPLETED",
+        event_date=datetime.utcnow(),
+        remarks=remarks,
+        user_id=user_id  # 👈 now saving user_id
+    )
+    db.add(lifecycle_event)
+
+    db.commit()
+    db.refresh(asset)
+    db.refresh(repair_request)
+
+    return {
+        "message": "Asset marked as repaired successfully",
+        "asset_id": asset_id,
+        "user_id": user_id,
+        "repair_request_id": repair_request.id,
+    }
+
+# @router.put("/assets/mark-repaired/{asset_id}")
+# def mark_asset_repaired(
+#     asset_id: int,
+#     user_id: int = Form(...),
+#     remarks: str = Form(...),
+#     db: Session = Depends(get_db)
+# ):
+    
+#     asset = db.query(Asset).filter(Asset.id == asset_id).first()
+#     if not asset:
+#         raise HTTPException(status_code=404, detail="Asset not found")
+#     asset.status = "ASSIGNED"
+
+ 
+#     allocation = db.query(AssetAllocation).filter(
+#         AssetAllocation.asset_id == asset_id,
+#         AssetAllocation.status == "IN_REPAIR"
+#     ).first()
+#     if allocation:
+#         allocation.status = "ASSIGNED"
+
+  
+#     repair_request = db.query(RepairRequest).filter(
+#         RepairRequest.asset_id == asset_id,
+#         RepairRequest.status == "APPROVED"  # or "IN_REPAIR" if you use that
+#     ).first()
+#     if repair_request:
+#         repair_request.status = "REPAIRED"
+#         repair_request.resolution_notes = remarks
+#         repair_request.resolution_date = datetime.utcnow()
+#     else:
+#         raise HTTPException(status_code=404, detail="Repair request not found")
+
+ 
+#     lifecycle_event = AssetLifecycleEvent(
+#         asset_id=asset_id,
+#         event_type="REPAIR_COMPLETED",
+#         event_date=datetime.utcnow(),
+#         remarks=remarks,
+#         user_id=None  # optionally pass user id who repaired
+#     )
+#     db.add(lifecycle_event)
+
+#     db.commit()
+#     db.refresh(asset)
+#     db.refresh(repair_request)
+
+#     return {"message": "Asset marked as repaired successfully"}

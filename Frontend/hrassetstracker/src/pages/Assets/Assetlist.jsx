@@ -267,7 +267,7 @@ const AssetList = ({ reloadAssets }) => {
                       </div>
 
                       <div className="mt-auto d-flex justify-content-end flex-wrap gap-2">
-                        {asset.status === "AVAILABLE" && (
+                        {/* {asset.status === "AVAILABLE" && (
                           <button
                             className="btn btn-warning btn-sm d-flex align-items-center"
                             onClick={() => handleRepairClick(asset)}
@@ -275,7 +275,7 @@ const AssetList = ({ reloadAssets }) => {
                           >
                             <Wrench size={14} />
                           </button>
-                        )}
+                        )} */}
 
                         <button
                           className="btn btn-outline-dark btn-sm d-flex align-items-center"
@@ -410,7 +410,7 @@ const AssetList = ({ reloadAssets }) => {
                         </td>
 
                         <td className="d-flex justify-content-center gap-1 flex-wrap">
-                          {asset.status === "AVAILABLE" && (
+                          {/* {asset.status === "AVAILABLE" && (
                             <span
                               className="badge bg-warning text-dark d-flex align-items-center"
                               style={{ cursor: "pointer" }}
@@ -419,7 +419,7 @@ const AssetList = ({ reloadAssets }) => {
                             >
                               <Wrench size={14} color="black" />
                             </span>
-                          )}
+                          )} */}
 
                           <span
                             className="badge bg-dark d-flex align-items-center"

@@ -13,6 +13,7 @@ class RepairRequestStatus(str, Enum):
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
+    REPAIRED = "REPAIRED"
 
 # Schema for creating a new repair request
 class RepairRequestCreate(BaseModel):
