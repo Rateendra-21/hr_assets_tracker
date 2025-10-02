@@ -1,48 +1,41 @@
 import { useState, useEffect } from "react";
-import ReturnAsset from "../Assets/ReturnAsset";
+import ReturnActionPopup from "../Assets/ReturnActionPopup";
 
 const AssignedList = ({ refreshAssets }) => {
   const [assignedAssets, setAssignedAssets] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [selectedAsset, setSelectedAsset] = useState(null); // Asset for return modal
-  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState(null);
 
   // Fetch assigned assets from API
- 
+
   const fetchAssignedAssets = async () => {
-  setLoading(true);
-  try {
-    const response = await fetch("http://127.0.0.1:8000/assigned");
-    const data = await response.json();
-    const assignedOnly = data.filter(asset => asset.status === "ASSIGNED");
-    setAssignedAssets(assignedOnly);
-  } catch (error) {
-    console.error("Error fetching assigned assets:", error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+    setLoading(true);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/assigned");
+      const data = await response.json();
+      const assignedOnly = data.filter(
+        (asset) =>
+          asset.status === "ASSIGNED" || asset.status === "RETURN_PENDING"
+      );
+      setAssignedAssets(assignedOnly);
+    } catch (error) {
+      console.error("Error fetching assigned assets:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchAssignedAssets();
   }, []);
 
-  const handleReturn = (allocation_id) => {
-    const asset = assignedAssets.find((a) => a.allocation_id === allocation_id);
-    if (asset) {
-      setSelectedAsset(asset);
-      setShowReturnModal(true);
-    }
-  };
-
+  
   const handleAssetReturned = async () => {
     setShowReturnModal(false);
     setSelectedAsset(null);
-    await fetchAssignedAssets(); // refresh assigned list
-    if (refreshAssets) refreshAssets(); // refresh Assign.jsx asset list
+    await fetchAssignedAssets();
+    if (refreshAssets) refreshAssets();
   };
 
   return (
@@ -78,6 +71,9 @@ const AssignedList = ({ refreshAssets }) => {
                     <small>Employee Name</small>
                   </th>
                   <th>
+                    <small>Designation</small>
+                  </th>
+                  <th>
                     <small>Asset Name</small>
                   </th>
                   <th>
@@ -89,14 +85,12 @@ const AssignedList = ({ refreshAssets }) => {
                   <th>
                     <small>Allocation Date</small>
                   </th>
-                  <th>
-                    <small>Designation</small>
-                  </th>
+
                   <th>
                     <small>Manufacturer</small>
                   </th>
                   <th>
-                    <small>Actions</small>
+                    <small>Return Request</small>
                   </th>
                 </tr>
               </thead>
@@ -105,6 +99,9 @@ const AssignedList = ({ refreshAssets }) => {
                   <tr key={asset.allocation_id}>
                     <td>
                       <small>{asset.employee_name}</small>
+                    </td>
+                    <td>
+                      <small>{asset.designation || "-"}</small>
                     </td>
                     <td>
                       <small>{asset.asset_name}</small>
@@ -127,39 +124,51 @@ const AssignedList = ({ refreshAssets }) => {
                         )}
                       </small>
                     </td>
-                    <td>
-                      <small>{asset.designation || "-"}</small>
-                    </td>
+
                     <td>
                       <small>{asset.manufacturer || "-"}</small>
                     </td>
+
                     <td className="d-flex justify-content-center gap-2">
-                      <button
-                        className="btn btn-sm btn-success"
-                        onClick={() => handleReturn(asset.allocation_id)}
-                      >
-                        Return
-                      </button>
+                      {asset.status === "RETURN_PENDING" ? (
+                        <>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() =>
+                              setSelectedAsset({ ...asset, action: "accept" })
+                            }
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() =>
+                              setSelectedAsset({ ...asset, action: "decline" })
+                            }
+                          >
+                            Reject
+                          </button>
+                        </>
+                      ) : (
+                        <span>-</span>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {selectedAsset && (
+              <ReturnActionPopup
+                asset={selectedAsset}
+                onClose={() => setSelectedAsset(null)}
+                onUpdated={fetchAssignedAssets}
+              />
+            )}
           </div>
         </div>
-      )}
-
-      {/* Return Asset Modal */}
-      {showReturnModal && selectedAsset && (
-        <ReturnAsset
-          asset={selectedAsset}
-          onClose={() => setShowReturnModal(false)}
-          onUpdated={handleAssetReturned}
-        />
       )}
     </div>
   );
 };
 
 export default AssignedList;
-

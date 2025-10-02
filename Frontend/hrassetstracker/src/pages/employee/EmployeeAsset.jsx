@@ -1,9 +1,19 @@
 import { useEffect, useState, useRef } from "react";
 import RepairAsset from "../Assets/RepairAsset";
-import DeclineAssetPopup from "./DeclineAssetPopup"; 
+import DeclineAssetPopup from "./DeclineAssetPopup";
 import { toast } from "react-hot-toast";
-import { CircleCheck, Folder, ThumbsDown, ThumbsUp, Wrench , Undo2, Circle, CircleX } from "lucide-react";
+import ReturnAsset from "../Assets/ReturnAsset";
 
+import {
+  CircleCheck,
+  Folder,
+  ThumbsDown,
+  ThumbsUp,
+  Wrench,
+  Undo2,
+  Circle,
+  CircleX,
+} from "lucide-react";
 
 const EmployeeAsset = () => {
   const [data, setData] = useState([]);
@@ -13,6 +23,7 @@ const EmployeeAsset = () => {
   const [showDeclinePopup, setShowDeclinePopup] = useState(false);
   const [statusFilterByCat, setStatusFilterByCat] = useState("all");
   const fetchedRef = useRef(false);
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
 
   const employeeId = JSON.parse(sessionStorage.getItem("userData"))?.user?.id;
 
@@ -71,63 +82,45 @@ const EmployeeAsset = () => {
     setShowDeclinePopup(true);
   };
 
-  // const submitDecline = async (remarks) => {
-  //   if (!remarks.trim()) {
-  //     toast.error("Please enter remarks for decline.");
-  //     return;
-  //   }
-  //   const payload = {
-  //     allocation_id: selectedAsset.allocation_id,
-  //     action: "decline",
-  //     user_id: employeeId,
-  //     remarks,
-  //   };
-
-  //   try {
-  //     const res = await fetch("http://127.0.0.1:8000/allocation/action", {
-  //       method: "PATCH",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(payload),
-  //     });
-  //     if (!res.ok) throw new Error("Failed to decline asset");
-
-  //     setShowDeclinePopup(false);
-  //     fetchAssignedAssets();
-  //     toast.success("Asset declined successfully!");
-  //     fetchAssignedAssets();
-  //   } catch (error) {
-  //     toast.error("Error declining asset: " + error.message);
-  //   }
-  // };
-
-  const submitDecline = async (remarks) => {
-  if (!remarks.trim()) {
-    toast.error("Please enter remarks for decline.");
-    return;
-  }
-  const payload = {
-    allocation_id: selectedAsset.allocation_id,
-    action: "decline",
-    user_id: employeeId,
-    remarks,
+  const handleReturnClick = (asset) => {
+    setSelectedAsset(asset);
+    setShowReturnPopup(true); 
   };
 
-  try {
-    const res = await fetch("http://127.0.0.1:8000/allocation/action", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error("Failed to decline asset");
 
-    toast.success("Asset declined successfully!"); // show success toast first
-    setShowDeclinePopup(false); // close the popup
-    await fetchAssignedAssets(); // fetch fresh data and wait for completion to trigger UI update
-  } catch (error) {
-    toast.error("Error declining asset: " + error.message);
-  }
-};
+  const handleAssetReturned = async () => {
+    setShowReturnPopup(false);  
+    setSelectedAsset(null);     
+    await fetchAssignedAssets(); 
+  };
 
+  const submitDecline = async (remarks) => {
+    if (!remarks.trim()) {
+      toast.error("Please enter remarks for decline.");
+      return;
+    }
+    const payload = {
+      allocation_id: selectedAsset.allocation_id,
+      action: "decline",
+      user_id: employeeId,
+      remarks,
+    };
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/allocation/action", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to decline asset");
+
+      toast.success("Asset declined successfully!"); 
+      setShowDeclinePopup(false); 
+      await fetchAssignedAssets(); 
+    } catch (error) {
+      toast.error("Error declining asset: " + error.message);
+    }
+  };
 
   const handleAssetUpdated = () => {
     fetchAssignedAssets();
@@ -153,17 +146,16 @@ const EmployeeAsset = () => {
 
       {/* Subtitle */}
       <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
-  {/* Left Section */}
-  <div className="d-flex flex-column mb-2 mb-md-0">
-    <h5 className="text-dark fw-bold mb-1">
-      <Folder size={17} className="me-2" />
-      My Assets
-    </h5>
-    <small className="text-muted">
-      View and manage your allocated company assets
-    </small>
-  </div>
-</div>
+        <div className="d-flex flex-column mb-2 mb-md-0">
+          <h5 className="text-dark fw-bold mb-1">
+            <Folder size={17} className="me-2" />
+            My Assets
+          </h5>
+          <small className="text-muted">
+            View and manage your allocated company assets
+          </small>
+        </div>
+      </div>
 
       {/* Filter Dropdown */}
       <div
@@ -183,8 +175,6 @@ const EmployeeAsset = () => {
             <option value="Charger">Charger</option>
           </select>
         </div>
-        
-      
       </div>
 
       {/* Table */}
@@ -289,8 +279,9 @@ const EmployeeAsset = () => {
                                   onClick={() => handleRepairClick(item)}
                                   title="Report Repair"
                                 >
-                                  <Wrench size={16} className="mb-1" /> 
+                                  <Wrench size={16} className="mb-1" />
                                 </button>
+                                
                                 <button
                                   className="btn btn-sm btn-secondary"
                                   onClick={() => handleReturnClick(item)}
@@ -349,14 +340,17 @@ const EmployeeAsset = () => {
           asset={selectedAsset}
         />
       )}
+
+      {/* Return Asset Popup */}
+      {showReturnPopup && selectedAsset && (
+        <ReturnAsset
+          asset={selectedAsset}
+          onClose={() => setShowReturnPopup(false)}
+          onUpdated={handleAssetReturned} // ✅ refresh list
+        />
+      )}
     </main>
   );
 };
 
 export default EmployeeAsset;
-
-
-
-
-
-

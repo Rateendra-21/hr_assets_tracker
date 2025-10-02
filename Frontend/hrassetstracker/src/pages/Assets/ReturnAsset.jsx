@@ -19,15 +19,11 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
       notes: remarks || "",
     };
 
-    console.log("Return Asset Payload:", payload);
-
     try {
       setSaving(true);
       const res = await fetch("http://127.0.0.1:8000/return-asset", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -38,10 +34,9 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
 
       toast.success("Asset returned successfully!");
 
-      if (onUpdated) onUpdated();
-      onClose();
+      if (onUpdated) await onUpdated(); // call parent to refresh list
+      onClose(); // close modal
     } catch (err) {
-      console.error("Return Asset Error:", err);
       toast.error(err.message || "Failed to return asset.");
     } finally {
       setSaving(false);
@@ -49,59 +44,17 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1050,
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={handleModalClick}
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: "8px",
-          padding: "20px",
-          width: "100%",
-          maxWidth: "500px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        }}
-      >
+    <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050 }} onClick={onClose}>
+      <div onClick={handleModalClick} style={{ backgroundColor: "#fff", borderRadius: "8px", padding: "20px", width: "100%", maxWidth: "500px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
         <h5 style={{ fontWeight: "500", color: "black" }}>Return Asset</h5>
-        <span className="d-block mt-2 mb-3" style={{ fontWeight: "500" }}>
-          Asset Name: {asset.asset_name}
-        </span>
+        <span className="d-block mt-2 mb-3" style={{ fontWeight: "500" }}>Asset Name: {asset.asset_name}</span>
 
         <small className="d-block mt-2 text-muted">Remarks (Optional):</small>
-        <textarea
-          className="form-control mt-1"
-          rows="4"
-          placeholder="Enter any remarks about the asset condition"
-          value={remarks}
-          onChange={handleRemarksChange}
-          style={{ resize: "none" }}
-        />
+        <textarea className="form-control mt-1" rows={4} placeholder="Enter any remarks about the asset condition" value={remarks} onChange={handleRemarksChange} style={{ resize: "none" }} />
 
         <div className="d-flex justify-content-end gap-2 mt-3">
-          <button
-            className="btn btn-outline-secondary"
-            onClick={onClose}
-            disabled={saving}
-          >
-            Cancel
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? "Processing..." : "Return Asset"}
-          </button>
+          <button className="btn btn-outline-dark" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="btn btn-dark" onClick={handleSave} disabled={saving}>{saving ? "Processing..." : "Return Asset"}</button>
         </div>
       </div>
     </div>

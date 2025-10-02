@@ -19,6 +19,8 @@ from pydantic import BaseModel
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.email_config import conf
 from sqlalchemy import or_
+from app.schemas.asset_allocation import ReturnAssetRequest, ReturnAssetResponse, ApproveReturnRequest, ApproveReturnResponse
+
 
 router = APIRouter(
     tags=["asset-allocations"]
@@ -145,7 +147,8 @@ def get_assigned_assets(db: Session = Depends(get_db)):
 
       .filter(or_(
     Asset.status == AssetAllocationStatus.ASSIGNED, 
-    Asset.status == AssetAllocationStatus.ALLOCATED
+    Asset.status == AssetAllocationStatus.ALLOCATED,
+    AssetAllocation.status == AssetAllocationStatus.RETURN_PENDING
 ))
     )
 
@@ -174,51 +177,6 @@ def get_assigned_assets(db: Session = Depends(get_db)):
     return response
 
 
-# ---------------------------
-# Return Asset
-# ---------------------------
-@router.post("/return-asset")
-def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db)) -> Any:
-    """
-    Return an assigned asset and create a lifecycle event
-    """
-    # Fetch the allocation record
-    allocation = db.query(AssetAllocation).filter(
-        AssetAllocation.id == request.allocation_id,
-        AssetAllocation.status == AssetAllocationStatus.ASSIGNED
-    ).first()
-
-    if not allocation:
-        raise HTTPException(status_code=404, detail="Allocation not found or already returned")
-
-    # Update allocation record
-    allocation.status = AssetAllocationStatus.RETURNED
-    allocation.return_date = datetime.utcnow()
-    if request.notes:
-        allocation.notes = request.notes
-
-    db.add(allocation)
-
-    # Create lifecycle event for return
-    lifecycle_event = AssetLifecycleEvent(
-        asset_id=allocation.asset_id,
-        event_type=AssetEventType.RETURNED,
-        event_date=datetime.utcnow(),
-        user_id=allocation.employee_id,  # returning user
-        remarks=request.notes
-    )
-    db.add(lifecycle_event)
-
-    # Update asset status to available
-    asset = db.query(Asset).filter(Asset.id == allocation.asset_id).first()
-    if asset:
-        asset.status = "AVAILABLE"
-        db.add(asset)
-
-    db.commit()
-    db.refresh(allocation)
-
-    return {"message": "Asset returned successfully", "allocation_id": allocation.id}
 
 
 #  Get assigned asset id using employee id
@@ -232,6 +190,7 @@ def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_
         .filter(
             AssetAllocation.employee_id == employee_id,
             or_(
+                
                 AssetAllocation.status == AssetAllocationStatus.ASSIGNED,
                 AssetAllocation.status == AssetAllocationStatus.ALLOCATED
             )
@@ -240,7 +199,7 @@ def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_
     )
 
     if not allocations:
-        raise HTTPException(status_code=404, detail="No assigned assets found for this employee")
+        return []
 
     response = []
     for alloc in allocations:
@@ -303,7 +262,6 @@ def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db)):
 
 
 
-
 @router.patch("/allocation/action")
 def allocation_action(payload: AllocationActionRequest, db: Session = Depends(get_db)):
     allocation = db.query(AssetAllocation).filter(AssetAllocation.id == payload.allocation_id).first()
@@ -341,3 +299,106 @@ def allocation_action(payload: AllocationActionRequest, db: Session = Depends(ge
     db.commit()
     db.refresh(allocation)
     return {"message": f"Asset assignment {payload.action}ed", "allocation": allocation}
+
+#---------------------------
+# return the asset 
+#---------------------------
+@router.post("/return-asset", response_model=ReturnAssetResponse)
+def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db)) -> Any:
+    """
+    Employee requests to return an asset. Status will be RETURN_PENDING.
+    """
+    allocation = db.query(AssetAllocation).filter(
+        AssetAllocation.id == request.allocation_id,
+        AssetAllocation.status == "ASSIGNED"
+    ).first()
+
+    if not allocation:
+        raise HTTPException(status_code=404, detail="Allocation not found or not eligible for return")
+
+    # Update allocation status
+    allocation.status = "RETURN_PENDING"
+    allocation.notes = request.notes
+    db.add(allocation)
+
+    # Update asset status to RETURN_PENDING
+    asset = db.query(Asset).filter(Asset.id == allocation.asset_id).first()
+    if asset:
+        asset.status = "RETURN_PENDING"
+        db.add(asset)
+
+    # Create lifecycle event
+    lifecycle_event = AssetLifecycleEvent(
+        asset_id=allocation.asset_id,
+        event_type=AssetEventType.RETURN_PENDING,
+        event_date=datetime.utcnow(),
+        user_id=allocation.employee_id,
+        remarks=request.notes
+    )
+    db.add(lifecycle_event)
+
+    db.commit()
+    db.refresh(allocation)
+
+    return {"message": "Return request submitted", "allocation_id": allocation.id}
+
+
+
+
+# ----------------------
+# Admin: Approve/Decline Return Request
+# ----------------------
+
+@router.patch("/return-action", response_model=ApproveReturnResponse)
+def approve_return(request: ApproveReturnRequest, db: Session = Depends(get_db)) -> Any:
+    """
+    Admin approves or declines a return request
+    """
+    allocation = db.query(AssetAllocation).filter(
+        AssetAllocation.id == request.allocation_id,
+        AssetAllocation.status == "RETURN_PENDING"
+    ).first()
+
+    if not allocation:
+        raise HTTPException(status_code=404, detail="Return request not found or already processed")
+
+    asset = db.query(Asset).filter(Asset.id == allocation.asset_id).first()
+
+    if request.action not in ["accept", "decline"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
+    if request.action == "accept":
+        allocation.status = "RETURN_ACCEPTED"
+        if asset:
+            asset.status = "AVAILABLE"
+            db.add(asset)
+        event_type = AssetEventType.RETURN_ACCEPTED
+
+    else:  # decline
+        # Keep both allocation and asset statuses as ASSIGNED
+        allocation.status = AssetAllocationStatus.ASSIGNED
+        if asset:
+            asset.status = "ASSIGNED"
+            db.add(asset)
+        event_type = AssetEventType.RETURN_DECLINED  # still log as declined in lifecycle
+
+    db.add(allocation)
+
+    # Create lifecycle event
+    lifecycle_event = AssetLifecycleEvent(
+        asset_id=allocation.asset_id,
+        event_type=event_type,
+        event_date=datetime.utcnow(),
+        user_id=request.user_id,
+        remarks=request.remarks
+    )
+    db.add(lifecycle_event)
+
+    db.commit()
+    db.refresh(allocation)
+
+    return {
+        "message": f"Return request {request.action}ed successfully",
+        "allocation_id": allocation.id,
+        "new_status": allocation.status
+    }

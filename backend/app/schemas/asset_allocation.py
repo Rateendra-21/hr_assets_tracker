@@ -52,3 +52,26 @@ class AssignedAssetResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+
+class ReturnAssetRequest(BaseModel):
+    allocation_id: int
+    notes: Optional[str] = None  # optional notes for return
+
+class ReturnAssetResponse(BaseModel):
+    message: str
+    allocation_id: int
+
+
+
+class ApproveReturnRequest(BaseModel):
+    allocation_id: int
+    action: str  # "accept" or "decline"
+    user_id: int
+    remarks: Optional[str] = None
+
+class ApproveReturnResponse(BaseModel):
+    message: str
+    allocation_id: int
+    new_status: str
