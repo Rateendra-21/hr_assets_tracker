@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Laptop, CheckCircle2, Clock } from "lucide-react";
+import {
+  Users,
+  Laptop,
+  CheckCircle2,
+  Clock,
+  Trash2,
+  Wrench,
+} from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [counts, setCounts] = useState(null);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("userData");
@@ -14,16 +22,28 @@ const Dashboard = () => {
     }
 
     const parsedUser = JSON.parse(userData);
-    const dashboardData = parsedUser.user;
-    // console.log("Parsed user object:", dashboardData);
+    setUser(parsedUser.user);
 
-    setUser(dashboardData);
+    // ✅ Fetch dashboard counts
+    const fetchCounts = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/dashboard/counts");
+        if (!response.ok) throw new Error("Failed to fetch dashboard counts");
+        const data = await response.json();
+        setCounts(data);
+      } catch (err) {
+        console.error("Error fetching counts:", err);
+      }
+    };
+
+    fetchCounts();
   }, [navigate]);
 
   if (!user) return null;
 
   return (
     <main className="flex-grow-1">
+      {/* Header */}
       <div
         className="d-flex justify-content-between align-items-center p-2 p-md-3"
         style={{ borderBottom: "1px solid #E5E7EB" }}
@@ -31,8 +51,7 @@ const Dashboard = () => {
         <h2 style={{ marginBottom: "3px" }}>Dashboard</h2>
       </div>
 
-      {/* Welcome Section with black-to-white gradient */}
-
+      {/* Welcome Section */}
       <div className="py-3">
         <div
           className="py-3 px-1 px-md-4 rounded text-light mx-3"
@@ -90,147 +109,188 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div
-        className="d-flex justify-content-between mx-3 mt-3"
-        style={{ gap: "1rem" }}
-      >
-        {/* Employees Card */}
-        <div
-          className="card rounded p-3 text-white position-relative"
-          style={{
-            border: "none",
-            flex: "1 1 22%",
-            background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
-            overflow: "hidden",
-          }}
-        >
-          {/* Background Icon */}
-          <Users
-            size={100}
-            className="position-absolute"
-            style={{
-              top: "60%",
-              right: "10%",
-              transform: "translateY(-50%)",
-              opacity: 0.1,
-              pointerEvents: "none",
-            }}
-          />
-
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <h5 className="mb-0">Employees</h5>
-            {/* <Users size={24} /> */}
-          </div>
+      {/* Dashboard Cards */}
+      <div className="row mx-2 mt-1 g-3">
+        {/* Employees */}
+        <div className="col-12 col-sm-6 col-md-4 col-lg-3">
           <div
-            style={{ fontSize: "2.5rem", fontWeight: "700", textAlign: "left" }}
+            className="card rounded p-3 text-white position-relative h-100"
+            style={{
+              border: "none",
+              background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
+              overflow: "hidden",
+            }}
           >
-            128
+            <Users
+              size={100}
+              className="position-absolute"
+              style={{
+                top: "60%",
+                right: "10%",
+                transform: "translateY(-50%)",
+                opacity: 0.1,
+                pointerEvents: "none",
+              }}
+            />
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">Employees</h5>
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: "700" }}>
+              {counts ? counts.active_employees : 0}
+            </div>
           </div>
         </div>
 
-        {/* Assets Card */}
-        <div
-          className="card rounded p-3 text-white position-relative"
-          style={{
-            flex: "1 1 22%",
-            border: "none",
-            backgroundColor: "#2ABB52",
-            overflow: "hidden",
-          }}
-        >
-          <Laptop
-            size={100}
-            className="position-absolute"
-            style={{
-              top: "60%",
-              right: "10%",
-              transform: "translateY(-50%)",
-              opacity: 0.1,
-              pointerEvents: "none",
-            }}
-          />
-
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <h5 className="mb-0">Assets</h5>
-            {/* <Laptop size={24} /> */}
-          </div>
+        {/* Assets */}
+        <div className="col-12 col-sm-6 col-md-4 col-lg-3">
           <div
-            style={{ fontSize: "2.5rem", fontWeight: "700", textAlign: "left" }}
+            className="card rounded p-3 text-white position-relative h-100"
+            style={{
+              border: "none",
+              backgroundColor: "#2ABB52",
+              overflow: "hidden",
+            }}
           >
-            325
+            <Laptop
+              size={100}
+              className="position-absolute"
+              style={{
+                top: "60%",
+                right: "10%",
+                transform: "translateY(-50%)",
+                opacity: 0.1,
+                pointerEvents: "none",
+              }}
+            />
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">Assets</h5>
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: "700" }}>
+              {counts ? counts.total_assets : 0}
+            </div>
           </div>
         </div>
 
-        {/* Assigned Card */}
-        <div
-          className="card rounded p-3 text-white position-relative"
-          style={{
-            flex: "1 1 22%",
-            border: "none",
-            backgroundColor: "#FFD200",
-            overflow: "hidden",
-          }}
-        >
-          <CheckCircle2
-            size={100}
-            className="position-absolute"
-            style={{
-              top: "60%",
-              right: "10%",
-              transform: "translateY(-50%)",
-              opacity: 0.1,
-              pointerEvents: "none",
-            }}
-          />
-
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <h5 className="mb-0" style={{ fontFamily: "unset" }}>
-              Assigned
-            </h5>
-            {/* <CheckCircle2 size={24} /> */}
-          </div>
+        {/* Assigned */}
+        <div className="col-12 col-sm-6 col-md-4 col-lg-3">
           <div
-            style={{ fontSize: "2.5rem", fontWeight: "700", textAlign: "left" }}
+            className="card rounded p-3 text-white position-relative h-100"
+            style={{
+              border: "none",
+              backgroundColor: "#FFD200",
+              overflow: "hidden",
+            }}
           >
-            87
+            <CheckCircle2
+              size={100}
+              className="position-absolute"
+              style={{
+                top: "60%",
+                right: "10%",
+                transform: "translateY(-50%)",
+                opacity: 0.1,
+                pointerEvents: "none",
+              }}
+            />
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">Assigned</h5>
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: "700" }}>
+              {counts ? counts.allocated_assets : 0}
+            </div>
           </div>
         </div>
 
-        {/* Pending Card */}
-        <div
-          className="card shadow rounded p-3 text-white position-relative"
-          style={{
-            border: "none",
-            flex: "1 1 22%",
-            background: "linear-gradient(135deg, #0250c5 0%, #d43f8d 100%)",
-            overflow: "hidden",
-          }}
-        >
-          <Clock
-            size={100}
-            className="position-absolute"
-            style={{
-              top: "60%",
-              right: "10%",
-              transform: "translateY(-50%)",
-              opacity: 0.1,
-              pointerEvents: "none",
-            }}
-          />
-
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <h5 className="mb-0">Pending</h5>
-            {/* <Clock size={24} /> */}
-          </div>
+        {/* Pending */}
+        <div className="col-12 col-sm-6 col-md-4 col-lg-3">
           <div
-            style={{ fontSize: "2.5rem", fontWeight: "700", textAlign: "left" }}
+            className="card shadow rounded p-3 text-white position-relative h-100"
+            style={{
+              border: "none",
+              background: "linear-gradient(135deg, #0250c5 0%, #d43f8d 100%)",
+              overflow: "hidden",
+            }}
           >
-            14
+            <Clock
+              size={100}
+              className="position-absolute"
+              style={{
+                top: "60%",
+                right: "10%",
+                transform: "translateY(-50%)",
+                opacity: 0.1,
+                pointerEvents: "none",
+              }}
+            />
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">Pending</h5>
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: "700" }}>
+              {counts ? counts.pending_repair_requests : 0}
+            </div>
+          </div>
+        </div>
+
+        {/* E-Waste */}
+        <div className="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div
+            className="card rounded p-3 text-white position-relative h-100"
+            style={{
+              border: "none",
+              backgroundColor: "#ff4d4d",
+              overflow: "hidden",
+            }}
+          >
+            <Trash2
+              size={100}
+              className="position-absolute"
+              style={{
+                top: "60%",
+                right: "10%",
+                transform: "translateY(-50%)",
+                opacity: 0.1,
+                pointerEvents: "none",
+              }}
+            />
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">E-Waste</h5>
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: "700" }}>
+              {counts ? counts.ewaste_assets : 0}
+            </div>
+          </div>
+        </div>
+
+        {/* In Repair */}
+        <div className="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div
+            className="card rounded p-3 text-white position-relative h-100"
+            style={{
+              border: "none",
+              backgroundColor: "#ff9900",
+              overflow: "hidden",
+            }}
+          >
+            <Wrench
+              size={100}
+              className="position-absolute"
+              style={{
+                top: "60%",
+                right: "10%",
+                transform: "translateY(-50%)",
+                opacity: 0.1,
+                pointerEvents: "none",
+              }}
+            />
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">In Repair</h5>
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: "700" }}>
+              {counts ? counts.in_repair : 0}
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="py-3 px-2 px-md-4">{/* Other content here */}</div>
     </main>
   );
 };

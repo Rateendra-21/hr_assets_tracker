@@ -5,3 +5,5 @@ class DashboardCounts(BaseModel):
     total_assets: int
     allocated_assets: int
     pending_repair_requests: int
+    ewaste_assets: int
+    in_repair : int

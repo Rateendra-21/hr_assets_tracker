@@ -27,9 +27,30 @@ def get_dashboard_counts(db: Session = Depends(get_db)):
         RepairRequest.status == "PENDING"
     ).count()
 
+    # New counts
+    repair_requested_assets = db.query(AssetAllocation).filter(
+        AssetAllocation.status == "REPAIR_REQUESTED"
+    ).count()
+
+    ewaste_assets = db.query(Asset).filter(
+        Asset.status == "EWASTE"
+    ).count()
+
+    in_repair_assets = db.query(Asset).filter(
+        Asset.status == "IN_REPAIR"
+    ).count()
+
     return {
         "active_employees": active_employees,
         "total_assets": total_assets,
         "allocated_assets": allocated_assets,
-        "pending_repair_requests": pending_repair_requests
+        "pending_repair_requests": pending_repair_requests,
+        "repair_requested_assets": repair_requested_assets,
+        "ewaste_assets": ewaste_assets,
+        "in_repair": in_repair_assets
     }
+
+
+
+
+
