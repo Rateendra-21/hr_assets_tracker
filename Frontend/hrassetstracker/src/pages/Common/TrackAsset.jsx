@@ -13,6 +13,9 @@ import {
   LaptopMinimalCheck,
   Hammer,
   Shredder,
+  CircleCheck,
+  ToolCase,
+  ThumbsUp,
 } from "lucide-react";
 
 const TrackAsset = () => {
@@ -96,11 +99,16 @@ const TrackAsset = () => {
     ALLOCATED: <CameraIcon size={20} />,
     ACCEPTED: <LaptopMinimalCheck size={20} />,
     REPAIR_REQUESTED: <Hammer size={20} />,
+    REPAIR_APPROVED : <CircleCheck size={20} />,
+    IN_REPAIR : <Wrench size={20}/>,
+    REPAIR_COMPLETED : <ThumbsUp size={20}/>,
     REJECTED: <Trash2 size={20} />,
     RETURNED: <Undo2 size={20} />,
     EWASTE: <Shredder size={20} />,
   };
+ 
 
+  
   return (
     <main className="flex-grow-1">
       <div className="d-flex justify-content-between align-items-center p-2 p-md-3 border-bottom">
@@ -108,6 +116,8 @@ const TrackAsset = () => {
           Track Asset
         </h4>
       </div>
+
+      {/* old upload data */}
 
       {/* <div className="row g-3 mb-2 py-4 px-4">
         <div className="col-12 col-md-6">
@@ -279,70 +289,60 @@ const TrackAsset = () => {
       )}
 
       {/* {looks like timeline} */}
-      {/* {assetData && !error && assetData.events.length > 0 && (
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            minHeight: 120,
-            margin: "32px 0",
-          }}
-        >
-          
+      <div
+        className="py-4 bg-light px-3 rounded shadow-sm mx-4 mt-4 text-light"
+        style={{ maxHeight: 400, overflowY: "auto" }}
+      >
+        {/* {assetData && !error && assetData.events.length > 0 && (
           <div
             style={{
-              position: "absolute",
-              top: 20,
-              left: "4%",
-              right: "4%",
-              height: 3,
-              backgroundColor: "#1877f5",
-              borderRadius: 3,
-              zIndex: 0,
+              position: "relative",
+              width: "100%",
+              minHeight: 120,
+              margin: "32px 0",
             }}
-          />
-
-       
-          <div
-            className="d-flex justify-content-between"
-            style={{ position: "relative", zIndex: 1 }}
           >
-            {assetData.events.map((event, idx) => (
-              <div key={event.id} className="text-center" style={{ flex: 1 }}>
-                <div
-                  className="bg-dark rounded-circle d-flex justify-content-center align-items-center mx-auto mb-2"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    color: "#fff",
-                    fontSize: 20,
-                    boxShadow: "0 3px 8px rgba(0,0,0,0.04)",
-                  }}
-                >
-                  {iconMap[event.event_type] || <CameraIcon size={20} />}
-                </div>
+            <div
+              style={{
+                position: "absolute",
+                top: 20,
+                left: "4%",
+                right: "4%",
+                height: 3,
+                backgroundColor: "#1877f5",
+                borderRadius: 3,
+                zIndex: 0,
+              }}
+            />
 
-                <div className="fw-bold" style={{ fontSize: 14 }}>
-                  {event.event_type.replace("_", " ")}
-                </div>
+            <div
+              className="d-flex justify-content-between"
+              style={{ position: "relative", zIndex: 1 }}
+            >
+              {assetData.events.map((event, idx) => (
+                <div key={event.id} className="text-center" style={{ flex: 1 }}>
+                  <div
+                    className="bg-dark rounded-circle d-flex justify-content-center align-items-center mx-auto mb-2"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      color: "#fff",
+                      fontSize: 20,
+                      boxShadow: "0 3px 8px rgba(0,0,0,0.04)",
+                    }}
+                  >
+                    {iconMap[event.event_type] || <CameraIcon size={20} />}
+                  </div>
 
-                <div className="text-muted small mt-1">
-                  {new Date(event.event_date).toLocaleString()}
+                  <div className="fw-bold text-dark" style={{ fontSize: 12 }}>
+                    {event.event_type.replace("_", " ")}
+                  </div>
                 </div>
-
-                <div className="text-secondary small mt-1">
-                  User: {event.user?.fullname || "N/A"}
-                </div>
-
-                <div className="text-secondary small">
-                  Remarks: {event.remarks || "No remarks"}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )} */}
-
+        )} */}
+      </div>
       {error && !assetData && (
         <span
           className="text-danger fw-medium mx-4"
