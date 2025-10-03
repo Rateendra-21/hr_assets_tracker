@@ -19,6 +19,7 @@ class AssetEventType(PyEnum):
     RETURN_ACCEPTED = "RETURN_ACCEPTED"
     RETURN_DECLINED = "RETURN_DECLINED"
     REPAIRED = "REPAIRED"
+    IN_REPAIR = "IN_REPAIR"
 
 class AssetLifecycleEvent(Base):
     __tablename__ = "asset_lifecycle_events"
