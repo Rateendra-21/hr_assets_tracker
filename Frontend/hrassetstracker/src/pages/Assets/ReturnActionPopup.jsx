@@ -13,13 +13,16 @@ const ReturnActionPopup = ({ asset, onClose, onUpdated }) => {
     setRemarks(value);
   };
 
+  const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
+  const userId = userData.user?.id || 1;
+
   const handleAction = async (action) => {
     if (!["accept", "decline"].includes(action)) return;
 
     const payload = {
       allocation_id: asset.allocation_id,
       action: action,
-      user_id: 1,
+      user_id: userId,
       remarks: remarks || "",
     };
 
@@ -99,26 +102,25 @@ const ReturnActionPopup = ({ asset, onClose, onUpdated }) => {
             Cancel
           </button>
 
-            {asset.action === "accept" && (
-  <button
-    className="btn btn-success"
-    onClick={() => handleAction("accept")}
-    disabled={saving}
-  >
-    {saving ? "Processing..." : "Accept"}
-  </button>
-)}
+          {asset.action === "accept" && (
+            <button
+              className="btn btn-success"
+              onClick={() => handleAction("accept")}
+              disabled={saving}
+            >
+              {saving ? "Processing..." : "Accept"}
+            </button>
+          )}
 
-{asset.action === "decline" && (
-  <button
-    className="btn btn-danger"
-    onClick={() => handleAction("decline")}
-    disabled={saving}
-  >
-    {saving ? "Processing..." : "Reject"}
-  </button>
-)}
-         
+          {asset.action === "decline" && (
+            <button
+              className="btn btn-danger"
+              onClick={() => handleAction("decline")}
+              disabled={saving}
+            >
+              {saving ? "Processing..." : "Reject"}
+            </button>
+          )}
         </div>
       </div>
     </div>
