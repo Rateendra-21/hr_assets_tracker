@@ -12,7 +12,6 @@ class AssetAllocationStatus(str, enum.Enum):
     RETURN_PENDING = "RETURN_PENDING"
     RETURN_ACCEPTED = "RETURN_ACCEPTED"
     RETURN_DECLINED = "RETURN_DECLINED"
-    # REPAIRED = "REPAIRED"
     IN_REPAIR = "IN_REPAIR"
 
 class AssetAllocation(Base):

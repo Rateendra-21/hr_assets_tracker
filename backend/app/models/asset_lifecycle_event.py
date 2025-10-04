@@ -12,7 +12,7 @@ class AssetEventType(PyEnum):
     REPAIR_COMPLETED = "REPAIR_COMPLETED"
     RETURNED = "RETURNED"
     EWASTE = "EWASTE"
-    ACCEPTED = "ACCEPTED"   # new status for acceptance
+    ACCEPTED = "ACCEPTED" 
     DECLINED = "DECLINED" 
     REJECTED ="REJECTED"
     RETURN_PENDING = "RETURN_PENDING"

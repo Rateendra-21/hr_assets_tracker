@@ -20,6 +20,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.email_config import conf
 from sqlalchemy import or_
 from app.schemas.asset_allocation import ReturnAssetRequest, ReturnAssetResponse, ApproveReturnRequest, ApproveReturnResponse
+from app.email_templates.asset_assigned import build_asset_assignment_email
 
 
 router = APIRouter(
@@ -92,29 +93,8 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
         </tr>
         """
 
-    email_body = f"""
-    <div style="font-family: Arial, sans-serif; color: #333;">
-        <p>Dear {employee.fullname},</p>
-        <p>You have been assigned the following assets:</p>
-        <table style="border-collapse: collapse; width: 100%; max-width: 700px;">
-            <thead style="background-color: #f2f2f2;">
-                <tr>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Asset Name</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Category</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Manufacturer</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Serial Number</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Model</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Assigned Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {table_rows}
-            </tbody>
-        </table>
-        <p>Please kindly collect the assigned asset(s) and mark them as accepted by logging into your portal account.</p>
-        <p>Regards,<br>Asset Management Team</p>
-    </div>
-    """
+    email_body = build_asset_assignment_email(employee.fullname, table_rows)
+
 
     fm = FastMail(conf)
     message = MessageSchema(

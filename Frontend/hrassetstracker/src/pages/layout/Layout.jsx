@@ -58,11 +58,7 @@ const Layout = () => {
         path: "/track-asset",
         icon: <QrCodeIcon size={15} />,
       },
-      // {
-      //   name: "Change Password",
-      //   path: "/change-password",
-      //   icon: <LockIcon size={15} />,
-      // },
+
     ],
     ADMIN: [
       {
@@ -96,11 +92,7 @@ const Layout = () => {
         path: "/track-asset",
         icon: <QrCodeIcon size={15} />,
       },
-      // {
-      //   name: "Change Password",
-      //   path: "/change-password",
-      //   icon: <LockIcon size={15} />,
-      // },
+
     ],
     EMPLOYEE: [
       {
@@ -119,11 +111,7 @@ const Layout = () => {
         path: "/track-asset",
         icon: <QrCodeIcon size={15} />,
       },
-      {
-        name: "Change Password",
-        path: "/change-password",
-        icon: <LockIcon size={15} />,
-      },
+     
     ],
   };
 

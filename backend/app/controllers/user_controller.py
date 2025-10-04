@@ -59,7 +59,7 @@ async def send_password_email(email: str, raw_password: str):
         body=(
             f"Hello,\n\n"
             f"Your admin account has been created.\n"
-            f"Your temporary password is: {raw_password}\n\n"
+            f"Your Username : {email} & temporary password is: {raw_password}\n\n"
             f"Please login and change your password immediately for security purposes.\n\n"
             f"Thank you."
         ),
