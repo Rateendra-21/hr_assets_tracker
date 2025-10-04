@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { Plus } from "lucide-react";
 
-const RepairAsset = ({ asset, onClose, onUpdated ,fetchAssets}) => {
+const RepairAsset = ({ asset, onClose, onUpdated, fetchAssets }) => {
   const [issueDescription, setIssueDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [attachedImages, setAttachedImages] = useState([]);
@@ -27,27 +27,89 @@ const RepairAsset = ({ asset, onClose, onUpdated ,fetchAssets}) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     setAttachedImages((prev) => [...prev, ...files]);
-    e.target.value = ""; 
+    e.target.value = "";
   };
 
   const removeImage = (index) => {
     setAttachedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // const handleSave = async () => {
+  //   console.log("Current asset value:", asset);
+  //   if (!issueDescription.trim()) {
+  //     toast.error("Issue description cannot be empty.");
+  //     return;
+  //   }
+
+  //   if (!myAssetId) {
+  //   toast.error("Asset data not available.");
+  //   return;
+  //  }
+
+  //   try {
+  //     setSaving(true);
+
+  //     const formData = new FormData();
+  //     formData.append("asset_id", myAssetId);
+  //     formData.append(
+  //       "requested_by",
+  //       JSON.parse(sessionStorage.getItem("userData"))?.user?.id
+  //     );
+  //     formData.append("issue_description", issueDescription.trim());
+
+  //     attachedImages.forEach((file) => {
+  //       formData.append("images", file);
+  //     });
+
+  //     const res = await fetch(`http://127.0.0.1:8000/repair-requests/`, {
+  //       method: "POST",
+  //       body: formData,
+  //     });
+
+  //     if (!res.ok) {
+  //       const data = await res.json();
+  //       throw new Error(data.detail || "Failed to create repair request.");
+  //     }
+
+  //     toast.success("Asset sent for repair successfully!");
+  //     if (onUpdated) onUpdated();
+
+  //     setIssueDescription("");
+  //     setAttachedImages([]);
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error(err.message || "Failed to create repair request.");
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
+
   const handleSave = async () => {
     console.log("Current asset value:", asset);
+
     if (!issueDescription.trim()) {
       toast.error("Issue description cannot be empty.");
       return;
     }
 
     if (!myAssetId) {
-    toast.error("Asset data not available.");
-    return;
-   }
+      toast.error("Asset data not available.");
+      return;
+    }
 
     try {
       setSaving(true);
+
+      const token = JSON.parse(
+        sessionStorage.getItem("userData")
+      )?.access_token;
+      if (!token) {
+        toast.error("You are not logged in.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       const formData = new FormData();
       formData.append("asset_id", myAssetId);
@@ -63,6 +125,9 @@ const RepairAsset = ({ asset, onClose, onUpdated ,fetchAssets}) => {
 
       const res = await fetch(`http://127.0.0.1:8000/repair-requests/`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // Pass the token here
+        },
         body: formData,
       });
 
@@ -73,8 +138,6 @@ const RepairAsset = ({ asset, onClose, onUpdated ,fetchAssets}) => {
 
       toast.success("Asset sent for repair successfully!");
       if (onUpdated) onUpdated();
-    
-     
 
       setIssueDescription("");
       setAttachedImages([]);

@@ -13,6 +13,9 @@ import {
   LaptopMinimalCheck,
   Hammer,
   Shredder,
+  Package,
+  Check,
+  AlertCircle,
   CircleCheck,
   ToolCase,
   ThumbsUp,
@@ -188,6 +191,8 @@ const TrackAsset = () => {
         </div>
       </div>
 
+      {/* look likes card  */}
+
       {/* {assetData && !error && (
         <div
           className="py-4 bg-light px-3 rounded shadow-sm mx-4 mt-4 text-light"
@@ -225,7 +230,7 @@ const TrackAsset = () => {
 
       {assetData && !error ? (
         <div
-          className="p-4 bg-white rounded shadow mx-4 mt-4"
+          className="p-4 bg-white rounded shadow mx-4 mt-4 custom-scroll"
           style={{ maxHeight: 400, overflowY: "auto" }}
         >
           <h5 className="mb-4 text-gradient fw-bold letter-spacing-1">
@@ -235,73 +240,230 @@ const TrackAsset = () => {
             <div
               className="timeline-connector position-absolute"
               style={{
-                left: 11, // aligns with dot
+                left: 32,
                 top: 0,
                 bottom: 0,
                 width: 4,
                 background:
                   "linear-gradient(to bottom, #6bc900ff 0%, #48ff7fff 100%)",
                 borderRadius: 2,
-                zIndex: 0,
+                zIndex: 1,
               }}
             />
             {assetData.events && assetData.events.length ? (
-              assetData.events.map((event) => (
-                <div key={event.id} className="d-flex mb-4 position-relative">
-                  <span
-                    className="timeline-dot"
-                    style={{
-                      width: 20,
-                      height: 20,
-                      background:
-                        event.event_type === "ASSIGNED"
-                          ? "#51cf66"
-                          : event.event_type === "REPAIR"
-                          ? "#ffd43b"
-                          : "#4895ef",
-                      border: "2px solid white",
-                      borderRadius: "50%",
-                      boxShadow: "0 0 8px rgba(34,139,230,0.12)",
-                      zIndex: 1,
-                      marginRight: 16,
-                    }}
-                  />
-                  <div className="flex-grow-1">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <span
-                        className="fw-semibold"
-                        style={{
-                          color:
-                            event.event_type === "ASSIGNED"
-                              ? "#2f9e44"
-                              : event.event_type === "REPAIR"
-                              ? "#be8507"
-                              : "#1971c2",
-                          fontSize: "1.1rem",
-                          letterSpacing: 0.3,
-                        }}
-                      >
-                        {event.event_type}
-                      </span>
-                      <span className="small text-muted">
-                        {new Date(event.event_date).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="ms-2">
-                      <div className="mb-1">
-                        <strong>User:</strong> {event.user?.fullname || "N/A"}
+              assetData.events.map((event) => {
+                const iconProps = {
+                  size: 16,
+                  color: "white",
+                  strokeWidth: 2,
+                };
+
+                let IconComponent;
+                let bgColor;
+
+                // switch (event.event_type) {
+                //   case "ALLOCATED":
+                //     IconComponent = CircleCheck;
+                //     bgColor = "#51cf66";
+                //     break;
+
+                //   case "ACCEPTED":
+                //     IconComponent = ThumbsUp;
+                //     bgColor = "#ffd43b";
+                //     break;
+
+                //   case "REPAIR":
+                //     IconComponent = Wrench;
+                //     bgColor = "#fa5252";
+                //     break;
+
+                //   case "ASSIGNED":
+                //     IconComponent = User2;
+                //     bgColor = "#339af0";
+                //     break;
+
+                //   case "RETURNED":
+                //     IconComponent = Undo2;
+                //     bgColor = "#868e96";
+                //     break;
+
+                //   case "EWASTE":
+                //     IconComponent = Trash2;
+                //     bgColor = "#f03e3e";
+                //     break;
+
+                //   case "INSPECTED":
+                //     IconComponent = LaptopMinimalCheck;
+                //     bgColor = "#74b816";
+                //     break;
+
+                //   default:
+                //     IconComponent = WrapText;
+                //     bgColor = "#4895ef";
+                //     break;
+                // }
+
+                switch (event.event_type) {
+                  case "AVAILABLE":
+                    IconComponent = CircleCheck;
+                    bgColor = "#28a745"; // green
+                    break;
+
+                  case "ASSIGNED":
+                    IconComponent = User2;
+                    bgColor = "#339af0"; // blue
+                    break;
+
+                  case "ALLOCATED":
+                    IconComponent = Package;
+                    bgColor = "#339af0"; // blue
+                    break;
+
+                  case "IN_REPAIR":
+                    IconComponent = Wrench;
+                    bgColor = "#ffc107"; // yellow
+                    break;
+
+                  case "REPAIRED":
+                    IconComponent = CheckCircle;
+                    bgColor = "#20c997"; // teal
+                    break;
+
+                  case "RETURN_PENDING":
+                    IconComponent = Clock;
+                    bgColor = "#fd7e14"; // orange
+                    break;
+
+                  case "RETURN_ACCEPTED":
+                    IconComponent = ThumbsUp;
+                    bgColor = "#198754"; // dark green
+                    break;
+
+                  case "RETURN_DECLINED":
+                    IconComponent = ThumbsDown;
+                    bgColor = "#dc3545"; // red
+                    break;
+
+                  case "REGISTERED":
+                    IconComponent = PlusCircle;
+                    bgColor = "#6c757d"; // gray
+                    break;
+
+                  case "REPAIR_REQUESTED":
+                    IconComponent = AlertCircle;
+                    bgColor = "#fd7e14"; // orange
+                    break;
+
+                  case "REPAIR_APPROVED":
+                    IconComponent = CheckCircle2;
+                    bgColor = "#0d6efd"; // blue
+                    break;
+
+                  case "REPAIR_COMPLETED":
+                    IconComponent = ClipboardCheck;
+                    bgColor = "#20c997"; // teal
+                    break;
+
+                  case "RETURNED":
+                    IconComponent = Undo2;
+                    bgColor = "#0dcaf0"; // cyan
+                    break;
+
+                  case "EWASTE":
+                    IconComponent = Trash2;
+                    bgColor = "#6c757d"; // gray
+                    break;
+
+                  case "ACCEPTED":
+                    IconComponent = Check;
+                    bgColor = "#198754"; // dark green
+                    break;
+
+                  case "DECLINED":
+                    IconComponent = X;
+                    bgColor = "#dc3545"; // red
+                    break;
+
+                  case "REJECTED":
+                    IconComponent = XCircle;
+                    bgColor = "#dc3545"; // red
+                    break;
+
+                  case "PENDING":
+                    IconComponent = Clock;
+                    bgColor = "#ffc107"; // yellow
+                    break;
+
+                  case "APPROVED":
+                    IconComponent = CheckCircle2;
+                    bgColor = "#0d6efd"; // blue
+                    break;
+
+                  case "IN_PROGRESS":
+                    IconComponent = Loader;
+                    bgColor = "#0d6efd"; // blue
+                    break;
+
+                  case "COMPLETED":
+                    IconComponent = CheckSquare;
+                    bgColor = "#20c997"; // teal
+                    break;
+
+                  default:
+                    IconComponent = WrapText;
+                    bgColor = "#4895ef"; // fallback
+                    break;
+                }
+
+                return (
+                  <div key={event.id} className="d-flex mb-4 position-relative">
+                    <span
+                      className="timeline-dot d-flex justify-content-center align-items-center shadow"
+                      style={{
+                        width: 36,
+                        height: 36,
+                        backgroundColor: bgColor,
+                        // border: "2px solid black",
+                        borderRadius: "50%",
+                        // boxShadow: "0 0 8px rgba(34,139,230,0.12)",
+                        zIndex: 2,
+                        marginRight: 16,
+                      }}
+                    >
+                      <IconComponent {...iconProps} />
+                    </span>
+                    <div className="flex-grow-1">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span
+                          className="fw-semibold"
+                          style={{
+                            color: bgColor,
+                            fontSize: "1.1rem",
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          {event.event_type}
+                        </span>
+                        <span className="small text-muted">
+                          {new Date(event.event_date).toLocaleString()}
+                        </span>
                       </div>
-                      <div
-                        className="text-secondary"
-                        style={{ fontSize: "0.95rem" }}
-                      >
-                        <strong>Remarks:</strong>{" "}
-                        {event.remarks || "No remarks"}
+                      <div className="ms-2">
+                        <div className="mb-1">
+                          <strong>User:</strong> {event.user?.fullname || "N/A"}
+                        </div>
+                        <div
+                          className="text-secondary"
+                          style={{ fontSize: "0.95rem" }}
+                        >
+                          <strong>Remarks:</strong>{" "}
+                          {event.remarks || "No remarks"}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center text-muted py-4">
                 No events for this asset.
