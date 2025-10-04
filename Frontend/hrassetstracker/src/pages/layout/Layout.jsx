@@ -1,5 +1,3 @@
-
-
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -14,6 +12,7 @@ import {
   QrCodeIcon,
   Wrench,
   History,
+  LockIcon,
 } from "lucide-react";
 
 const Layout = () => {
@@ -23,29 +22,108 @@ const Layout = () => {
 
   const menuItems = {
     SUPER_ADMIN: [
-      { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
-      { name: "Manage Admins", path: "/admin-management", icon: <UserCog size={15} /> },
-      { name: "Employees", path: "/employee-management", icon: <Users size={15} /> },
-      { name: "Assets", path: "/asset-management", icon: <Package size={15} /> },
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+        icon: <LayoutDashboard size={15} />,
+      },
+      {
+        name: "Manage Admins",
+        path: "/admin-management",
+        icon: <UserCog size={15} />,
+      },
+      {
+        name: "Employees",
+        path: "/employee-management",
+        icon: <Users size={15} />,
+      },
+      {
+        name: "Assets",
+        path: "/asset-management",
+        icon: <Package size={15} />,
+      },
       // { name: "Asset Lifecycle", path: "/asset-lifecycle", icon: <History size={15} /> },
-      { name: "Allocation", path: "/asset-allocation", icon: <Share2 size={15} /> },
-      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
-      { name: "Track Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
+      {
+        name: "Allocation",
+        path: "/asset-allocation",
+        icon: <Share2 size={15} />,
+      },
+      {
+        name: "Repair Requests",
+        path: "/repair-requests",
+        icon: <Wrench size={15} />,
+      },
+      {
+        name: "Track Asset",
+        path: "/track-asset",
+        icon: <QrCodeIcon size={15} />,
+      },
+      // {
+      //   name: "Change Password",
+      //   path: "/change-password",
+      //   icon: <LockIcon size={15} />,
+      // },
     ],
     ADMIN: [
-      { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
-      { name: "Employees", path: "/employee-management", icon: <Users size={15} /> },
-      { name: "Assets", path: "/asset-management", icon: <Package size={15} /> },
-      // { name: "Asset Lifecycle", path: "/asset-lifecycle", icon: <History size={15} /> },
-      { name: "Allocation", path: "/asset-allocation", icon: <Share2 size={15} /> },
-      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
-      { name: "Track Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+        icon: <LayoutDashboard size={15} />,
+      },
+      {
+        name: "Employees",
+        path: "/employee-management",
+        icon: <Users size={15} />,
+      },
+      {
+        name: "Assets",
+        path: "/asset-management",
+        icon: <Package size={15} />,
+      },
+      
+      {
+        name: "Allocation",
+        path: "/asset-allocation",
+        icon: <Share2 size={15} />,
+      },
+      {
+        name: "Repair Requests",
+        path: "/repair-requests",
+        icon: <Wrench size={15} />,
+      },
+      {
+        name: "Track Asset",
+        path: "/track-asset",
+        icon: <QrCodeIcon size={15} />,
+      },
+      // {
+      //   name: "Change Password",
+      //   path: "/change-password",
+      //   icon: <LockIcon size={15} />,
+      // },
     ],
     EMPLOYEE: [
-      { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+        icon: <LayoutDashboard size={15} />,
+      },
       { name: "My Assets", path: "/my-assets", icon: <Package size={15} /> },
-      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
-      { name: "Track My Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
+      {
+        name: "Repair Requests",
+        path: "/repair-requests",
+        icon: <Wrench size={15} />,
+      },
+      {
+        name: "Track My Asset",
+        path: "/track-asset",
+        icon: <QrCodeIcon size={15} />,
+      },
+      {
+        name: "Change Password",
+        path: "/change-password",
+        icon: <LockIcon size={15} />,
+      },
     ],
   };
 
@@ -81,7 +159,11 @@ const Layout = () => {
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  const sidebarStyle = { width: 250, backgroundColor: "#fff", borderRight: "1px solid #E5E7EB" };
+  const sidebarStyle = {
+    width: 250,
+    backgroundColor: "#fff",
+    borderRight: "1px solid #E5E7EB",
+  };
 
   return (
     <div className="d-flex flex-column vh-100">
@@ -100,7 +182,9 @@ const Layout = () => {
                   to={item.path}
                   className={({ isActive }) =>
                     `d-flex align-items-center p-2 text-decoration-none ${
-                      isActive ? "bg-dark text-white fw-bold rounded" : "text-dark"
+                      isActive
+                        ? "bg-dark text-white fw-bold rounded"
+                        : "text-dark"
                     }`
                   }
                 >
@@ -114,7 +198,11 @@ const Layout = () => {
           <div className="p-3 border-top">
             <button
               className="btn w-100 d-flex align-items-center justify-content-center"
-              style={{ backgroundColor: "transparent", border: "1px solid black", color: "black" }}
+              style={{
+                backgroundColor: "transparent",
+                border: "1px solid black",
+                color: "black",
+              }}
               onClick={handleLogout}
             >
               <LogOut size={15} className="me-2" />
@@ -131,7 +219,10 @@ const Layout = () => {
       {/* Mobile Navbar + Sidebar */}
       <div className="d-md-none flex-grow-1 d-flex flex-column">
         <nav className="d-flex align-items-center p-2 border-bottom bg-white">
-          <button className="btn btn-transparent p-0" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <button
+            className="btn btn-transparent p-0"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
             <SquareMenu size={24} />
           </button>
         </nav>
@@ -143,7 +234,10 @@ const Layout = () => {
           >
             <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
               <h5 className="mb-0">HR Assets</h5>
-              <button className="btn btn-transparent p-0" onClick={closeMobileMenu}>
+              <button
+                className="btn btn-transparent p-0"
+                onClick={closeMobileMenu}
+              >
                 <X size={24} />
               </button>
             </div>
@@ -155,7 +249,9 @@ const Layout = () => {
                     to={item.path}
                     className={({ isActive }) =>
                       `d-flex align-items-center p-2 text-decoration-none ${
-                        isActive ? "bg-dark text-white fw-bold rounded" : "text-dark"
+                        isActive
+                          ? "bg-dark text-white fw-bold rounded"
+                          : "text-dark"
                       }`
                     }
                     onClick={closeMobileMenu}

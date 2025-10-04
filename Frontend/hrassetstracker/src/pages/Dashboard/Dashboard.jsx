@@ -9,7 +9,9 @@ import {
   Wrench,
   BadgeCheck,
   CircleAlert,
+  Gauge,
 } from "lucide-react";
+import Header from "../Common/Header";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -56,12 +58,15 @@ const Dashboard = () => {
   return (
     <main className="flex-grow-1">
       {/* Header */}
-      <div
-        className="d-flex justify-content-between align-items-center p-2 p-md-3"
-        style={{ borderBottom: "1px solid #E5E7EB" }}
-      >
-        <h2 style={{ marginBottom: "3px" }}>Dashboard</h2>
-      </div>
+   
+
+      {/* <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
+        <h4 className="fw-bold" style={{ marginBottom: "12px" }}>
+          Dashboard 
+        </h4> 
+      </div> */}
+      
+      <Header></Header>
 
       {/* Welcome Section */}
       <div className="py-3">

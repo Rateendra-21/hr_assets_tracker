@@ -19,6 +19,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
   const [activeTab, setActiveTab] = useState("manual");
   const [departments, setDepartments] = useState([]);
   const [locations, setLocations] = useState([]);
+ const [loading, setLoading] = useState(false); 
 
   // Fetch departments & locations
   useEffect(() => {
@@ -136,7 +137,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
       e.target.value = "";
       return;
     }
-
+    setLoading(true);
     try {
       const form = new FormData();
       form.append("file", file);
@@ -187,6 +188,8 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
     } catch (err) {
       console.error("CSV upload error:", err);
       toast.error("Something went wrong while uploading the file.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -194,7 +197,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
+    setLoading(true);
     try {
       const payload = {
         fullname: formData.fullName,
@@ -233,6 +236,8 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Something went wrong!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -494,7 +499,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                       Cancel
                     </button>
                     <button type="submit" className="btn btn-dark">
-                      Create Employee
+                     {loading ? "Saving..." : "Create Employee"}
                     </button>
                   </div>
                 </form>
@@ -519,7 +524,8 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
                     onChange={handleCSVUpload}
                   />
                   <label htmlFor="excelUpload" className="btn btn-dark">
-                    Choose CSV File
+                    
+                    {loading ? "Saving..." : "Choose CSV File"}
                   </label>
                 </div>
 

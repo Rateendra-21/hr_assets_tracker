@@ -5,14 +5,26 @@ from app.models.user import User
 from app.schemas.user import AdminCreateRequest, LoginRequest, LoginResponse, UserResponse
 from passlib.context import CryptContext
 from typing import List
-router = APIRouter()
+import secrets
+import string
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from fastapi_mail import FastMail, MessageSchema
+from app.email_config import conf
+from fastapi import HTTPException, status, Depends
+from sqlalchemy.orm import Session
+from passlib.context import CryptContext
+from pydantic import BaseModel
+
+router = APIRouter()
+
 
 
 # login API
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
+    # Fetch user from DB
     user = db.query(User).filter(User.username == request.username).first()
     if not user:
         raise HTTPException(
@@ -20,66 +32,101 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             detail="Incorrect username or password"
         )
 
-    if request.password != user.password:
+    # Verify hashed password
+    if not pwd_context.verify(request.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password"
         )
+
+    # Check if user is active
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive"
         )
+
+    # Return user data
     user_response = UserResponse.from_orm(user)
     return LoginResponse(user=user_response)
 
 
-# Create a new admin user API
+# Create a new admin user API with hased password
+async def send_password_email(email: str, raw_password: str):
+    message = MessageSchema(
+        subject="Hr Asset Tracker Account Password",
+        recipients=[email],
+        body=(
+            f"Hello,\n\n"
+            f"Your admin account has been created.\n"
+            f"Your temporary password is: {raw_password}\n\n"
+            f"Please login and change your password immediately for security purposes.\n\n"
+            f"Thank you."
+        ),
+        subtype="plain"
+    )
+    fm = FastMail(conf)
+    await fm.send_message(message)
+
+def generate_password(length: int = 12) -> str:
+    max_length = min(length, 72)  # bcrypt password length limit
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(alphabet) for _ in range(max_length))
 
 @router.post("/createadmin", response_model=UserResponse)
-def create_admin(request: AdminCreateRequest, db: Session = Depends(get_db)):
+async def create_admin(request: AdminCreateRequest, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(
         (User.email == request.email) |
         (User.mobile_no == request.mobile_no) |
         (User.employee_id == request.employee_id)
     ).first()
+
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with given email, mobile number, or employee ID already exists."
         )
-    
- 
-    raw_password = f"{request.fullname}{request.employee_id}"
-    
-    
+
+    raw_password = generate_password()
+    print(f"[DEBUG] Generated password: '{raw_password}' Length: {len(raw_password)}")
+
+    # Hash the raw password with UTF-8 encoding and truncate at 72 bytes (bcrypt limit)
+    hashed_password = pwd_context.hash(raw_password.encode("utf-8")[:72])
+
     new_admin = User(
         fullname=request.fullname,
-      mobile_no=request.mobile_no,
-    email=request.email,
-    username=request.username,
-    password=raw_password,
-    employee_id=request.employee_id,
-    designation=request.designation,
-    reporting_manager=request.reporting_manager,
-    employee_type=request.employee_type,
-    department_id=request.department_id,
-    location_id=request.location_id,
-    role="ADMIN",  # hardcoded here
-    is_active=True,
-    working_status="active"
-
-    
+        mobile_no=request.mobile_no,
+        email=request.email,
+        username=request.username,
+        password=hashed_password,
+        employee_id=request.employee_id,
+        designation=request.designation,
+        reporting_manager=request.reporting_manager,
+        employee_type=request.employee_type,
+        department_id=request.department_id,
+        location_id=request.location_id,
+        role="ADMIN",
+        is_active=True,
+        working_status="active"
     )
-    db.add(new_admin)
-    db.commit()
-    db.refresh(new_admin)
-    return UserResponse.from_orm(new_admin)
+
+    try:
+        db.add(new_admin)
+        db.commit()
+        db.refresh(new_admin)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+    await send_password_email(request.email, raw_password)
+
+    response_data = UserResponse.from_orm(new_admin).dict()
+    response_data["raw_password"] = raw_password  
+
+    return response_data
 
 
 # get the admin data 
-
-
 @router.get("/admin/admindata", response_model=List[UserResponse])
 def get_admin_data(db: Session = Depends(get_db)):
     admins = db.query(User).filter(User.role == "ADMIN").all()
@@ -87,7 +134,6 @@ def get_admin_data(db: Session = Depends(get_db)):
 
 
 #deactivate admin user
-
 @router.patch("/admin/deactivate/{employee_id}")
 def deactivate_admin(employee_id: str, db: Session = Depends(get_db)):
     admin = db.query(User).filter(User.employee_id == employee_id, User.role == "ADMIN").first()
@@ -103,7 +149,6 @@ def deactivate_admin(employee_id: str, db: Session = Depends(get_db)):
     return {"message": "Admin deactivated successfully"}
 
 #activate admin user
-
 @router.patch("/admin/activate/{employee_id}")
 def activate_admin(employee_id: str, db: Session = Depends(get_db)):
     admin = db.query(User).filter(User.employee_id == employee_id, User.role == "ADMIN").first()
@@ -119,3 +164,23 @@ def activate_admin(employee_id: str, db: Session = Depends(get_db)):
 
 
 
+#Change password
+class ChangePasswordRequest(BaseModel):
+    userid: int          
+    old_password: str
+    new_password: str
+
+@router.post("/change-password")
+def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == request.userid).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not pwd_context.verify(request.old_password, user.password):
+        raise HTTPException(status_code=401, detail="Old password is incorrect")
+
+    user.password = pwd_context.hash(request.new_password.encode("utf-8")[:72])
+    db.commit()
+    db.refresh(user)
+
+    return {"message": "Password changed successfully"}

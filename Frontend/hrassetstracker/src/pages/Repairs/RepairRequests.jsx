@@ -5,6 +5,8 @@ import ImageModal from "./ImageModal";
 import ApproveRepairPopup from "./ApproveRepairRequest";
 import RejectRepairRequest from "./RejectRepairRequest";
 import RepairAccept from "./RepairAccept";
+import Header from "../Common/Header"
+
 
 const RepairRequests = () => {
   // States
@@ -117,11 +119,8 @@ const RepairRequests = () => {
 
   return (
     <main className="flex-grow-1">
-      <div className="d-flex justify-content-between align-items-center p-2 p-md-3 border-bottom">
-        <h4 className="fw-bold" style={{ marginBottom: "12px" }}>
-          Repair Requests
-        </h4>
-      </div>
+      
+      <Header></Header>
 
       {/* Toggle buttons */}
       <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">

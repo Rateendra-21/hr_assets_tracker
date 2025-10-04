@@ -11,6 +11,7 @@ import EmployeeAsset from "../pages/employee/EmployeeAsset";
 import RepairRequests from "../pages/Repairs/RepairRequests";
 import AssetLifecycle from "../pages/Assets/AssetLifecycle";
 import EwasteDisposal from "../pages/Assets/EwasteDisposal";
+import ChangePassword from "../pages/employee/ChangePassword";
 
 const PrivateRoute = ({ children }) => {
   const user = JSON.parse(sessionStorage.getItem("userData") || "null");
@@ -49,6 +50,10 @@ const AppRoutes = () => {
         <Route path="repair-requests" element={<RepairRequests />} />
         <Route path="asset-lifecycle" element={<AssetLifecycle />} />
         <Route path="ewaste-disposal" element={<EwasteDisposal />} />
+        {/* <Route path="change-password" element={<ChangePassword />} /> */}
+
+
+
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

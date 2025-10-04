@@ -17,6 +17,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
   const [errors, setErrors] = useState({});
   const [departments, setDepartments] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!show) return;
@@ -84,6 +85,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
 
   const handleSubmit = async () => {
     if (!validate()) return;
+    setLoading(true);
     try {
       const payload = {
         fullname: formData.fullName,
@@ -113,17 +115,16 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
       console.log("Admin created:", result);
       setFormData(initialFormData);
       setErrors({});
-      onSave(); 
+      onSave();
       onClose();
       toast.success("Admin created successfully!");
     } catch (err) {
       console.error(err);
       alert(err.message || "Something went wrong!");
+    } finally {
+      setLoading(false);
     }
   };
-
-  
-
 
   const renderLabel = (label) => (
     <label className="form-label">
@@ -341,8 +342,18 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
               >
                 Cancel
               </button>
-              <button className="btn btn-dark" onClick={handleSubmit}>
-                {editingAdmin ? "Update Admin" : "Create Admin"}
+              <button
+                className="btn btn-dark"
+                onClick={handleSubmit}
+                disabled={loading} // optional, prevent multiple clicks
+              >
+                {loading
+                  ? editingAdmin
+                    ? "Updating..."
+                    : "Creating..."
+                  : editingAdmin
+                  ? "Update Admin"
+                  : "Create Admin"}
               </button>
             </div>
           </div>

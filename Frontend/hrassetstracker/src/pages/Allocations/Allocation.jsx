@@ -1,15 +1,12 @@
 import { UserCheckIcon } from "lucide-react";
 import Assign from "./Assign";
+import Header from "../Common/Header"
 
 const Allocation = () => {
   return (
     <main className="flex-grow-1">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
-        <h4 className="fw-bold " style={{ marginBottom: "12px" }}>
-          Allocations
-        </h4>
-      </div>
+      <Header></Header>
 
       {/* Sub-header */}
       {/* <div className="py-4 px-3 px-md-4" style={{ backgroundColor: "#F9FAFB" }}>

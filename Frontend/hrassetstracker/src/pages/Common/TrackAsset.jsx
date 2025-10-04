@@ -17,6 +17,8 @@ import {
   ToolCase,
   ThumbsUp,
 } from "lucide-react";
+import Header from "../Common/Header"
+
 
 const TrackAsset = () => {
   const cameraInputRef = useRef(null);
@@ -111,11 +113,7 @@ const TrackAsset = () => {
   
   return (
     <main className="flex-grow-1">
-      <div className="d-flex justify-content-between align-items-center p-2 p-md-3 border-bottom">
-        <h4 className="fw-bold" style={{ marginBottom: "12px" }}>
-          Track Asset
-        </h4>
-      </div>
+      <Header></Header>
 
       {/* old upload data */}
 
