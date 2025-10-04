@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, User } from "lucide-react";
 import AddAdminModal from "./AddAdminModal";
 import AdminList from "./adminlist";
-
+import Header from "../Common/Header"
 const Admin = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -33,11 +33,12 @@ const Admin = () => {
 
   return (
     <main className="flex-grow-1">
-      <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
+      {/* <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
         <h4 className="fw-bold" style={{ marginBottom: "12px" }}>
           Admin Management
         </h4>
-      </div>
+      </div> */}
+      <Header></Header>
 
       <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
         <div className="d-flex flex-column mb-2 mb-md-0">

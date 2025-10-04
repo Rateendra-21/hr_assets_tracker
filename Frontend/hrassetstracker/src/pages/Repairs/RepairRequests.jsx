@@ -5,8 +5,7 @@ import ImageModal from "./ImageModal";
 import ApproveRepairPopup from "./ApproveRepairRequest";
 import RejectRepairRequest from "./RejectRepairRequest";
 import RepairAccept from "./RepairAccept";
-import Header from "../Common/Header"
-
+import Header from "../Common/Header";
 
 const RepairRequests = () => {
   // States
@@ -35,14 +34,43 @@ const RepairRequests = () => {
   const isEmployee = userData.user?.role === "EMPLOYEE";
 
   // Fetch pending requests
+
   const fetchPendingRequests = async () => {
     setLoading(true);
+
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/repair-requests/pending`,
-        { method: "GET", headers: { "Content-Type": "application/json" } }
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
+      if (response.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
       if (!response.ok) throw new Error("Failed to fetch pending requests");
+
       const data = await response.json();
       setRepairRequests(data || []);
     } catch (err) {
@@ -56,12 +84,40 @@ const RepairRequests = () => {
   // Fetch in-repair assets
   const fetchInRepairAssets = async () => {
     setLoadingInRepair(true);
+
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/repair-requests/assets/in-repair`,
-        { method: "GET", headers: { "Content-Type": "application/json" } }
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
+      if (response.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
       if (!response.ok) throw new Error("Failed to fetch in-repair assets");
+
       const data = await response.json();
       setInRepairAssets(data || []);
     } catch (err) {
@@ -79,16 +135,43 @@ const RepairRequests = () => {
 
   // Approve/Reject action
   const handleAction = async (id, action) => {
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
     try {
       const url = `http://127.0.0.1:8000/repair-requests/${id}/${action.toLowerCase()}`;
-      const response = await fetch(url, { method: "POST" });
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
       if (!response.ok) throw new Error("Failed to update request");
+
       toast.success(`Request ${action} successfully`);
       fetchPendingRequests();
       fetchInRepairAssets();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update request");
+      toast.error(err.message || "Failed to update request");
     }
   };
 
@@ -119,7 +202,6 @@ const RepairRequests = () => {
 
   return (
     <main className="flex-grow-1">
-      
       <Header></Header>
 
       {/* Toggle buttons */}

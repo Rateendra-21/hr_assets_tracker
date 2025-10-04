@@ -29,15 +29,47 @@ const EmployeeAsset = () => {
 
   const fetchAssignedAssets = async () => {
     if (!employeeId) return;
+
     try {
       setLoading(true);
-      const res = await fetch(`http://127.0.0.1:8000/assigned/${employeeId}`);
-      if (!res.ok) throw new Error("Failed to fetch");
+
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+
+      if (!token) {
+        toast.error("You are not logged in.");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`http://127.0.0.1:8000/assigned/${employeeId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login"; 
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to fetch assigned assets");
+      }
+
       const result = await res.json();
       const filteredData = result.filter((asset) => asset.status !== "EWASTE");
       setData(filteredData);
     } catch (err) {
       console.error("Error fetching data:", err);
+      toast.error(err.message || "Something went wrong while fetching assets.");
     } finally {
       setLoading(false);
     }
@@ -63,19 +95,46 @@ const EmployeeAsset = () => {
     };
 
     try {
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+
+      if (!token) {
+        toast.error("You are not logged in.");
+        return;
+      }
+
       const res = await fetch("http://127.0.0.1:8000/allocation/action", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to accept asset");
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to accept asset");
+      }
 
       toast.success("Asset accepted successfully!");
       fetchAssignedAssets();
     } catch (error) {
-      toast.error("Error accepting asset: " + error.message);
+      console.error("Error accepting asset:", error);
+      toast.error(
+        error.message || "Something went wrong while accepting asset."
+      );
     }
   };
+
 
   const handleDeclineClick = (item) => {
     setSelectedAsset(item);
@@ -84,14 +143,13 @@ const EmployeeAsset = () => {
 
   const handleReturnClick = (asset) => {
     setSelectedAsset(asset);
-    setShowReturnPopup(true); 
+    setShowReturnPopup(true);
   };
 
-
   const handleAssetReturned = async () => {
-    setShowReturnPopup(false);  
-    setSelectedAsset(null);     
-    await fetchAssignedAssets(); 
+    setShowReturnPopup(false);
+    setSelectedAsset(null);
+    await fetchAssignedAssets();
   };
 
   const submitDecline = async (remarks) => {
@@ -99,6 +157,7 @@ const EmployeeAsset = () => {
       toast.error("Please enter remarks for decline.");
       return;
     }
+
     const payload = {
       allocation_id: selectedAsset.allocation_id,
       action: "decline",
@@ -107,18 +166,44 @@ const EmployeeAsset = () => {
     };
 
     try {
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+
+      if (!token) {
+        toast.error("You are not logged in.");
+        return;
+      }
+
       const res = await fetch("http://127.0.0.1:8000/allocation/action", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to decline asset");
 
-      toast.success("Asset declined successfully!"); 
-      setShowDeclinePopup(false); 
-      await fetchAssignedAssets(); 
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to decline asset");
+      }
+
+      toast.success("Asset declined successfully!");
+      setShowDeclinePopup(false);
+      await fetchAssignedAssets();
     } catch (error) {
-      toast.error("Error declining asset: " + error.message);
+      console.error("Error declining asset:", error);
+      toast.error(
+        error.message || "Something went wrong while declining asset."
+      );
     }
   };
 
@@ -281,7 +366,7 @@ const EmployeeAsset = () => {
                                 >
                                   <Wrench size={16} className="mb-1" />
                                 </button>
-                                
+
                                 <button
                                   className="btn btn-sm btn-secondary"
                                   onClick={() => handleReturnClick(item)}

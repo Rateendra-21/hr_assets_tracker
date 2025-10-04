@@ -27,7 +27,7 @@ const RepairAsset = ({ asset, onClose, onUpdated ,fetchAssets}) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     setAttachedImages((prev) => [...prev, ...files]);
-    e.target.value = ""; // clear input
+    e.target.value = ""; 
   };
 
   const removeImage = (index) => {

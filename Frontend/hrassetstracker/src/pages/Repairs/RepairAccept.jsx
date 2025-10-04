@@ -22,12 +22,15 @@ const RepairAccept = ({ requestData, onClose, onApproved }) => {
       return;
     }
 
-    // get user_id from sessionStorage
     const userData = JSON.parse(sessionStorage.getItem("userData"));
     const userId = userData?.user?.id;
+    const token = userData?.access_token;
 
-    if (!userId) {
-      toast.error("User not found in session");
+    if (!userId || !token) {
+      toast.error("You are not logged in or user not found.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
       return;
     }
 
@@ -41,10 +44,21 @@ const RepairAccept = ({ requestData, onClose, onApproved }) => {
         `http://127.0.0.1:8000/repair-requests/assets/mark-repaired/${assetId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: formData.toString(),
         }
       );
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (!res.ok) {
         const errText = await res.text();
@@ -52,10 +66,11 @@ const RepairAccept = ({ requestData, onClose, onApproved }) => {
       }
 
       toast.success("Asset marked as repaired successfully!");
-      onApproved();
+      onApproved?.();
       onClose();
-      setRemarks(""); // reset input
+      setRemarks(""); 
     } catch (error) {
+      console.error("Error:", error);
       toast.error(error.message || "Error completing repair request");
     } finally {
       setLoading(false);

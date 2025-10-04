@@ -3,6 +3,7 @@ import { Download, Plus, User } from "lucide-react";
 import EmployeeList from "../employee/Employeelist";
 import AddEmployeeModal from "../employee/AddEmployeeModal";
 import Header from "../Common/Header"
+import toast from "react-hot-toast";
 
 const Employee = () => {
   const [showModal, setShowModal] = useState(false);
@@ -11,9 +12,28 @@ const Employee = () => {
 
   // Fetch employees
   const fetchEmployees = async () => {
+    
     try {
       setLoading(true);
-      const res = await fetch("http://127.0.0.1:8000/employees/getemployee");
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+      const res = await fetch("http://127.0.0.1:8000/employees/getemployee", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, 
+        },
+      });
+
+     
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
       const data = await res.json();
       setEmployees(data);
     } catch (err) {

@@ -15,6 +15,8 @@ from app.schemas.user import UserResponse
 import csv
 import io
 from app.models.asset_lifecycle_event import AssetLifecycleEvent
+from app.utils.jwt import create_access_token
+from app.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/assets",
@@ -62,40 +64,40 @@ def get_asset(asset_id: int, db: Session = Depends(get_db)):
 # get all the count 
 
 
-@router.get("/counts")
-def get_asset_counts(db: Session = Depends(get_db)):
-    """
-    Returns counts of assets grouped by category, status, location, and total count
-    """
+# @router.get("/counts")
+# def get_asset_counts(db: Session = Depends(get_db)):
+#     """
+#     Returns counts of assets grouped by category, status, location, and total count
+#     """
 
-    # Count by category
-    category_counts = db.query(
-        Asset.category,
-        func.count(Asset.id)
-    ).group_by(Asset.category).all()
+#     # Count by category
+#     category_counts = db.query(
+#         Asset.category,
+#         func.count(Asset.id)
+#     ).group_by(Asset.category).all()
 
-    # Count by status
-    status_counts = db.query(
-        Asset.status,
-        func.count(Asset.id)
-    ).group_by(Asset.status).all()
+#     # Count by status
+#     status_counts = db.query(
+#         Asset.status,
+#         func.count(Asset.id)
+#     ).group_by(Asset.status).all()
 
-    # Count by location
-    location_counts = db.query(
-        Location.locationname,
-        func.count(Asset.id)
-    ).join(Asset, Asset.location_id == Location.id, isouter=True)\
-     .group_by(Location.locationname).all()
+#     # Count by location
+#     location_counts = db.query(
+#         Location.locationname,
+#         func.count(Asset.id)
+#     ).join(Asset, Asset.location_id == Location.id, isouter=True)\
+#      .group_by(Location.locationname).all()
 
-    # Total count of all assets
-    total_count = db.query(func.count(Asset.id)).scalar()
+#     # Total count of all assets
+#     total_count = db.query(func.count(Asset.id)).scalar()
 
-    return {
-        "total_count": total_count,
-        "category_counts": {cat if cat else "Unknown": count for cat, count in category_counts},
-        "status_counts": {status if status else "Unknown": count for status, count in status_counts},
-        "location_counts": {loc if loc else "Unknown": count for loc, count in location_counts}
-    }
+#     return {
+#         "total_count": total_count,
+#         "category_counts": {cat if cat else "Unknown": count for cat, count in category_counts},
+#         "status_counts": {status if status else "Unknown": count for status, count in status_counts},
+#         "location_counts": {loc if loc else "Unknown": count for loc, count in location_counts}
+#     }
 
 # update asset details
 

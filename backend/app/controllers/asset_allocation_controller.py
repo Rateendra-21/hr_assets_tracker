@@ -21,14 +21,17 @@ from app.email_config import conf
 from sqlalchemy import or_
 from app.schemas.asset_allocation import ReturnAssetRequest, ReturnAssetResponse, ApproveReturnRequest, ApproveReturnResponse
 from app.email_templates.asset_assigned import build_asset_assignment_email
-
+from app.utils.jwt import create_access_token
+from app.utils.auth import get_current_user
 
 router = APIRouter(
     tags=["asset-allocations"]
 )
 
 
-
+# ---------------------------
+# Assign Asset 
+# ---------------------------
 @router.post("/assignasset", response_model=List[AssetAllocationResponse])
 async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db)):
     employee_id = payload.employee_id
@@ -75,10 +78,10 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
 
     db.commit()
 
-    # Format assigned_time string
+   
     formatted_time = assigned_time.strftime("%d-%b-%Y %I:%M %p")
 
-    # Create HTML table rows for assigned assets with assigned time
+    
     table_rows = ""
     for a in allocations:
         asset = a.asset
@@ -155,7 +158,6 @@ def get_assigned_assets(db: Session = Depends(get_db)):
         )
 
     return response
-
 
 
 
@@ -241,6 +243,9 @@ def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db)):
     return {"message": "Asset marked as E-WASTE successfully", "asset_id": asset.id, "status": asset.status}
 
 
+# ---------------------------
+# Allocation Asset
+# ---------------------------
 
 @router.patch("/allocation/action")
 def allocation_action(payload: AllocationActionRequest, db: Session = Depends(get_db)):
@@ -321,7 +326,6 @@ def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db)) -> 
     db.refresh(allocation)
 
     return {"message": "Return request submitted", "allocation_id": allocation.id}
-
 
 
 

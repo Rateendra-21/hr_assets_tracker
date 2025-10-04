@@ -115,15 +115,28 @@ const AddAsset = ({ onClose, onAssetSaved }) => {
       qr_id,
     };
 
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+      if (!token) {
+        toast.error("You are not logged in.");
+        setLoading(false);
+        return;
+      }
     try {
       const res = await fetch("http://127.0.0.1:8000/assets/assetregister", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json", "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
-
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(errorText || "Failed to save asset");

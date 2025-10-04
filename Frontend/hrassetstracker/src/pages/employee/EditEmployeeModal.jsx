@@ -132,6 +132,14 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
     e.preventDefault();
     if (!validate()) return;
 
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
+
     // Construct payload with only allowed fields
     const payload = {
       fullname: formData.fullName,
@@ -146,13 +154,20 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
     };
 
     try {
-      // Make PUT request with employee_id in the URL
       const url = `http://127.0.0.1:8000/employees/update/${formData.employeeId}`;
       const res = await fetch(url, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json","Authorization": `Bearer ${token}`, },
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (!res.ok) {
         const errorData = await res.json();

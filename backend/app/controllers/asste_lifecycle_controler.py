@@ -6,6 +6,8 @@ from app.models.asset_lifecycle_event import AssetLifecycleEvent
 from app.models.asset import Asset
 from app.schemas.asset_lifecycle_event import AssetLifecycleEventResponse, AssetResponse
 from pydantic import BaseModel
+from app.utils.jwt import create_access_token
+from app.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/asset-lifecycle",

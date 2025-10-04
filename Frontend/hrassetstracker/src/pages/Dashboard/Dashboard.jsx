@@ -59,12 +59,6 @@ const Dashboard = () => {
     <main className="flex-grow-1">
       {/* Header */}
    
-
-      {/* <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
-        <h4 className="fw-bold" style={{ marginBottom: "12px" }}>
-          Dashboard 
-        </h4> 
-      </div> */}
       
       <Header></Header>
 

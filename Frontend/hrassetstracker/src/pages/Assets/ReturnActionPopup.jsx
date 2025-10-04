@@ -19,20 +19,41 @@ const ReturnActionPopup = ({ asset, onClose, onUpdated }) => {
   const handleAction = async (action) => {
     if (!["accept", "decline"].includes(action)) return;
 
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    const userId = userData?.user?.id;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      return;
+    }
+
     const payload = {
       allocation_id: asset.allocation_id,
-      action: action,
+      action,
       user_id: userId,
       remarks: remarks || "",
     };
 
     try {
       setSaving(true);
+
       const res = await fetch("http://127.0.0.1:8000/return-action", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json();
@@ -45,9 +66,10 @@ const ReturnActionPopup = ({ asset, onClose, onUpdated }) => {
         } successfully!`
       );
 
-      if (onUpdated) await onUpdated(); // refresh table
-      onClose(); // close popup
+      if (onUpdated) await onUpdated(); 
+      onClose(); 
     } catch (err) {
+      console.error("Error handling return action:", err);
       toast.error(err.message || "Failed to process return request.");
     } finally {
       setSaving(false);

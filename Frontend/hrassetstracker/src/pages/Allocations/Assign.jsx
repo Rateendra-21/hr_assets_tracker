@@ -13,19 +13,51 @@ const Assign = () => {
   const [activeView, setActiveView] = useState("assigned"); 
 
   // Fetch all assets from backend
-  const fetchAssets = () => {
-    setLoading(true);
-    fetch("http://127.0.0.1:8000/assets/getAllAssets")
-      .then((res) => res.json())
-      .then((data) => {
-        const availableAssets = data.filter((a) => a.status === "AVAILABLE");
-        setAssets(availableAssets);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching assets:", err);
-        setLoading(false);
-      });
+  
+  const fetchAssets = async () => {
+  const userData = JSON.parse(sessionStorage.getItem("userData"));
+  const token = userData?.access_token;
+
+  if (!token) {
+    toast.error("You are not logged in.");
+    setLoading(false);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/assets/getAllAssets", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+         Authorization: `Bearer ${token}`,
+      },
+    });
+
+  
+
+    // Handle 401 first
+    if (res.status === 401) {
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.detail || "Failed to fetch assets");
+    }
+
+    setAssets(data);
+  } catch (err) {
+    console.error("Error fetching assets:", err);
+    toast.error(err.message || "Something went wrong while fetching assets.");
+  } finally {
+    setLoading(false);
+  }
   };
 
   useEffect(() => {

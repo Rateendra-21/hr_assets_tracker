@@ -17,8 +17,7 @@ import {
   ToolCase,
   ThumbsUp,
 } from "lucide-react";
-import Header from "../Common/Header"
-
+import Header from "../Common/Header";
 
 const TrackAsset = () => {
   const cameraInputRef = useRef(null);
@@ -30,15 +29,40 @@ const TrackAsset = () => {
   const fetchAssetData = async (qrId) => {
     if (!qrId) return;
 
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/asset-lifecycle/timeline/qr/${encodeURIComponent(
           qrId
-        )}`
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
+      if (response.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
       if (response.status === 404) {
-        // Show toast for no data
         toast.error("No data found for this QR code");
         setAssetData(null);
         setError("");
@@ -79,7 +103,6 @@ const TrackAsset = () => {
 
         if (code) fetchAssetData(code.data);
         else toast.error("QR code not detected in the image");
-        // else setError("QR code not detected in the image");
       };
     };
     reader.readAsDataURL(file);
@@ -101,103 +124,17 @@ const TrackAsset = () => {
     ALLOCATED: <CameraIcon size={20} />,
     ACCEPTED: <LaptopMinimalCheck size={20} />,
     REPAIR_REQUESTED: <Hammer size={20} />,
-    REPAIR_APPROVED : <CircleCheck size={20} />,
-    IN_REPAIR : <Wrench size={20}/>,
-    REPAIR_COMPLETED : <ThumbsUp size={20}/>,
+    REPAIR_APPROVED: <CircleCheck size={20} />,
+    IN_REPAIR: <Wrench size={20} />,
+    REPAIR_COMPLETED: <ThumbsUp size={20} />,
     REJECTED: <Trash2 size={20} />,
     RETURNED: <Undo2 size={20} />,
     EWASTE: <Shredder size={20} />,
   };
- 
 
-  
   return (
     <main className="flex-grow-1">
       <Header></Header>
-
-      {/* old upload data */}
-
-      {/* <div className="row g-3 mb-2 py-4 px-4">
-        <div className="col-12 col-md-6">
-          <div
-            onClick={() => cameraInputRef.current.click()}
-            className="d-flex flex-column align-items-center justify-content-center rounded bg-white text-center p-4"
-            style={{
-              border: "2px dotted black",
-              cursor: "pointer",
-              minHeight: "200px",
-            }}
-          >
-            <div
-              className="d-flex justify-content-center align-items-center"
-              style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                padding: "10px",
-                backgroundColor: "black",
-              }}
-            >
-              <CameraIcon size={30} className="text-light" />
-            </div>
-
-            <h5 className="mb-1 text-dark mt-2">Open Camera</h5>
-            <small className="text-muted">
-              Take photo using your device camera
-            </small>
-
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleCameraUpload}
-              style={{ display: "none" }}
-            />
-          </div>
-        </div>
-
-      
-        <div className="col-12 col-md-6">
-          <div
-            onClick={() => uploadInputRef.current.click()}
-            className="d-flex flex-column align-items-center justify-content-center rounded bg-white text-center p-4"
-            style={{
-              border: "2px dotted black",
-              cursor: "pointer",
-              minHeight: "200px",
-            }}
-          >
-            <div
-              className="d-flex justify-content-center align-items-center"
-              style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                padding: "10px",
-                backgroundColor: "black",
-              }}
-            >
-              <UploadIcon size={30} className="text-light" />
-            </div>
-
-            <h5 className="mb-1 text-dark mt-2">Upload File</h5>
-            <small className="text-muted">
-              Select image from device storage
-            </small>
-
-            
-            <input
-              ref={uploadInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              style={{ display: "none" }}
-            />
-          </div>
-        </div>
-      </div> */}
-
       <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
         {/* Left Section */}
         <div className="d-flex flex-column mb-2 mb-md-0">
@@ -251,7 +188,7 @@ const TrackAsset = () => {
         </div>
       </div>
 
-      {assetData && !error && (
+      {/* {assetData && !error && (
         <div
           className="py-4 bg-light px-3 rounded shadow-sm mx-4 mt-4 text-light"
           style={{ maxHeight: 400, overflowY: "auto" }}
@@ -284,14 +221,106 @@ const TrackAsset = () => {
             ))}
           </div>
         </div>
+      )} */}
+
+      {assetData && !error ? (
+        <div
+          className="p-4 bg-white rounded shadow mx-4 mt-4"
+          style={{ maxHeight: 400, overflowY: "auto" }}
+        >
+          <h5 className="mb-4 text-gradient fw-bold letter-spacing-1">
+            Asset: {assetData.asset.asset_name}
+          </h5>
+          <div className="position-relative ps-3">
+            <div
+              className="timeline-connector position-absolute"
+              style={{
+                left: 11, // aligns with dot
+                top: 0,
+                bottom: 0,
+                width: 4,
+                background:
+                  "linear-gradient(to bottom, #6bc900ff 0%, #48ff7fff 100%)",
+                borderRadius: 2,
+                zIndex: 0,
+              }}
+            />
+            {assetData.events && assetData.events.length ? (
+              assetData.events.map((event) => (
+                <div key={event.id} className="d-flex mb-4 position-relative">
+                  <span
+                    className="timeline-dot"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      background:
+                        event.event_type === "ASSIGNED"
+                          ? "#51cf66"
+                          : event.event_type === "REPAIR"
+                          ? "#ffd43b"
+                          : "#4895ef",
+                      border: "2px solid white",
+                      borderRadius: "50%",
+                      boxShadow: "0 0 8px rgba(34,139,230,0.12)",
+                      zIndex: 1,
+                      marginRight: 16,
+                    }}
+                  />
+                  <div className="flex-grow-1">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span
+                        className="fw-semibold"
+                        style={{
+                          color:
+                            event.event_type === "ASSIGNED"
+                              ? "#2f9e44"
+                              : event.event_type === "REPAIR"
+                              ? "#be8507"
+                              : "#1971c2",
+                          fontSize: "1.1rem",
+                          letterSpacing: 0.3,
+                        }}
+                      >
+                        {event.event_type}
+                      </span>
+                      <span className="small text-muted">
+                        {new Date(event.event_date).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="ms-2">
+                      <div className="mb-1">
+                        <strong>User:</strong> {event.user?.fullname || "N/A"}
+                      </div>
+                      <div
+                        className="text-secondary"
+                        style={{ fontSize: "0.95rem" }}
+                      >
+                        <strong>Remarks:</strong>{" "}
+                        {event.remarks || "No remarks"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted py-4">
+                No events for this asset.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="text-danger text-center p-4">
+          {error ? error : "No data found."}
+        </div>
       )}
 
       {/* {looks like timeline} */}
-      <div
+      {/* <div
         className="py-4 bg-light px-3 rounded shadow-sm mx-4 mt-4 text-light"
         style={{ maxHeight: 400, overflowY: "auto" }}
       >
-        {/* {assetData && !error && assetData.events.length > 0 && (
+        {assetData && !error && assetData.events.length > 0 && (
           <div
             style={{
               position: "relative",
@@ -339,8 +368,9 @@ const TrackAsset = () => {
               ))}
             </div>
           </div>
-        )} */}
-      </div>
+        )}
+      </div> */}
+
       {error && !assetData && (
         <span
           className="text-danger fw-medium mx-4"

@@ -18,62 +18,77 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
   // Save remarks and mark as E-Waste
 
   const handleSave = async () => {
-    if (!remarks.trim()) {
-      toast.error("Remarks cannot be empty.");
-      return;
-    }
-    if (remarks.startsWith(" ")) {
-      toast.error("Remarks cannot start with a space.");
-      return;
-    }
+  if (!remarks.trim()) {
+    toast.error("Remarks cannot be empty.");
+    return;
+  }
 
-    try {
-      setSaving(true);
+  if (remarks.startsWith(" ")) {
+    toast.error("Remarks cannot start with a space.");
+    return;
+  }
 
-      const user_id = JSON.parse(sessionStorage.getItem("userData"))?.user?.id
-      // Create payload object
-      const payload = {
-        asset_id: asset.id,
-        user_id: user_id,
-        remarks: remarks,
-      };
+  try {
+    setSaving(true);
 
-      // Log payload to console
-      console.log("Payload being sent to API:", payload);
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    const user_id = userData?.user?.id;
 
-      const res = await fetch(
-        `http://127.0.0.1:8000/mark-ewaste`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || "Failed to update asset.");
-      }
-
-      toast.success("Asset marked as E-Waste successfully!");
-
-      if (onUpdated) onUpdated();
-      onClose();
-    } catch (err) {
-      console.error(err);
-      if (err.message && err.message.includes("currently assigned")) {
-        toast.error(
-          "Cannot mark as e-waste: Asset is currently assigned to an employee. Please return the asset first."
-        );
-      } else {
-        toast.error(err.message || "Failed to mark asset as E-Waste.");
-      }
-    } finally {
+    if (!token) {
+      toast.error("You are not logged in.");
       setSaving(false);
+      return;
     }
-  };
+
+    const payload = {
+      asset_id: asset.id,
+      user_id,
+      remarks,
+    };
+
+    console.log("Payload being sent to API:", payload);
+
+    const res = await fetch(`http://127.0.0.1:8000/mark-ewaste`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.status === 401) {
+      toast.error("Session expired. Please login again.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || "Failed to update asset.");
+    }
+
+    toast.success("Asset marked as E-Waste successfully!");
+
+    if (onUpdated) onUpdated();
+    onClose();
+  } catch (err) {
+    console.error("Error marking as e-waste:", err);
+    if (err.message?.includes("currently assigned")) {
+      toast.error(
+        "Cannot mark as e-waste: Asset is currently assigned to an employee. Please return the asset first."
+      );
+    } else {
+      toast.error(err.message || "Failed to mark asset as E-Waste.");
+    }
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   return (
     <div

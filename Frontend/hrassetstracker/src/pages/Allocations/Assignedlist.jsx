@@ -11,16 +11,48 @@ const AssignedList = ({ refreshAssets }) => {
 
   const fetchAssignedAssets = async () => {
     setLoading(true);
+
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/assigned");
+      const response = await fetch("http://127.0.0.1:8000/assigned", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to fetch assigned assets.");
+      }
+
       const data = await response.json();
       const assignedOnly = data.filter(
         (asset) =>
           asset.status === "ASSIGNED" || asset.status === "RETURN_PENDING"
       );
+
       setAssignedAssets(assignedOnly);
     } catch (error) {
       console.error("Error fetching assigned assets:", error);
+      toast.error(error.message || "Failed to load assigned assets.");
     } finally {
       setLoading(false);
     }
@@ -30,7 +62,6 @@ const AssignedList = ({ refreshAssets }) => {
     fetchAssignedAssets();
   }, []);
 
-  
   const handleAssetReturned = async () => {
     setShowReturnModal(false);
     setSelectedAsset(null);

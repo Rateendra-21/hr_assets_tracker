@@ -14,41 +14,37 @@ from fastapi import HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from pydantic import BaseModel
+from app.utils.jwt import create_access_token
+# from app.utils.auth import get_current_user
 
 router = APIRouter()
-
 
 
 # login API
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    # Fetch user from DB
-    user = db.query(User).filter(User.username == request.username).first()
+    user = db.query(User).filter(User.username.ilike(request.username)).first()
+    
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
-        )
-
-    # Verify hashed password
+        print("No user found for:", request.username)
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    print("User found:", user.username)
+    print("Request password:", request.password)
+    print("DB hash:", user.password)
+    
     if not pwd_context.verify(request.password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
-        )
-
-    # Check if user is active
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive"
-        )
-
-    # Return user data
+        print("Password verification failed")
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    token = create_access_token(user_id=user.id, role=user.role)
     user_response = UserResponse.from_orm(user)
-    return LoginResponse(user=user_response)
+    
+    return LoginResponse(user=user_response, access_token=token, token_type="bearer")
+
 
 
 # Create a new admin user API with hased password
@@ -125,17 +121,15 @@ async def create_admin(request: AdminCreateRequest, db: Session = Depends(get_db
 
     return response_data
 
-
 # get the admin data 
 @router.get("/admin/admindata", response_model=List[UserResponse])
 def get_admin_data(db: Session = Depends(get_db)):
     admins = db.query(User).filter(User.role == "ADMIN").all()
     return admins
 
-
 #deactivate admin user
 @router.patch("/admin/deactivate/{employee_id}")
-def deactivate_admin(employee_id: str, db: Session = Depends(get_db)):
+def deactivate_admin(employee_id: str, db: Session = Depends(get_db) ):
     admin = db.query(User).filter(User.employee_id == employee_id, User.role == "ADMIN").first()
 
     if not admin:
@@ -159,9 +153,6 @@ def activate_admin(employee_id: str, db: Session = Depends(get_db)):
     admin.is_active = True
     db.commit()
     return {"message": "Admin activated successfully"}
-
-
-
 
 
 #Change password

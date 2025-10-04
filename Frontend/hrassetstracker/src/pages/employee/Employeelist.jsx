@@ -76,18 +76,34 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
   };
 
   const handleDeactivateSubmit = async (employeeId, reason) => {
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
     try {
       const response = await fetch(
         "http://127.0.0.1:8000/employees/deactivate",
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" , "Authorization": `Bearer ${token}`, },
           body: JSON.stringify({
             employee_id: employeeId.toString(),
             remarks: reason,
           }),
         }
       );
+
+       if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+      
 
       if (!response.ok) {
         const errData = await response.json();
@@ -108,16 +124,32 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
   };
 
   const handleActivateClick = async (emp) => {
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
     try {
       const response = await fetch("http://127.0.0.1:8000/employees/activate", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           employee_id: emp.employee_id,
         }),
       });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (!response.ok) {
         const errData = await response.json();
@@ -128,7 +160,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
       console.log("Activation success:", data);
       toast.success(data.message || "Employee activated successfully");
 
-      // ✅ Re-fetch the employee list
+ 
       refreshList();
     } catch (error) {
       console.error("Error activating employee:", error);

@@ -27,6 +27,14 @@ const ApproveRepairPopup = ({
       return;
     }
 
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = new URLSearchParams();
@@ -37,15 +45,29 @@ const ApproveRepairPopup = ({
         `http://127.0.0.1:8000/repair-requests/approve/${requestId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: formData.toString(),
         }
       );
 
-      if (!res.ok) throw new Error("Failed to approve repair request");
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to approve repair request");
+      }
 
       toast.success("Repair request approved successfully!");
-      onApproved();
+      onApproved?.(); // optional chaining to avoid runtime errors
       onClose();
       setVendorName(""); // clear input
     } catch (error) {

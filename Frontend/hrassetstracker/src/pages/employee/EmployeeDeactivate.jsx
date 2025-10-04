@@ -6,7 +6,6 @@ const EmployeeDeactivate = ({ employee, onClose, onSubmit }) => {
   const [error, setError] = useState("");
 
   const handleSubmit = async () => {
-    // Validation
     if (!reason.trim()) {
       setError("Reason cannot be empty.");
       return;

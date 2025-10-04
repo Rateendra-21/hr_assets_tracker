@@ -81,34 +81,55 @@ const EditAsset = ({ asset, onClose, onSave }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setLoading(true);
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/assets/updateasset/${asset.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+  setLoading(true);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to update asset");
-      }
+  try {
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
 
-      toast.success("Asset updated successfully!");
-      
-      const updatedAsset = await response.json();
-      onSave(updatedAsset);
-      onClose();
-    } catch (err) {
-      console.error("Update failed:", err);
-      alert(err.message);
-    } finally {
+    if (!token) {
+      toast.error("You are not logged in.");
       setLoading(false);
+      return;
     }
-  };
+
+    const response = await fetch(`http://127.0.0.1:8000/assets/updateasset/${asset.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (response.status === 401) {
+      toast.error("Session expired. Please login again.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to update asset");
+    }
+
+    const updatedAsset = await response.json();
+    toast.success("Asset updated successfully!");
+    onSave(updatedAsset);
+    onClose();
+  } catch (err) {
+    console.error("Update failed:", err);
+    toast.error(err.message || "Something went wrong while updating asset.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const renderLabel = (label, required = false) => (
     <label className="form-label">

@@ -87,6 +87,14 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
     if (!validate()) return;
     setLoading(true);
     try {
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+      if (!token) {
+        toast.error("You are not logged in.");
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         fullname: formData.fullName,
         mobile_no: formData.mobileNumber,
@@ -103,9 +111,17 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
       const url = "http://127.0.0.1:8000/createadmin";
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json","Authorization": `Bearer ${token}`, },
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (!res.ok) {
         const errorData = await res.json();

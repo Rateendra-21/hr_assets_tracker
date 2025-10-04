@@ -18,6 +18,7 @@ import EditAsset from "./EditAsset";
 import EwasteAsset from "./EwasteAsset";
 import RepairAsset from "./RepairAsset";
 import ReturnAsset from "./ReturnAsset";
+import { toast } from "react-hot-toast";
 
 const AssetList = ({ reloadAssets }) => {
   const [assets, setAssets] = useState([]);
@@ -63,14 +64,31 @@ const AssetList = ({ reloadAssets }) => {
 
   const handleUpdateAsset = async (updatedAsset) => {
     try {
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+      if (!token) {
+        toast.error("You are not logged in.");
+        setLoading(false);
+        return;
+      }
       const res = await fetch(
         `http://127.0.0.1:8000/assets/update/${updatedAsset.id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(updatedAsset),
         }
       );
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
       const data = await res.json();
       setAssets((prev) => prev.map((a) => (a.id === data.id ? data : a)));
       handleCloseEdit();
@@ -79,18 +97,48 @@ const AssetList = ({ reloadAssets }) => {
     }
   };
 
-  const fetchAssets = () => {
+  const fetchAssets = async () => {
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    fetch("http://127.0.0.1:8000/assets/getAllAssets")
-      .then((res) => res.json())
-      .then((data) => {
-        setAssets(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching assets:", err);
-        setLoading(false);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/assets/getAllAssets", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+           Authorization: `Bearer ${token}`,
+        },
       });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to fetch assets");
+      }
+
+      const data = await res.json();
+      setAssets(data); 
+    } catch (err) {
+      console.error("Error fetching assets:", err);
+      toast.error(err.message || "Something went wrong while fetching assets.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Fetch assets on mount or when reloadAssets changes

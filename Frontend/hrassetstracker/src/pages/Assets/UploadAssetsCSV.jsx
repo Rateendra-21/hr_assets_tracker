@@ -55,13 +55,32 @@ const handleCSVUpload = async (e) => {
 
     const formData = new FormData();
     formData.append("file", file);
-
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+      if (!token) {
+        toast.error("You are not logged in.");
+        setLoading(false);
+        return;
+      }
     try {
       setLoading(true);
       const res = await fetch(
         `http://127.0.0.1:8000/assets/assetregister/csv`,
-        { method: "POST", body: formData }
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (!res.ok) {
         const errData = await res.json();

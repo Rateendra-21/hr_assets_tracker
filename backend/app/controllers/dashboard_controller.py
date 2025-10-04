@@ -8,6 +8,8 @@ from app.models.repair_requests import RepairRequest
 from app.schemas.dashboard import DashboardCounts
 from sqlalchemy import func
 from app.models.asset_lifecycle_event import AssetLifecycleEvent
+from app.utils.jwt import create_access_token
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 

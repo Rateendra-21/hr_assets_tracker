@@ -3,7 +3,6 @@ import { Trash2, User, LayoutGrid, Table, UserCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
 import AddAdminModal from "./AddAdminModal";
 
-
 const AdminList = forwardRef((props, ref) => {
   const [admins, setAdmins] = useState([]);
   const [filteredAdmins, setFilteredAdmins] = useState([]);
@@ -14,7 +13,25 @@ const AdminList = forwardRef((props, ref) => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://127.0.0.1:8000/admin/admindata");
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+      
+      const res = await fetch("http://127.0.0.1:8000/admin/admindata", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, 
+        },
+      });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
       if (!res.ok) throw new Error("Failed to fetch admin data");
       const data = await res.json();
       const admins = data.filter((user) => user.role === "ADMIN");
@@ -53,28 +70,30 @@ const AdminList = forwardRef((props, ref) => {
   }, [search, admins]);
 
   const handleToggleAdmin = async (employee_id, isActive) => {
-  const action = isActive ? "deactivate" : "activate";
+    const action = isActive ? "deactivate" : "activate";
 
-  if (!window.confirm(`Are you sure you want to ${action} this admin?`)) return;
+    if (!window.confirm(`Are you sure you want to ${action} this admin?`))
+      return;
+     const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+    const url = `http://127.0.0.1:8000/admin/${action}/${employee_id}`;
 
-  const url = `http://127.0.0.1:8000/admin/${action}/${employee_id}`;
+    try {
 
-  try {
-    const response = await fetch(url, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!response.ok) throw new Error(`Failed to ${action} admin`);
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" , Authorization: `Bearer ${token}`, },
+      });
+      if (!response.ok) throw new Error(`Failed to ${action} admin`);
 
-    const data = await response.json();
-    toast.success(data.message);
-    fetchAdmins();
-  } catch (error) {
-    console.error(error);
-    alert(`Something went wrong while trying to ${action} the admin.`);
-  }
-};
-
+      const data = await response.json();
+      toast.success(data.message);
+      fetchAdmins();
+    } catch (error) {
+      console.error(error);
+      alert(`Something went wrong while trying to ${action} the admin.`);
+    }
+  };
 
   if (loading) return <p>Loading admin data...</p>;
 
@@ -90,7 +109,6 @@ const AdminList = forwardRef((props, ref) => {
           padding: "8px 12px",
         }}
       >
-     
         <div className="col-12 col-md-11 py-2">
           <div className="position-relative">
             <User
@@ -109,12 +127,10 @@ const AdminList = forwardRef((props, ref) => {
               onChange={(e) => setSearch(e.target.value)}
               className="form-control ps-5 form-control-sm mb-2"
               placeholder="Search admins..."
-          
             />
           </div>
         </div>
 
-       
         <div className="col-12 col-md-1 py-2  d-flex justify-content-md-end gap-2">
           <button
             className="btn btn-dark btn-sm mb-2"
@@ -217,7 +233,7 @@ const AdminList = forwardRef((props, ref) => {
       </div>
 
       {/* Table view  */}
-      <div className="shadow rounded" >
+      <div className="shadow rounded">
         {viewMode === "table" && (
           <div className="container-fluid p-0">
             {filteredAdmins.length === 0 ? (

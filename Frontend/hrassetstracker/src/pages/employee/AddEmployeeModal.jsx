@@ -138,11 +138,19 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
       return;
     }
     setLoading(true);
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
     try {
       const form = new FormData();
       form.append("file", file);
       const res = await fetch("http://127.0.0.1:8000/employees/upload-csv", {
         method: "POST",
+        headers: { "Authorization": `Bearer ${token}`,},
         body: form,
       });
       const data = await res.json();
@@ -198,6 +206,13 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
     try {
       const payload = {
         fullname: formData.fullName,
@@ -216,9 +231,17 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
       const url = "http://127.0.0.1:8000/employees/createemployee";
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`,},
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (!res.ok) {
         const errorData = await res.json();
