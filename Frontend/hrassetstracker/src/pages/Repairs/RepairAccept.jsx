@@ -37,15 +37,17 @@ const RepairAccept = ({ requestData, onClose, onApproved }) => {
     setLoading(true);
     try {
       const formData = new URLSearchParams();
-      formData.append("user_id", userId);
-      formData.append("remarks", remarks);
+      formData.append("user_id", String(userId)); // always send as string
+      formData.append("remarks", remarks.trim());
+
+      console.log("Payload being sent:", formData.toString());
 
       const res = await fetch(
         `http://127.0.0.1:8000/repair-requests/assets/mark-repaired/${assetId}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
             Authorization: `Bearer ${token}`,
           },
           body: formData.toString(),
@@ -68,7 +70,7 @@ const RepairAccept = ({ requestData, onClose, onApproved }) => {
       toast.success("Asset marked as repaired successfully!");
       onApproved?.();
       onClose();
-      setRemarks(""); 
+      setRemarks("");
     } catch (error) {
       console.error("Error:", error);
       toast.error(error.message || "Error completing repair request");

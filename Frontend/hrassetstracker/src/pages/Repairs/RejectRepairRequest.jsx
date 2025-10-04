@@ -33,7 +33,7 @@ const RejectRepairRequest = ({
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
+             "Content-Type": "application/x-www-form-urlencoded",
             Authorization: `Bearer ${token}`,
           },
           body: formData.toString(),

@@ -15,10 +15,16 @@ import {
   Shredder,
   Package,
   Check,
+  CheckCircle,
   AlertCircle,
   CircleCheck,
   ToolCase,
+  ClipboardCheck,
+  CheckCircle2,
   ThumbsUp,
+  XCircle,
+  Clock,
+  ThumbsDown
 } from "lucide-react";
 import Header from "../Common/Header";
 
@@ -245,7 +251,7 @@ const TrackAsset = () => {
                 bottom: 0,
                 width: 4,
                 background:
-                  "linear-gradient(to bottom, #6bc900ff 0%, #48ff7fff 100%)",
+                  "linear-gradient(to bottom, #303030ff 0%, #c5c5c5ff 100%)",
                 borderRadius: 2,
                 zIndex: 1,
               }}
@@ -260,48 +266,6 @@ const TrackAsset = () => {
 
                 let IconComponent;
                 let bgColor;
-
-                // switch (event.event_type) {
-                //   case "ALLOCATED":
-                //     IconComponent = CircleCheck;
-                //     bgColor = "#51cf66";
-                //     break;
-
-                //   case "ACCEPTED":
-                //     IconComponent = ThumbsUp;
-                //     bgColor = "#ffd43b";
-                //     break;
-
-                //   case "REPAIR":
-                //     IconComponent = Wrench;
-                //     bgColor = "#fa5252";
-                //     break;
-
-                //   case "ASSIGNED":
-                //     IconComponent = User2;
-                //     bgColor = "#339af0";
-                //     break;
-
-                //   case "RETURNED":
-                //     IconComponent = Undo2;
-                //     bgColor = "#868e96";
-                //     break;
-
-                //   case "EWASTE":
-                //     IconComponent = Trash2;
-                //     bgColor = "#f03e3e";
-                //     break;
-
-                //   case "INSPECTED":
-                //     IconComponent = LaptopMinimalCheck;
-                //     bgColor = "#74b816";
-                //     break;
-
-                //   default:
-                //     IconComponent = WrapText;
-                //     bgColor = "#4895ef";
-                //     break;
-                // }
 
                 switch (event.event_type) {
                   case "AVAILABLE":
@@ -371,7 +335,7 @@ const TrackAsset = () => {
 
                   case "EWASTE":
                     IconComponent = Trash2;
-                    bgColor = "#6c757d"; // gray
+                    bgColor = "#d81919ff"; // gray
                     break;
 
                   case "ACCEPTED":
