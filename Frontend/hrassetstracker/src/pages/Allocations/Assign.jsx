@@ -35,9 +35,7 @@ const Assign = () => {
       },
     });
 
-  
 
-    // Handle 401 first
     if (res.status === 401) {
       sessionStorage.removeItem("userData");
       localStorage.clear();
@@ -46,12 +44,12 @@ const Assign = () => {
     }
 
     const data = await res.json();
-
+    console.log("Data",data)
     if (!res.ok) {
       throw new Error(data.detail || "Failed to fetch assets");
     }
-
-    setAssets(data);
+    
+    setAssets(data.filter((asset) => asset.status === "AVAILABLE"));
   } catch (err) {
     console.error("Error fetching assets:", err);
     toast.error(err.message || "Something went wrong while fetching assets.");

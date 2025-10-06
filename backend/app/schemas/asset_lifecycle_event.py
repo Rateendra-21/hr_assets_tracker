@@ -29,7 +29,7 @@ class AssetLifecycleEventResponse(BaseModel):
     created_at: Optional[datetime]
     vendor_name: Optional[str]
 
-    asset: Optional[AssetResponse]
+    # asset: Optional[AssetResponse]
     user: Optional[UserResponse]
 
     class Config:

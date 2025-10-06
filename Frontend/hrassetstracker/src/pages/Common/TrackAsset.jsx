@@ -5,42 +5,155 @@ import {
   CameraIcon,
   Wrench,
   Trash2,
-  User2,
   Undo2,
   WrapText,
   QrCodeIcon,
   Upload,
   LaptopMinimalCheck,
-  Hammer,
-  Shredder,
-  Package,
   Check,
   CheckCircle,
   AlertCircle,
   CircleCheck,
-  ToolCase,
   ClipboardCheck,
   CheckCircle2,
   ThumbsUp,
   XCircle,
   Clock,
-  ThumbsDown
+  ThumbsDown,
+  Package,
 } from "lucide-react";
 import Header from "../Common/Header";
+
+const eventTypeIconMap = {
+  REGISTERED: { Icon: LaptopMinimalCheck, color: "#2fad2fff" },
+  AVAILABLE: { Icon: CircleCheck, color: "#28a745" },
+  ALLOCATED: { Icon: Package, color: "#339af0" },
+  ACCEPTED: { Icon: Check, color: "#198754" },
+  DECLINED: { Icon: XCircle, color: "#dc3545" },
+  REPAIR_REQUESTED: { Icon: AlertCircle, color: "#fd7e14" },
+  REPAIR_APPROVED: { Icon: CheckCircle2, color: "#0d6efd" },
+  IN_REPAIR: { Icon: Wrench, color: "#ffc107" },
+  REPAIR_COMPLETED: { Icon: ClipboardCheck, color: "#20c997" },
+  RETURN_PENDING: { Icon: Clock, color: "#fd7e14" },
+  RETURN_DECLINED: { Icon: ThumbsDown, color: "#dc3545" },
+  RETURN_ACCEPTED: { Icon: ThumbsUp, color: "#198754" },
+  RETURNED: { Icon: Undo2, color: "#0dcaf0" },
+  EWASTE: { Icon: Trash2, color: "#d81919ff" },
+  DEFAULT: { Icon: WrapText, color: "#4895ef" },
+};
+
+const userLabelMap = {
+  REGISTERED: "Registered by",
+  ALLOCATED: "Allocated by",
+  ACCEPTED: "Accepted by",
+  DECLINED: "Declined by",
+  REPAIR_REQUESTED: "Requested by",
+  REPAIR_APPROVED: "Approved by",
+  IN_REPAIR: "Sent to repair by",
+  REPAIR_COMPLETED: "Completed by",
+  RETURN_PENDING: "Requested return by",
+  RETURN_DECLINED: "Return declined by",
+  RETURN_ACCEPTED: "Return accepted by",
+  EWASTE: "Marked Ewaste by",
+};
+
+const eventLabelMap = {
+  REGISTERED: "Asset Registered",
+  ALLOCATED: "Asset Allocated",
+  ACCEPTED: "Asset Accepted",
+  DECLINED: "Asset Declined",
+  REPAIR_REQUESTED: "Repair Requested",
+  REPAIR_APPROVED: "Repair Approved",
+  IN_REPAIR: "In Repair",
+  REPAIR_COMPLETED: "Repair Completed",
+  RETURN_PENDING: "Return Request - Pending",
+  RETURN_DECLINED: "Return Rejected",
+  RETURN_ACCEPTED: "Return Accepted",
+  RETURNED: "Returned",
+  EWASTE: "Marked as Ewaste",
+};
+
+const getUserLabel = (eventType) => userLabelMap[eventType] || "Performed by";
+const getEventLabel = (eventType) => eventLabelMap[eventType] || eventType;
+
+
+const convertEventsToCSV = (groupedEvents) => {
+  const headers = [
+    "Allocation Cycle",
+    "Event",
+    "Date & Time",
+    "User",
+    "Role",
+    "Remarks",
+  ];
+  const rows = [];
+
+  groupedEvents.forEach((group, index) => {
+    const cycleNum = `Allocation Cycle ${index + 1}`;
+    group.forEach((event) => {
+      rows.push([
+        `"${cycleNum}"`,
+        `"${getEventLabel(event.event_type)}"`,
+        `"${new Date(event.event_date).toLocaleString()}"`,
+        `"${event.user?.fullname || "N/A"}"`,
+        `"${event.user?.role || "N/A"}"`,
+        `"${event.remarks ? event.remarks.replace(/"/g, '""') : "No remarks"}"`,
+      ]);
+    });
+  });
+
+  return [headers, ...rows].map((r) => r.join(",")).join("\r\n");
+};
+
+const downloadCSV = (csv, filename) => {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+};
+
+const groupByAllocationCycles = (events) => {
+  if (!events?.length) return [];
+
+  const registeredEvent = events.find((e) => e.event_type === "REGISTERED");
+  if (!registeredEvent) return []; 
+
+  const groups = [];
+  let currentGroup = [];
+
+ 
+  let hasAllocated = false;
+
+  events.forEach((event) => {
+    if (event.event_type === "REGISTERED") return; 
+    if (event.event_type === "ALLOCATED") {
+
+      if (currentGroup.length) groups.push(currentGroup);
+      currentGroup = [registeredEvent, event];
+      hasAllocated = true;
+    } else {
+      currentGroup.push(event);
+    }
+  });
+
+  if (!hasAllocated) groups.push([registeredEvent]);
+  else if (currentGroup.length) groups.push(currentGroup);
+
+  return groups;
+};
 
 const TrackAsset = () => {
   const cameraInputRef = useRef(null);
   const uploadInputRef = useRef(null);
-
   const [assetData, setAssetData] = useState(null);
   const [error, setError] = useState("");
+  const [selectedUser, setSelectedUser] = useState("All");
 
   const fetchAssetData = async (qrId) => {
     if (!qrId) return;
-
     const userData = JSON.parse(sessionStorage.getItem("userData"));
     const token = userData?.access_token;
-
     if (!token) {
       toast.error("You are not logged in.");
       sessionStorage.removeItem("userData");
@@ -48,374 +161,168 @@ const TrackAsset = () => {
       window.location.href = "/login";
       return;
     }
-
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/asset-lifecycle/timeline/qr/${encodeURIComponent(
-          qrId
-        )}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const res = await fetch(
+        `http://127.0.0.1:8000/asset-lifecycle/timeline/qr/${encodeURIComponent(qrId)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.status === 401) {
-        toast.error("Session expired. Please login again.");
-        sessionStorage.removeItem("userData");
-        localStorage.clear();
-        window.location.href = "/login";
-        return;
-      }
-
-      if (response.status === 404) {
+      if (res.status === 404) {
         toast.error("No data found for this QR code");
         setAssetData(null);
-        setError("");
         return;
       }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch asset data");
-      }
-
-      const data = await response.json();
+      if (!res.ok) throw new Error();
+      const data = await res.json();
       setAssetData(data);
-      setError("");
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to fetch asset data");
       setAssetData(null);
-      setError("");
     }
   };
 
   const processImageFile = (file) => {
-    if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
       img.src = reader.result;
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, canvas.width, canvas.height);
-
-        if (code) fetchAssetData(code.data);
-        else toast.error("QR code not detected in the image");
+        const c = document.createElement("canvas");
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const code = jsQR(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height);
+        code ? fetchAssetData(code.data) : toast.error("QR code not detected");
       };
     };
     reader.readAsDataURL(file);
   };
 
-  const handleCameraUpload = (e) => processImageFile(e.target.files[0]);
-  const handleFileUpload = (e) => processImageFile(e.target.files[0]);
+  const handleDownloadReport = () => {
+    if (!assetData?.events?.length) return toast.error("No data to download");
+    const grouped = groupByAllocationCycles(assetData.events);
 
-  const steps = [
-    { label: "ALLOCATED" },
-    { label: "ACCEPTED" },
-    { label: "REPAIR_REQUESTED" },
-    { label: "REJECTED" },
-    { label: "RETURNED" },
-    { label: "EWASTE" },
-  ];
+    // Filter cycles by employee selection
+    const filteredGrouped = selectedUser === "All"
+      ? grouped
+      : grouped.filter((cycle) => cycle.some((e) => e.user?.fullname === selectedUser));
 
-  const iconMap = {
-    ALLOCATED: <CameraIcon size={20} />,
-    ACCEPTED: <LaptopMinimalCheck size={20} />,
-    REPAIR_REQUESTED: <Hammer size={20} />,
-    REPAIR_APPROVED: <CircleCheck size={20} />,
-    IN_REPAIR: <Wrench size={20} />,
-    REPAIR_COMPLETED: <ThumbsUp size={20} />,
-    REJECTED: <Trash2 size={20} />,
-    RETURNED: <Undo2 size={20} />,
-    EWASTE: <Shredder size={20} />,
+    const csv = convertEventsToCSV(filteredGrouped);
+    const name = `asset_${assetData.asset.asset_name.replace(/\s+/g, "_")}_report.csv`;
+    downloadCSV(csv, name);
   };
+
+  const employeeUsers =
+    assetData?.events
+      ?.map((e) => e.user)
+      .filter((u) => u?.role?.toLowerCase() === "employee")
+      .filter((v, i, a) => a.findIndex((x) => x.fullname === v.fullname) === i)
+      .map((u) => u.fullname) || [];
+
+  const filteredCycles =
+    selectedUser === "All"
+      ? groupByAllocationCycles(assetData?.events)
+      : groupByAllocationCycles(assetData?.events).filter((cycle) =>
+          cycle.some((event) => event.user?.fullname === selectedUser)
+        );
 
   return (
     <main className="flex-grow-1">
-      <Header></Header>
-      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
-        {/* Left Section */}
-        <div className="d-flex flex-column mb-2 mb-md-0">
-          <h5 className="text-dark fw-bold mb-1">
-            {/* Optional icon */}
-            <QrCodeIcon className="me-2 mb-1" />
-            Track Assset
+      <Header />
+
+      {/* Header */}
+      <div className="d-flex mx-4 mt-3 flex-column flex-md-row align-items-start justify-content-between p-3 bg-light shadow-sm rounded">
+        <div>
+          <h5 className="fw-bold mb-1 text-dark">
+            <QrCodeIcon className="me-2 mb-1" /> Track Asset
           </h5>
-          <small className="text-muted">
-            Track your asset by scanning qr code
-          </small>
+          <small className="text-muted">Scan or upload a QR to view asset timeline</small>
         </div>
 
-        {/* Right Section */}
-
-        <div className="d-flex gap-2">
-          <button
-            className="btn btn-dark btn-sm d-flex align-items-center"
-            onClick={() => cameraInputRef.current.click()}
-          >
-            <CameraIcon size={16} className="me-2" />
-            Open Camera
+        <div className="d-flex gap-2 align-items-center">
+          <button className="btn btn-dark btn-sm d-flex align-items-center" onClick={() => cameraInputRef.current.click()}>
+            <CameraIcon size={16} className="me-2" /> Open Camera
           </button>
-
-          <button
-            className="btn btn-dark btn-sm d-flex align-items-center"
-            onClick={() => uploadInputRef.current.click()}
-          >
-            <Upload size={16} className="me-2" />
-            Upload File
+          <button className="btn btn-dark btn-sm d-flex align-items-center" onClick={() => uploadInputRef.current.click()}>
+            <Upload size={16} className="me-2" /> Upload File
           </button>
-
-          {/* Hidden camera input */}
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleCameraUpload}
-            style={{ display: "none" }}
-          />
-
-          {/* Hidden upload input */}
-          <input
-            ref={uploadInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileUpload}
-            style={{ display: "none" }}
-          />
+          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => processImageFile(e.target.files[0])} />
+          <input ref={uploadInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => processImageFile(e.target.files[0])} />
         </div>
       </div>
 
-     
-
-  
-      {/* ---------------------------------------------------------------------------- */}
-
-      {assetData && !error ? (
-        <div
-          className="p-4 bg-white rounded shadow mx-4 mt-4 custom-scroll"
-          style={{ maxHeight: 400, overflowY: "auto" }}
-        >
-          <h5 className="mb-4 text-gradient fw-bold letter-spacing-1">
-            Asset: {assetData.asset.asset_name}
-          </h5>
-          <div className="position-relative ps-3">
-            <div
-              className="timeline-connector position-absolute"
-              style={{
-                left: 32,
-                top: 0,
-                bottom: 0,
-                width: 4,
-                background:
-                  "linear-gradient(to bottom, #303030ff 0%, #c5c5c5ff 100%)",
-                borderRadius: 2,
-                zIndex: 1,
-              }}
-            />
-            {assetData.events && assetData.events.length ? (
-              assetData.events.map((event) => {
-                const iconProps = {
-                  size: 16,
-                  color: "white",
-                  strokeWidth: 2,
-                };
-
-                let IconComponent;
-                let bgColor;
-
-                switch (event.event_type) {
-                  case "AVAILABLE":
-                    IconComponent = CircleCheck;
-                    bgColor = "#28a745"; // green
-                    break;
-
-                  case "ASSIGNED":
-                    IconComponent = User2;
-                    bgColor = "#339af0"; // blue
-                    break;
-
-                  case "ALLOCATED":
-                    IconComponent = Package;
-                    bgColor = "#339af0"; // blue
-                    break;
-
-                  case "IN_REPAIR":
-                    IconComponent = Wrench;
-                    bgColor = "#ffc107"; // yellow
-                    break;
-
-                  case "REPAIRED":
-                    IconComponent = CheckCircle;
-                    bgColor = "#20c997"; // teal
-                    break;
-
-                  case "RETURN_PENDING":
-                    IconComponent = Clock;
-                    bgColor = "#fd7e14"; // orange
-                    break;
-
-                  case "RETURN_ACCEPTED":
-                    IconComponent = ThumbsUp;
-                    bgColor = "#198754"; // dark green
-                    break;
-
-                  case "RETURN_DECLINED":
-                    IconComponent = ThumbsDown;
-                    bgColor = "#dc3545"; // red
-                    break;
-
-                  case "REGISTERED":
-                    IconComponent = PlusCircle;
-                    bgColor = "#6c757d"; // gray
-                    break;
-
-                  case "REPAIR_REQUESTED":
-                    IconComponent = AlertCircle;
-                    bgColor = "#fd7e14"; // orange
-                    break;
-
-                  case "REPAIR_APPROVED":
-                    IconComponent = CheckCircle2;
-                    bgColor = "#0d6efd"; // blue
-                    break;
-
-                  case "REPAIR_COMPLETED":
-                    IconComponent = ClipboardCheck;
-                    bgColor = "#20c997"; // teal
-                    break;
-
-                  case "RETURNED":
-                    IconComponent = Undo2;
-                    bgColor = "#0dcaf0"; // cyan
-                    break;
-
-                  case "EWASTE":
-                    IconComponent = Trash2;
-                    bgColor = "#d81919ff"; // gray
-                    break;
-
-                  case "ACCEPTED":
-                    IconComponent = Check;
-                    bgColor = "#198754"; // dark green
-                    break;
-
-                  case "DECLINED":
-                    IconComponent = X;
-                    bgColor = "#dc3545"; // red
-                    break;
-
-                  case "REJECTED":
-                    IconComponent = XCircle;
-                    bgColor = "#dc3545"; // red
-                    break;
-
-                  case "PENDING":
-                    IconComponent = Clock;
-                    bgColor = "#ffc107"; // yellow
-                    break;
-
-                  case "APPROVED":
-                    IconComponent = CheckCircle2;
-                    bgColor = "#0d6efd"; // blue
-                    break;
-
-                  case "IN_PROGRESS":
-                    IconComponent = Loader;
-                    bgColor = "#0d6efd"; // blue
-                    break;
-
-                  case "COMPLETED":
-                    IconComponent = CheckSquare;
-                    bgColor = "#20c997"; // teal
-                    break;
-
-                  default:
-                    IconComponent = WrapText;
-                    bgColor = "#4895ef"; // fallback
-                    break;
-                }
-
-                return (
-                  <div key={event.id} className="d-flex mb-4 position-relative">
-                    <span
-                      className="timeline-dot d-flex justify-content-center align-items-center shadow"
-                      style={{
-                        width: 36,
-                        height: 36,
-                        backgroundColor: bgColor,
-                        // border: "2px solid black",
-                        borderRadius: "50%",
-                        // boxShadow: "0 0 8px rgba(34,139,230,0.12)",
-                        zIndex: 2,
-                        marginRight: 16,
-                      }}
-                    >
-                      <IconComponent {...iconProps} />
-                    </span>
-                    <div className="flex-grow-1">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span
-                          className="fw-semibold"
-                          style={{
-                            color: bgColor,
-                            fontSize: "1.1rem",
-                            letterSpacing: 0.3,
-                          }}
-                        >
-                          {event.event_type}
-                        </span>
-                        <span className="small text-muted">
-                          {new Date(event.event_date).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="ms-2">
-                        <div className="mb-1">
-                          <strong>User:</strong> {event.user?.fullname || "N/A"}
-                        </div>
-                        <div
-                          className="text-secondary"
-                          style={{ fontSize: "0.95rem" }}
-                        >
-                          <strong>Remarks:</strong>{" "}
-                          {event.remarks || "No remarks"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center text-muted py-4">
-                No events for this asset.
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="text-danger text-center p-4">
-          {error ? error : "No data found."}
+      {assetData?.events?.length > 0 && (
+        <div className="rounded border mx-4 mt-2 py-3 px-3 bg-light text-dark d-flex justify-content-between align-items-center">
+          {employeeUsers.length > 0 && (
+            <div className="d-flex align-items-center">
+              <label htmlFor="employeeFilter" className="me-2"><small>Filter by Employee:</small></label>
+              <select id="employeeFilter" className="form-select form-select-sm w-auto" value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)}>
+                <option value="All">All Employees</option>
+                {employeeUsers.map((user) => (<option key={user} value={user}>{user}</option>))}
+              </select>
+            </div>
+          )}
+          <button className="btn btn-primary btn-sm" onClick={handleDownloadReport}>Download Report</button>
         </div>
       )}
 
-       {/* ---------------------------------------------------------------------------- */}
+      {/* Timeline */}
+      {assetData && !error && (
+        <div className="p-4 bg-white rounded shadow mx-4 mt-3 custom-scroll" style={{ maxHeight: 360, overflowY: "auto" }}>
+          <h5 className="fw-bold mb-4 text-gradient">Asset: {assetData.asset.asset_name}</h5>
 
+          {filteredCycles.map((group, i) => (
+            <div key={i} className="position-relative mb-4">
+              <div className="text-primary fw-semibold position-absolute" style={{ right: 0, top: -30, fontSize: "0.9rem", background: "#fff", padding: "0 8px" }}>
+                Allocation Cycle {i + 1}
+              </div>
 
-    
-     
+              <div className="position-relative ps-3">
+                <div className="timeline-connector position-absolute animated-line" style={{ left: 32, top: 0, width: 4, zIndex: 1, borderRadius: 2 }} />
+                {group.map((event) => {
+                  const { Icon, color: bg } = eventTypeIconMap[event.event_type] || eventTypeIconMap.DEFAULT;
+                  return (
+                    <div key={event.id} className="d-flex mb-3 position-relative">
+                      <span className="timeline-dot d-flex justify-content-center align-items-center shadow" style={{ width: 36, height: 36, backgroundColor: bg, borderRadius: "50%", zIndex: 2, marginRight: 16 }}>
+                        <Icon size={16} color="white" strokeWidth={2} />
+                      </span>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="fw-semibold" style={{ color: bg }}>{getEventLabel(event.event_type)}</span>
+                          <span className="small text-muted">{new Date(event.event_date).toLocaleString()}</span>
+                        </div>
+                        <div className="ms-2">
+                          <div>
+                            <strong>{getUserLabel(event.event_type)}:</strong> {event.user?.fullname || "N/A"} <small className="text-muted">({event.user?.role || "N/A"})</small>
+                          </div>
+                          <div className="text-secondary" style={{ fontSize: "0.95rem" }}>
+                            <strong>Remarks:</strong> {event.remarks || "No remarks"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <hr style={{ borderTop: "2px dashed #ccc", margin: "10px 0" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        .animated-line {
+          background: linear-gradient(to bottom, #303030 0%, #c5c5c5 100%);
+          height: 0;
+          animation: growLine 2s forwards;
+        }
+        @keyframes growLine {
+          to { height: 100%; }
+        }
+      `}</style>
     </main>
   );
 };
+
 
 export default TrackAsset;

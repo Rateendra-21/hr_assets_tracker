@@ -72,7 +72,7 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
             asset_id=asset_id,
             event_type=AssetEventType.ALLOCATED,
             user_id=user_id,
-            remarks=f"Allocated to employee {employee_id}"
+            remarks=f"Allocated to employee"
         )
         db.add(event)
 
@@ -264,7 +264,7 @@ def allocation_action(payload: AllocationActionRequest, db: Session = Depends(ge
             asset_id=asset.id,
             event_type=AssetEventType.ACCEPTED,
             user_id=payload.user_id,
-            remarks=f"Asset assignment accepted by employee {allocation.employee_id}"
+            remarks=f"Asset assignment accepted by employee"
         )
 
     elif payload.action.lower() == "decline":
