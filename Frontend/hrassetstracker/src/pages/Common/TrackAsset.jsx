@@ -164,7 +164,8 @@ const TrackAsset = () => {
   const [assetData, setAssetData] = useState(null);
   const [error, setError] = useState("");
   const [selectedUser, setSelectedUser] = useState("All");
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  
   const fetchAssetData = async (qrId) => {
     if (!qrId) return;
     const userData = JSON.parse(sessionStorage.getItem("userData"));
@@ -178,7 +179,7 @@ const TrackAsset = () => {
     }
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/asset-lifecycle/timeline/qr/${encodeURIComponent(
+        `${baseUrl}/asset-lifecycle/timeline/qr/${encodeURIComponent(
           qrId
         )}`,
         { headers: { Authorization: `Bearer ${token}` } }

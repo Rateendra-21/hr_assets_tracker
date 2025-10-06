@@ -27,7 +27,6 @@ const AssetList = ({ reloadAssets }) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [statusFilterByCat, setStatusFilterByCat] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showQrPopup, setShowQrPopup] = useState(false);
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
@@ -35,7 +34,8 @@ const AssetList = ({ reloadAssets }) => {
   const [showEwastePopup, setShowEwastePopup] = useState(false);
   const [showRepairPopup, setShowRepairPopup] = useState(false);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
-
+  
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const handleQrClick = (asset) => {
     setSelectedAsset(asset);
     setShowQrPopup(true);
@@ -72,7 +72,7 @@ const AssetList = ({ reloadAssets }) => {
         return;
       }
       const res = await fetch(
-        `http://127.0.0.1:8000/assets/update/${updatedAsset.id}`,
+        `${baseUrl}/assets/update/${updatedAsset.id}`,
         {
           method: "PUT",
           headers: {
@@ -110,7 +110,7 @@ const AssetList = ({ reloadAssets }) => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/assets/getAllAssets", {
+      const res = await fetch(`${baseUrl}/assets/getAllAssets`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

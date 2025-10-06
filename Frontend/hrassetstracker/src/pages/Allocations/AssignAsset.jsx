@@ -7,7 +7,7 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   useEffect(() => {
     const fetchEmployees = async () => {
       setLoading(true);
@@ -21,18 +21,14 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
           return;
         }
 
-        const response = await fetch(
-          "http://127.0.0.1:8000/employees/getemployee",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch(`${baseUrl}/employees/getemployee`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        // Handle expired/unauthorized token
         if (response.status === 401) {
           toast.error("Session expired. Please login again.");
           sessionStorage.removeItem("userData");
@@ -79,14 +75,14 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
     }
 
     const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
-    const userId = userData.user?.id || 1; 
+    const userId = userData.user?.id || 1;
     const token = userData?.access_token;
-      if (!token) {
-        toast.error("You are not logged in.");
-        setLoading(false);
-        return;
-      }
-    
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       employee_id: parseInt(employeeId),
       asset_ids: assets.map((asset) => asset.id),
@@ -94,9 +90,12 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
     };
     setSubmitting(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/assignasset", {
+      const response = await fetch(`${baseUrl}/assignasset`, {
         method: "POST",
-        headers: { "Content-Type": "application/json","Authorization": `Bearer ${token}`, },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -106,11 +105,7 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
         setSubmitting(false);
         return;
       }
-
       const result = await response.json();
-
-      console.log("API response:", result);
-
       toast.success("Assets allocated successfully!");
       onSave(employeeId);
     } catch (error) {

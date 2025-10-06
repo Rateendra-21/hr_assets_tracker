@@ -8,6 +8,7 @@ const ChangePasswordModal = ({ show, onClose }) => {
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
   if (!show) return null;
 
@@ -41,7 +42,7 @@ const ChangePasswordModal = ({ show, onClose }) => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/change-password", {
+      const response = await fetch(`${baseUrl}/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`,  },
         body: JSON.stringify(payload),

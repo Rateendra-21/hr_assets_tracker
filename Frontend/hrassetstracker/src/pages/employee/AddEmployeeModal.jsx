@@ -19,8 +19,9 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
   const [activeTab, setActiveTab] = useState("manual");
   const [departments, setDepartments] = useState([]);
   const [locations, setLocations] = useState([]);
- const [loading, setLoading] = useState(false); 
-
+  const [loading, setLoading] = useState(false); 
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  
   // Fetch departments & locations
   useEffect(() => {
     fetchDepartments();
@@ -29,7 +30,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/departments/");
+      const res = await fetch(`${baseUrl}/departments/`);
       const data = await res.json();
       setDepartments(data);
     } catch (err) {
@@ -39,7 +40,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/locations/");
+      const res = await fetch(`${baseUrl}/locations/`);
       const data = await res.json();
       setLocations(data);
     } catch (err) {
@@ -148,7 +149,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("http://127.0.0.1:8000/employees/upload-csv", {
+      const res = await fetch(`${baseUrl}/employees/upload-csv`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`,},
         body: form,
@@ -228,7 +229,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
         role: "EMPLOYEE",
       };
 
-      const url = "http://127.0.0.1:8000/employees/createemployee";
+      const url = `${baseUrl}/employees/createemployee`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`,},

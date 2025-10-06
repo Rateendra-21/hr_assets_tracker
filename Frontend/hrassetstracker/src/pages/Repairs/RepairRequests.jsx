@@ -14,7 +14,7 @@ const RepairRequests = () => {
   const [loading, setLoading] = useState(true);
   const [loadingInRepair, setLoadingInRepair] = useState(true);
   const [selectedRequestData, setSelectedRequestData] = useState(null);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   // Modal state
   const [selectedImages, setSelectedImages] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -51,7 +51,7 @@ const RepairRequests = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/repair-requests/pending`,
+        `${baseUrl}/repair-requests/pending`,
         {
           method: "GET",
           headers: {
@@ -98,7 +98,7 @@ const RepairRequests = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/repair-requests/assets/in-repair`,
+        `${baseUrl}/repair-requests/assets/in-repair`,
         {
           method: "GET",
           headers: {
@@ -147,7 +147,7 @@ const RepairRequests = () => {
     }
 
     try {
-      const url = `http://127.0.0.1:8000/repair-requests/${id}/${action.toLowerCase()}`;
+      const url = `${baseUrl}/repair-requests/${id}/${action.toLowerCase()}`;
       const response = await fetch(url, {
         method: "POST",
         headers: {

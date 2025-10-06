@@ -15,6 +15,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
   // Filter logic: search + status
   useEffect(() => {
@@ -85,7 +86,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
     }
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/employees/deactivate",
+        `${baseUrl}/employees/deactivate`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" , "Authorization": `Bearer ${token}`, },
@@ -132,7 +133,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
       return;
     }
     try {
-      const response = await fetch("http://127.0.0.1:8000/employees/activate", {
+      const response = await fetch(`${baseUrl}/employees/activate`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

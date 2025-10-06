@@ -25,7 +25,7 @@ const AddAsset = ({ onClose, onAssetSaved }) => {
   const [locations, setLocations] = useState([]);
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("manual");
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const handleChange = (e) => {
     const { name, value } = e.target;
     const newValue = value.replace(/^\s+/g, "");
@@ -39,7 +39,7 @@ const AddAsset = ({ onClose, onAssetSaved }) => {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/locations/");
+        const res = await fetch(`${baseUrl}/locations/`);
         const data = await res.json();
         setLocations(data);
       } catch (err) {
@@ -125,7 +125,7 @@ const AddAsset = ({ onClose, onAssetSaved }) => {
         return;
       }
     try {
-      const res = await fetch("http://127.0.0.1:8000/assets/assetregister", {
+      const res = await fetch(`${baseUrl}/assets/assetregister`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json", "Authorization": `Bearer ${token}`,

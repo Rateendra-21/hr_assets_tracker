@@ -17,45 +17,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [counts, setCounts] = useState(null);
-
-  // useEffect(() => {
-  //   const userData = sessionStorage.getItem("userData");
-  //   if (!userData) {
-  //     navigate("/login", { replace: true });
-  //     return;
-  //   }
-
-  //   const parsedUser = JSON.parse(userData);
-  //   setUser(parsedUser.user);
-
-  //   const fetchCounts = async () => {
-  //     try {
-  //       let response;
-  //       if (
-  //         parsedUser.user.role === "SUPER_ADMIN" ||
-  //         parsedUser.user.role === "ADMIN"
-  //       ) {
-  //         response = await fetch("http://127.0.0.1:8000/dashboard/counts");
-  //       } else if (parsedUser.user.role === "EMPLOYEE") {
-  //         response = await fetch(
-  //           `http://127.0.0.1:8000/dashboard/assigned-assets-count/${parsedUser.user.id}`
-  //         );
-  //       }
-
-  //       if (!response.ok) throw new Error("Failed to fetch counts");
-        
-  //       const data = await response.json();
-  //       setCounts(data);
-  //     } catch (err) {
-  //       console.error("Error fetching counts:", err);
-  //     }
-  //   };
-
-  //   fetchCounts();
-  // }, [navigate]);
-
-  // if (!user) return null;
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
   const userData = sessionStorage.getItem("userData");
@@ -73,7 +35,7 @@ const Dashboard = () => {
 
       let response;
       if (parsedUser.user.role === "SUPER_ADMIN" || parsedUser.user.role === "ADMIN") {
-        response = await fetch("http://127.0.0.1:8000/dashboard/counts", {
+        response = await fetch(`${baseUrl}/dashboard/counts`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -82,7 +44,7 @@ const Dashboard = () => {
         });
       } else if (parsedUser.user.role === "EMPLOYEE") {
         response = await fetch(
-          `http://127.0.0.1:8000/dashboard/assigned-assets-count/${parsedUser.user.id}`,
+          `{${baseUrl}}/dashboard/assigned-assets-count/${parsedUser.user.id}`,
           {
             method: "GET",
             headers: {
@@ -94,7 +56,6 @@ const Dashboard = () => {
       }
 
       if (response.status == 401) {
-        // toast.error("Session expired. Please login again.");
         sessionStorage.removeItem("userData");
         localStorage.clear();
         window.location.href = "/login";

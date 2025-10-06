@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 const RepairAccept = ({ requestData, onClose, onApproved }) => {
   const [remarks, setRemarks] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   // Destructure values from requestData
   const {
     asset_id: assetId,
@@ -43,7 +43,7 @@ const RepairAccept = ({ requestData, onClose, onApproved }) => {
       console.log("Payload being sent:", formData.toString());
 
       const res = await fetch(
-        `http://127.0.0.1:8000/repair-requests/assets/mark-repaired/${assetId}`,
+        `${baseUrl}/repair-requests/assets/mark-repaired/${assetId}`,
         {
           method: "PUT",
           headers: {

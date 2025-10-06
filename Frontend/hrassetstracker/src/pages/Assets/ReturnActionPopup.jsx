@@ -22,7 +22,8 @@ const ReturnActionPopup = ({ asset, onClose, onUpdated }) => {
     const userData = JSON.parse(sessionStorage.getItem("userData"));
     const token = userData?.access_token;
     const userId = userData?.user?.id;
-
+    const baseUrl = import.meta.env.VITE_BASE_URL;
+    
     if (!token) {
       toast.error("You are not logged in.");
       return;
@@ -38,7 +39,7 @@ const ReturnActionPopup = ({ asset, onClose, onUpdated }) => {
     try {
       setSaving(true);
 
-      const res = await fetch("http://127.0.0.1:8000/return-action", {
+      const res = await fetch(`${baseUrl}/return-action`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

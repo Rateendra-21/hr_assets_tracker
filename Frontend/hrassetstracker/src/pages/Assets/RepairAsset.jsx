@@ -8,6 +8,7 @@ const RepairAsset = ({ asset, onClose, onUpdated, fetchAssets }) => {
   const [attachedImages, setAttachedImages] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const [myAssetId, setMyAssetId] = useState(null);
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
     if (asset) {
@@ -34,55 +35,6 @@ const RepairAsset = ({ asset, onClose, onUpdated, fetchAssets }) => {
     setAttachedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // const handleSave = async () => {
-  //   console.log("Current asset value:", asset);
-  //   if (!issueDescription.trim()) {
-  //     toast.error("Issue description cannot be empty.");
-  //     return;
-  //   }
-
-  //   if (!myAssetId) {
-  //   toast.error("Asset data not available.");
-  //   return;
-  //  }
-
-  //   try {
-  //     setSaving(true);
-
-  //     const formData = new FormData();
-  //     formData.append("asset_id", myAssetId);
-  //     formData.append(
-  //       "requested_by",
-  //       JSON.parse(sessionStorage.getItem("userData"))?.user?.id
-  //     );
-  //     formData.append("issue_description", issueDescription.trim());
-
-  //     attachedImages.forEach((file) => {
-  //       formData.append("images", file);
-  //     });
-
-  //     const res = await fetch(`http://127.0.0.1:8000/repair-requests/`, {
-  //       method: "POST",
-  //       body: formData,
-  //     });
-
-  //     if (!res.ok) {
-  //       const data = await res.json();
-  //       throw new Error(data.detail || "Failed to create repair request.");
-  //     }
-
-  //     toast.success("Asset sent for repair successfully!");
-  //     if (onUpdated) onUpdated();
-
-  //     setIssueDescription("");
-  //     setAttachedImages([]);
-  //   } catch (err) {
-  //     console.error(err);
-  //     toast.error(err.message || "Failed to create repair request.");
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
 
   const handleSave = async () => {
     console.log("Current asset value:", asset);
@@ -123,7 +75,7 @@ const RepairAsset = ({ asset, onClose, onUpdated, fetchAssets }) => {
         formData.append("images", file);
       });
 
-      const res = await fetch(`http://127.0.0.1:8000/repair-requests/`, {
+      const res = await fetch(`${baseUrl}/repair-requests/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`, // Pass the token here

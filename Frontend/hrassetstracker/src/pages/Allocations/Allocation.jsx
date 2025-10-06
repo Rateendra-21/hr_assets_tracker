@@ -7,9 +7,6 @@ const Allocation = () => {
     <main className="flex-grow-1">
       {/* Header */}
       <Header></Header>
-
-      
-
       {/* Assign component */}
       <div className="px-3 px-md-4 py-4">
         <Assign />

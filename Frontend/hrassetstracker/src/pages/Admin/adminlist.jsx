@@ -9,18 +9,18 @@ const AdminList = forwardRef((props, ref) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("grid");
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const fetchAdmins = async () => {
     try {
       setLoading(true);
       const userData = JSON.parse(sessionStorage.getItem("userData"));
       const token = userData?.access_token;
-      
-      const res = await fetch("http://127.0.0.1:8000/admin/admindata", {
+
+      const res = await fetch(`${baseUrl}/admin/admindata`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, 
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -74,15 +74,17 @@ const AdminList = forwardRef((props, ref) => {
 
     if (!window.confirm(`Are you sure you want to ${action} this admin?`))
       return;
-     const userData = JSON.parse(sessionStorage.getItem("userData"));
-      const token = userData?.access_token;
-    const url = `http://127.0.0.1:8000/admin/${action}/${employee_id}`;
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
+    const url = `${baseUrl}/admin/${action}/${employee_id}`;
 
     try {
-
       const response = await fetch(url, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" , Authorization: `Bearer ${token}`, },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!response.ok) throw new Error(`Failed to ${action} admin`);
 

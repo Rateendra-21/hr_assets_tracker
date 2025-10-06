@@ -8,7 +8,7 @@ const RejectRepairRequest = ({
   onRejected,
 }) => {
   const [reason, setReason] = useState("");
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const handleReject = async () => {
     if (!reason.trim()) {
       toast.error("Please enter rejection remark");
@@ -17,6 +17,7 @@ const RejectRepairRequest = ({
 
     const userData = JSON.parse(sessionStorage.getItem("userData"));
     const token = userData?.access_token;
+    
 
     if (!token) {
       toast.error("You are not logged in.");
@@ -29,7 +30,7 @@ const RejectRepairRequest = ({
       formData.append("remark", reason); // backend expects `remark`
 
       const response = await fetch(
-        `http://127.0.0.1:8000/repair-requests/reject/${requestData.id}`,
+        `${baseUrl}/repair-requests/reject/${requestData.id}`,
         {
           method: "PUT",
           headers: {

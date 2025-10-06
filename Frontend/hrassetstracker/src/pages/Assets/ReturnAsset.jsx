@@ -4,7 +4,8 @@ import { toast } from "react-hot-toast";
 const ReturnAsset = ({ asset, onClose, onUpdated }) => {
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  
   const handleModalClick = (e) => e.stopPropagation();
 
   const handleRemarksChange = (e) => {
@@ -30,7 +31,7 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
     try {
       setSaving(true);
 
-      const res = await fetch("http://127.0.0.1:8000/return-asset", {
+      const res = await fetch(`${baseUrl}/return-asset`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -11,7 +11,7 @@ const Assign = () => {
   const [selectedAssets, setSelectedAssets] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
   const [activeView, setActiveView] = useState("assigned"); 
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   // Fetch all assets from backend
   
   const fetchAssets = async () => {
@@ -27,7 +27,7 @@ const Assign = () => {
   setLoading(true);
 
   try {
-    const res = await fetch("http://127.0.0.1:8000/assets/getAllAssets", {
+    const res = await fetch(`${baseUrl}/assets/getAllAssets`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -104,8 +104,6 @@ const Assign = () => {
 
   return (
     <main className="flex-grow-1">
-   
-
       <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 rounded p-3 bg-light shadow-sm">
         {/* Left Section */}
         <div className="d-flex flex-column mb-2 mb-md-0">

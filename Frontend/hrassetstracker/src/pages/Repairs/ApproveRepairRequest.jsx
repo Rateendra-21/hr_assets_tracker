@@ -9,7 +9,7 @@ const ApproveRepairPopup = ({
 }) => {
   const [vendorName, setVendorName] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   // Destructure values from requestData
   const {
     id: requestId,
@@ -36,90 +36,49 @@ const ApproveRepairPopup = ({
     }
 
     setLoading(true);
-    // try {
-    //   const formData = new URLSearchParams();
-    //   formData.append("approved_by", approvedBy);
-    //   formData.append("vendor_name", vendorName);
-
-    //   const res = await fetch(
-    //     `http://127.0.0.1:8000/repair-requests/approve/${requestId}`,
-    //     {
-    //       method: "PUT",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //         Authorization: `Bearer ${token}`,
-    //       },
-    //       body: formData.toString(),
-    //     }
-    //   );
-
-    //   if (res.status === 401) {
-    //     toast.error("Session expired. Please login again.");
-    //     sessionStorage.removeItem("userData");
-    //     localStorage.clear();
-    //     window.location.href = "/login";
-    //     return;
-    //   }
-
-    //   if (!res.ok) {
-    //     const errorData = await res.json();
-    //     throw new Error(errorData.detail || "Failed to approve repair request");
-    //   }
-
-    //   toast.success("Repair request approved successfully!");
-    //   onApproved?.(); // optional chaining to avoid runtime errors
-    //   onClose();
-    //   setVendorName(""); // clear input
-    // } catch (error) {
-    //   toast.error(error.message || "Error approving repair request");
-    // } finally {
-    //   setLoading(false);
-    // }
-
 
     try {
-  const formData = new URLSearchParams();
-  formData.append("approved_by", approvedBy);
-  formData.append("vendor_name", vendorName);
+      const formData = new URLSearchParams();
+      formData.append("approved_by", approvedBy);
+      formData.append("vendor_name", vendorName);
 
-  // Log the payload
-  console.log("Payload being sent:", formData.toString());
+      // Log the payload
+      console.log("Payload being sent:", formData.toString());
 
-  const res = await fetch(
-    `http://127.0.0.1:8000/repair-requests/approve/${requestId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded", // match URLSearchParams
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData.toString(),
+      const res = await fetch(
+        `${baseUrl}/repair-requests/approve/${requestId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded", // match URLSearchParams
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData.toString(),
+        }
+      );
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to approve repair request");
+      }
+
+      toast.success("Repair request approved successfully!");
+      onApproved?.();
+      onClose();
+      setVendorName(""); // clear input
+    } catch (error) {
+      toast.error(error.message || "Error approving repair request");
+    } finally {
+      setLoading(false);
     }
-  );
-
-  if (res.status === 401) {
-    toast.error("Session expired. Please login again.");
-    sessionStorage.removeItem("userData");
-    localStorage.clear();
-    window.location.href = "/login";
-    return;
-  }
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.detail || "Failed to approve repair request");
-  }
-
-  toast.success("Repair request approved successfully!");
-  onApproved?.();
-  onClose();
-  setVendorName(""); // clear input
-} catch (error) {
-  toast.error(error.message || "Error approving repair request");
-} finally {
-  setLoading(false);
-}
-
   };
 
   return (

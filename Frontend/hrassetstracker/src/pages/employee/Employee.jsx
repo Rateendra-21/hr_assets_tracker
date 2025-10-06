@@ -9,7 +9,7 @@ const Employee = () => {
   const [showModal, setShowModal] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   // Fetch employees
   const fetchEmployees = async () => {
     
@@ -17,7 +17,7 @@ const Employee = () => {
       setLoading(true);
       const userData = JSON.parse(sessionStorage.getItem("userData"));
       const token = userData?.access_token;
-      const res = await fetch("http://127.0.0.1:8000/employees/getemployee", {
+      const res = await fetch(`${baseUrl}/employees/getemployee`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

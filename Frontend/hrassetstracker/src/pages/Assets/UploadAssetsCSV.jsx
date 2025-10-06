@@ -2,10 +2,10 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { FileSpreadsheet } from "lucide-react";
 
-const UploadAssetsCSV = ({ onClose, onAssetsUploaded }) => {
+  const UploadAssetsCSV = ({ onClose, onAssetsUploaded }) => {
   const [loading, setLoading] = useState(false);
   const [category, setCategory] = useState("");
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
 
 
@@ -25,7 +25,7 @@ const handleCSVUpload = async (e) => {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://127.0.0.1:8000/assets/assetregister/csv`,
+        `${baseUrl}/assets/assetregister/csv`,
         {
           method: "POST",
           body: formData,

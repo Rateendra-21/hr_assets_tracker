@@ -4,12 +4,15 @@ import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "../../config/api";
 
+
+
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
     const userData = sessionStorage.getItem("userData");
@@ -20,7 +23,7 @@ const Login = () => {
 
 
   const login = async ({ username, password }) => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
+    const response = await fetch(`${baseUrl}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -63,11 +66,11 @@ const Login = () => {
   };
 
   return (
-    <div className="d-flex vh-100 align-items-center justify-content-center bg-light">
-      <div className="card p-4" style={{ maxWidth: "450px", width: "100%" }}>
+    <div className="d-flex vh-100 align-items-center justify-content-center" style={{background: "linear-gradient(135deg, #0029ddff, #67b5ffff)",}}>
+      <div className="card p-4" style={{ maxWidth: "450px", width: "100%", borderRadius:"50px" }}>
         <div className="text-center mb-4">
           <div
-            className="rounded-circle bg-muted d-flex align-items-center justify-content-center mx-auto mb-3"
+            className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
             style={{ width: "64px", height: "64px" }}
           >
             <User className="text-dark" size={40} />

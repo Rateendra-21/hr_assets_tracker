@@ -24,7 +24,7 @@ const EmployeeAsset = () => {
   const [statusFilterByCat, setStatusFilterByCat] = useState("all");
   const fetchedRef = useRef(false);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const employeeId = JSON.parse(sessionStorage.getItem("userData"))?.user?.id;
 
   const fetchAssignedAssets = async () => {
@@ -42,7 +42,7 @@ const EmployeeAsset = () => {
         return;
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/assigned/${employeeId}`, {
+      const res = await fetch(`${baseUrl}/assigned/${employeeId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +103,7 @@ const EmployeeAsset = () => {
         return;
       }
 
-      const res = await fetch("http://127.0.0.1:8000/allocation/action", {
+      const res = await fetch(`${baseUrl}/allocation/action`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -174,7 +174,7 @@ const EmployeeAsset = () => {
         return;
       }
 
-      const res = await fetch("http://127.0.0.1:8000/allocation/action", {
+      const res = await fetch(`${baseUrl}/allocation/action`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

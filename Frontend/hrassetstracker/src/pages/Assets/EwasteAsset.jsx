@@ -4,8 +4,8 @@ import { toast } from "react-hot-toast";
 const EwasteAsset = ({ asset, onClose, onUpdated }) => {
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // Prevent modal close when clicking inside
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  
   const handleModalClick = (e) => e.stopPropagation();
 
   // Handle textarea input
@@ -49,7 +49,7 @@ const EwasteAsset = ({ asset, onClose, onUpdated }) => {
 
     console.log("Payload being sent to API:", payload);
 
-    const res = await fetch(`http://127.0.0.1:8000/mark-ewaste`, {
+    const res = await fetch(`${baseUrl}/mark-ewaste`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

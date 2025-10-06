@@ -18,6 +18,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
   const [departments, setDepartments] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
     if (!show) return;
@@ -27,7 +28,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/departments/");
+      const res = await fetch(`${baseUrl}/departments/`);
       const data = await res.json();
       setDepartments(data);
     } catch (err) {
@@ -37,7 +38,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/locations/");
+      const res = await fetch(`${baseUrl}/locations/`);
       const data = await res.json();
       setLocations(data);
     } catch (err) {
@@ -108,7 +109,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
         department_id: formData.department,
         role: "ADMIN",
       };
-      const url = "http://127.0.0.1:8000/createadmin";
+      const url = `${baseUrl}/createadmin`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json","Authorization": `Bearer ${token}`, },

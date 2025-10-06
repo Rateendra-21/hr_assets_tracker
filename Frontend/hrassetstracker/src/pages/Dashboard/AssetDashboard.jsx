@@ -8,11 +8,12 @@ const AssetDashboard = () => {
     location_counts: {},
   });
   const [loading, setLoading] = useState(true);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/assets/counts");
+        const res = await fetch(`${baseUrl}/assets/counts`);
         const data = await res.json();
         setCounts(data);
       } catch (err) {

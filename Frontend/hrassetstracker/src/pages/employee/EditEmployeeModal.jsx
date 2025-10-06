@@ -17,7 +17,7 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
   const [errors, setErrors] = useState({});
   const [departments, setDepartments] = useState([]);
   const [locations, setLocations] = useState([]);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   useEffect(() => {
     fetchDepartments();
     fetchLocations();
@@ -44,7 +44,7 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/departments/");
+      const res = await fetch(`${baseUrl}/departments/`);
       const data = await res.json();
       setDepartments(data);
     } catch (err) {
@@ -54,7 +54,7 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/locations/");
+      const res = await fetch(`${baseUrl}/locations/`);
       const data = await res.json();
       setLocations(data);
     } catch (err) {
@@ -154,7 +154,7 @@ const EditEmployeeModal = ({ show, handleClose, onSave, employeeData }) => {
     };
 
     try {
-      const url = `http://127.0.0.1:8000/employees/update/${formData.employeeId}`;
+      const url = `${baseUrl}/employees/update/${formData.employeeId}`;
       const res = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json","Authorization": `Bearer ${token}`, },

@@ -4,9 +4,8 @@ import ReturnActionPopup from "../Assets/ReturnActionPopup";
 const AssignedList = ({ refreshAssets }) => {
   const [assignedAssets, setAssignedAssets] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const [selectedAsset, setSelectedAsset] = useState(null);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   // Fetch assigned assets from API
 
   const fetchAssignedAssets = async () => {
@@ -22,7 +21,7 @@ const AssignedList = ({ refreshAssets }) => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/assigned", {
+      const response = await fetch(`${baseUrl}/assigned`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

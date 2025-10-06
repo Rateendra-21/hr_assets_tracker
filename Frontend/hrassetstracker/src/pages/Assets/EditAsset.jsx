@@ -27,12 +27,13 @@ const EditAsset = ({ asset, onClose, onSave }) => {
   const [locations, setLocations] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  
   // Fetch locations
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/locations/");
+        const res = await fetch(`${baseUrl}/locations/`);
         const data = await res.json();
         setLocations(data);
       } catch (err) {
@@ -96,7 +97,7 @@ const EditAsset = ({ asset, onClose, onSave }) => {
       return;
     }
 
-    const response = await fetch(`http://127.0.0.1:8000/assets/updateasset/${asset.id}`, {
+    const response = await fetch(`${baseUrl}/assets/updateasset/${asset.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
