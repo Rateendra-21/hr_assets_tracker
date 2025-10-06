@@ -21,6 +21,7 @@ class AssetCreate(BaseModel):
     power_output: Optional[str] = None
     connector_type: Optional[str] = None
     cable_type: Optional[str] = None
+    registered_by : Optional[int] = None
     location_id: Optional[int] = None
     status: Optional[str] = "available"
     qr_id: Optional[str] = None

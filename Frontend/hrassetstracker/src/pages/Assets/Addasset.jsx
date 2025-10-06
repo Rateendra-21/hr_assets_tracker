@@ -107,15 +107,17 @@ const AddAsset = ({ onClose, onAssetSaved }) => {
     if (!validateForm()) return;
 
     const qr_id = generateQrId();
-
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const addedby = userData.user?.id
     const payload = {
       ...formData,
       location_id: parseInt(formData.workLocation),
       status: formData.status || "available",
+      registered_by : addedby,
       qr_id,
     };
 
-    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    
       const token = userData?.access_token;
       if (!token) {
         toast.error("You are not logged in.");

@@ -6,46 +6,6 @@ const UploadAssetsCSV = ({ onClose, onAssetsUploaded }) => {
   const [loading, setLoading] = useState(false);
   const [category, setCategory] = useState("");
 
-  // Handle CSV Upload
-
-
-//   const handleCSVUpload = async (e) => {
-//   const file = e.target.files[0];
-//   if (!file) return;
-
-//   const formData = new FormData();
-//   formData.append("file", file);
-
-//   try {
-//     setLoading(true);
-//     const res = await fetch(
-//       `http://127.0.0.1:8000/assets/assetregister/csv`,
-//       {
-//         method: "POST",
-//         body: formData,
-//       }
-//     );
-
-//     if (!res.ok) {
-//       const errData = await res.json();
-//       throw new Error(errData.detail || "Upload failed");
-//     }
-
-//     const data = await res.json();
-//     toast.success("CSV uploaded successfully!");
-
-//     // Call parent function to update the asset list
-//     if (onAssetsUploaded) onAssetsUploaded(data);
-
-//     // Close the modal
-//     if (onClose) onClose();
-
-//   } catch (err) {
-//     toast.error(err.message || "Failed to upload CSV");
-//   } finally {
-//     setLoading(false);
-//   }
-// };
 
 
 

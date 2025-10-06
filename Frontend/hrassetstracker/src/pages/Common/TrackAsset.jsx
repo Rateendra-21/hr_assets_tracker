@@ -197,42 +197,10 @@ const TrackAsset = () => {
         </div>
       </div>
 
-      {/* look likes card  */}
+     
 
-      {/* {assetData && !error && (
-        <div
-          className="py-4 bg-light px-3 rounded shadow-sm mx-4 mt-4 text-light"
-          style={{ maxHeight: 400, overflowY: "auto" }}
-        >
-          <h5 className="mb-4 text-primary fw-semibold">
-            Asset: {assetData.asset.asset_name}
-          </h5>
-          <div className="timeline">
-            {assetData.events.map((event) => (
-              <div
-                key={event.id}
-                className="timeline-item mb-4 p-3 bg-white rounded shadow-sm"
-              >
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <div className="fw-bold fs-5 text-dark">
-                    {event.event_type}
-                  </div>
-                  <div className="text-muted small">
-                    {new Date(event.event_date).toLocaleString()}
-                  </div>
-                </div>
-                <div
-                  className="ms-2 text-secondary"
-                  style={{ fontSize: "0.9rem" }}
-                >
-                  <div>User: {event.user?.fullname || "N/A"}</div>
-                  <div>Remarks: {event.remarks || "No remarks"}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )} */}
+  
+      {/* ---------------------------------------------------------------------------- */}
 
       {assetData && !error ? (
         <div
@@ -441,70 +409,11 @@ const TrackAsset = () => {
         </div>
       )}
 
-      {/* {looks like timeline} */}
-      {/* <div
-        className="py-4 bg-light px-3 rounded shadow-sm mx-4 mt-4 text-light"
-        style={{ maxHeight: 400, overflowY: "auto" }}
-      >
-        {assetData && !error && assetData.events.length > 0 && (
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              minHeight: 120,
-              margin: "32px 0",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: 20,
-                left: "4%",
-                right: "4%",
-                height: 3,
-                backgroundColor: "#1877f5",
-                borderRadius: 3,
-                zIndex: 0,
-              }}
-            />
+       {/* ---------------------------------------------------------------------------- */}
 
-            <div
-              className="d-flex justify-content-between"
-              style={{ position: "relative", zIndex: 1 }}
-            >
-              {assetData.events.map((event, idx) => (
-                <div key={event.id} className="text-center" style={{ flex: 1 }}>
-                  <div
-                    className="bg-dark rounded-circle d-flex justify-content-center align-items-center mx-auto mb-2"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      color: "#fff",
-                      fontSize: 20,
-                      boxShadow: "0 3px 8px rgba(0,0,0,0.04)",
-                    }}
-                  >
-                    {iconMap[event.event_type] || <CameraIcon size={20} />}
-                  </div>
 
-                  <div className="fw-bold text-dark" style={{ fontSize: 12 }}>
-                    {event.event_type.replace("_", " ")}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div> */}
-
-      {error && !assetData && (
-        <span
-          className="text-danger fw-medium mx-4"
-          style={{ fontSize: "0.9rem" }}
-        >
-          {error}
-        </span>
-      )}
+    
+     
     </main>
   );
 };

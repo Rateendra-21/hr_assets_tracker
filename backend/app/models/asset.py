@@ -28,6 +28,7 @@ class Asset(Base):
     register_date = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    registered_by = Column(Integer,nullable=True)
     # relationships
     location = relationship("Location", back_populates="assets")
     lifecycle_events = relationship("AssetLifecycleEvent", back_populates="asset")

@@ -88,8 +88,8 @@ const Dashboard = () => {
                 Manage employees, assets, and allocations for your organization.
               </span>
             )}
-            {user.employee_type === "EMPLOYEE" && (
-              <span>View your assigned assets and track their status.</span>
+            {user.role === "EMPLOYEE" && (
+              <span>View your assigned assets and track their status</span>
             )}
 
             <div className="mt-3">
