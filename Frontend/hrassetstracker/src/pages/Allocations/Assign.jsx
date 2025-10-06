@@ -104,7 +104,7 @@ const Assign = () => {
 
   return (
     <main className="flex-grow-1">
-      <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 rounded p-3 bg-light shadow-sm">
+      <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 rounded p-3 bg-mix shadow-sm">
         {/* Left Section */}
         <div className="d-flex flex-column mb-2 mb-md-0">
           <h5 className="text-dark d-flex align-items-center mb-1">
@@ -128,7 +128,7 @@ const Assign = () => {
               className={`btn btn-sm rounded-start ${
                 activeView === "assigned"
                   ? "btn-dark text-white"
-                  : "btn-outline-dark"
+                  : "btn-outline-light"
               }`}
               onClick={() => setActiveView("assigned")}
             >
@@ -139,7 +139,7 @@ const Assign = () => {
               className={`btn btn-sm rounded-end ${
                 activeView === "assign"
                   ? "btn-dark text-white"
-                  : "btn-outline-dark"
+                  : "btn-outline-light"
               }`}
               onClick={() => setActiveView("assign")}
             >

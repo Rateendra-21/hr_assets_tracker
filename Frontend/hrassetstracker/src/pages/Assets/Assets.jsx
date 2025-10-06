@@ -24,7 +24,7 @@ const Assets = () => {
 
       {/* Management Section */}
 
-      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
+      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-mix shadow-sm">
         {/* Left Section */}
         <div className="d-flex flex-column mb-2 mb-md-0">
           <h5 className="text-dark fw-bold mb-1">
@@ -39,7 +39,7 @@ const Assets = () => {
         {/* Right Section */}
         <div className="d-flex gap-2">
           <button
-            className="btn btn-dark btn-sm d-flex align-items-center"
+            className="btn btn-outline-light btn-sm d-flex align-items-center"
             onClick={openAddAssetModal}
           >
             <Plus size={16} className="me-2" />

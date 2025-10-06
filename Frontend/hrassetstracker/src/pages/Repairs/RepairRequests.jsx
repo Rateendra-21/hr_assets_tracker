@@ -205,7 +205,7 @@ const RepairRequests = () => {
       <Header></Header>
 
       {/* Toggle buttons */}
-      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-light shadow-sm">
+      <div className="d-flex mx-4 mt-4 flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-2 rounded p-3 bg-mix shadow-sm">
         <div className="d-flex flex-column mb-2 mb-md-0">
           <h5 className="text-dark d-flex align-items-center mb-1">
             <Clock className="me-2 text-muted" size={20} />
@@ -225,31 +225,19 @@ const RepairRequests = () => {
               className={`btn btn-sm rounded-start ${
                 activeView === "requsted"
                   ? "btn-dark text-white"
-                  : "btn-outline-dark"
+                  : "btn-outline-light"
               }`}
               onClick={() => setActiveView("requsted")}
             >
               Repair Requested
             </button>
-            {/* <button
-              type="button"
-              className={`btn btn-sm rounded-end ${
-                activeView === "inrepair"
-                  ? "btn-dark text-white"
-                  : "btn-outline-dark"
-              }`}
-              onClick={() => setActiveView("inrepair")}
-            >
-              In Repair
-            </button> */}
-
-            {["SUPER ADMIN", "ADMIN"].includes(userData.user.role) && (
+             {["SUPER ADMIN", "ADMIN"].includes(userData.user.role) && (
               <button
                 type="button"
                 className={`btn btn-sm rounded-end ${
                   activeView === "inrepair"
                     ? "btn-dark text-white"
-                    : "btn-outline-dark"
+                    : "btn-outline-light"
                 }`}
                 onClick={() => setActiveView("inrepair")}
               >

@@ -37,3 +37,7 @@ button {
   font-weight: 500 !important;
 }
 
+.bg-mix {
+  background: linear-gradient(135deg, #67b5ffff , #0029ddff);
+
+}

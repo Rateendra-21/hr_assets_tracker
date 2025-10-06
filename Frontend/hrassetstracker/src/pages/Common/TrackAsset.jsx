@@ -39,7 +39,7 @@ const eventTypeIconMap = {
   RETURNED: { Icon: Undo2, color: "#0dcaf0" },
   EWASTE: { Icon: Trash2, color: "#d81919ff" },
   REJECTED: { Icon: ThumbsDown, color: "#167d8fff" },
-  IN_INVENTORY: { Icon: CircleCheck, color: "#20c997" }, 
+  IN_INVENTORY: { Icon: CircleCheck, color: "#20c997" },
   DEFAULT: { Icon: WrapText, color: "#4895ef" },
 };
 
@@ -57,7 +57,7 @@ const userLabelMap = {
   RETURN_ACCEPTED: "Return accepted by",
   EWASTE: "Marked Ewaste by",
   REJECTED: "Repair rejected by",
-  IN_INVENTORY: "Updated by", 
+  IN_INVENTORY: "Updated by",
 };
 
 const eventLabelMap = {
@@ -75,7 +75,7 @@ const eventLabelMap = {
   RETURN_ACCEPTED: "Return Accepted",
   RETURNED: "Returned",
   EWASTE: "Marked as Ewaste",
-  IN_INVENTORY: "Asset at Inventory", 
+  IN_INVENTORY: "Asset at Inventory",
 };
 
 const getUserLabel = (eventType) => userLabelMap[eventType] || "Performed by";
@@ -165,7 +165,7 @@ const TrackAsset = () => {
   const [error, setError] = useState("");
   const [selectedUser, setSelectedUser] = useState("All");
   const baseUrl = import.meta.env.VITE_BASE_URL;
-  
+
   const fetchAssetData = async (qrId) => {
     if (!qrId) return;
     const userData = JSON.parse(sessionStorage.getItem("userData"));
@@ -179,9 +179,7 @@ const TrackAsset = () => {
     }
     try {
       const res = await fetch(
-        `${baseUrl}/asset-lifecycle/timeline/qr/${encodeURIComponent(
-          qrId
-        )}`,
+        `${baseUrl}/asset-lifecycle/timeline/qr/${encodeURIComponent(qrId)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.status === 404) {
@@ -262,10 +260,10 @@ const TrackAsset = () => {
     <main className="flex-grow-1">
       <Header />
 
-      <div className="d-flex mx-4 mt-3 flex-column flex-md-row align-items-start justify-content-between p-3 bg-light shadow-sm rounded">
-        <div>
-          <h5 className="fw-bold mb-1 text-dark">
-            <QrCodeIcon className="me-2 mb-1" /> Track Asset
+      <div className="d-flex mx-4 mt-3 flex-column flex-md-row align-items-center justify-content-between p-3 bg-mix shadow-sm rounded">
+        <div className="mb-2 mb-md-0">
+          <h5 className="fw-bold mb-1 text-dark d-flex align-items-center">
+            <QrCodeIcon className="me-2" /> Track Asset
           </h5>
           <small className="text-muted">
             Scan or upload a QR to view asset timeline
@@ -274,13 +272,13 @@ const TrackAsset = () => {
 
         <div className="d-flex gap-2 align-items-center">
           <button
-            className="btn btn-dark btn-sm d-flex align-items-center"
+            className="btn btn-outline-light btn-sm d-flex align-items-center"
             onClick={() => cameraInputRef.current.click()}
           >
             <CameraIcon size={16} className="me-2" /> Open Camera
           </button>
           <button
-            className="btn btn-dark btn-sm d-flex align-items-center"
+            className="btn btn-outline-light btn-sm d-flex align-items-center"
             onClick={() => uploadInputRef.current.click()}
           >
             <Upload size={16} className="me-2" /> Upload File
@@ -374,7 +372,10 @@ const TrackAsset = () => {
                     eventTypeIconMap[event.event_type] ||
                     eventTypeIconMap.DEFAULT;
                   return (
-                    <div key={event.id} className="d-flex mb-3 position-relative">
+                    <div
+                      key={event.id}
+                      className="d-flex mb-3 position-relative"
+                    >
                       <span
                         className="timeline-dot d-flex justify-content-center align-items-center shadow"
                         style={{
@@ -390,10 +391,7 @@ const TrackAsset = () => {
                       </span>
                       <div className="flex-grow-1">
                         <div className="d-flex justify-content-between align-items-center">
-                          <span
-                            className="fw-semibold"
-                            style={{ color: bg }}
-                          >
+                          <span className="fw-semibold" style={{ color: bg }}>
                             {getEventLabel(event.event_type)}
                           </span>
                           <span className="small text-muted">
