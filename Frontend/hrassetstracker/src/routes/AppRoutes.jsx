@@ -10,7 +10,7 @@ import TrackAsset from "../pages/Common/TrackAsset";
 import EmployeeAsset from "../pages/employee/EmployeeAsset";
 import RepairRequests from "../pages/Repairs/RepairRequests";
 import AssetLifecycle from "../pages/Assets/AssetLifecycle";
-import EwasteDisposal from "../pages/Assets/EwasteDisposal";
+// import EwasteDisposal from "../pages/Assets/EwasteDisposal";
 
 const PrivateRoute = ({ children }) => {
   const user = JSON.parse(sessionStorage.getItem("userData") || "null");
@@ -48,7 +48,7 @@ const AppRoutes = () => {
         <Route path="my-assets" element={<EmployeeAsset />} />
         <Route path="repair-requests" element={<RepairRequests />} />
         <Route path="asset-lifecycle" element={<AssetLifecycle />} />
-        <Route path="ewaste-disposal" element={<EwasteDisposal />} />
+        {/* <Route path="ewaste-disposal" element={<EwasteDisposal />} /> */}
 
 
 
