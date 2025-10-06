@@ -17,7 +17,7 @@ from app.schemas.user import UserResponse, EmployeeDeactivateRequest
 from app.schemas.user import UserResponse, EmployeeActivateRequest
 
 from app.utils.jwt import create_access_token
-# from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -46,7 +46,7 @@ def generate_password(length: int = 12) -> str:
     return ''.join(secrets.choice(alphabet) for _ in range(max_length))
 
 @router.post("/createemployee", response_model=UserResponse)
-async def create_employee(request: AdminCreateRequest, db: Session = Depends(get_db)):
+async def create_employee(request: AdminCreateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     # 1. Check if user exists
     existing_user = db.query(User).filter(
         (User.email == request.email) |
@@ -101,14 +101,14 @@ async def create_employee(request: AdminCreateRequest, db: Session = Depends(get
 
 # get all employee
 @router.get("/getemployee", response_model=List[UserResponse])
-def get_admin_data(db: Session = Depends(get_db)):
+def get_admin_data(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     admins = db.query(User).filter(User.role == "EMPLOYEE").all()
     return admins
 
 
 # create employee by using csv file upload
 @router.post("/upload-csv")
-async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
 
@@ -182,7 +182,7 @@ async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depend
 
 #uodate employee by id
 @router.put("/update/{employee_id}", response_model=dict)
-def update_employee(employee_id: str, request: EmployeeUpdateRequest, db: Session = Depends(get_db)):
+def update_employee(employee_id: str, request: EmployeeUpdateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
 
     employee = db.query(User).filter(User.employee_id == employee_id).first()
     if not employee:
@@ -222,7 +222,7 @@ def update_employee(employee_id: str, request: EmployeeUpdateRequest, db: Sessio
 
 # Employee Deactivate
 @router.put("/deactivate", response_model=dict)
-def deactivate_employee(request: EmployeeDeactivateRequest, db: Session = Depends(get_db)):
+def deactivate_employee(request: EmployeeDeactivateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     employee = db.query(User).filter(User.employee_id == request.employee_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -248,7 +248,7 @@ def deactivate_employee(request: EmployeeDeactivateRequest, db: Session = Depend
 # employee Activate
 
 @router.put("/activate", response_model=dict)
-def activate_employee(request: EmployeeActivateRequest, db: Session = Depends(get_db)):
+def activate_employee(request: EmployeeActivateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     employee = db.query(User).filter(User.employee_id == request.employee_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")

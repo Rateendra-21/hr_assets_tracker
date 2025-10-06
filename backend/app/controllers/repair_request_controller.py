@@ -170,7 +170,7 @@ def approve_repair_request(
 
 #get pending repair request
 @router.get("/pending", response_model=List[RepairRequestWithUserResponse])
-def get_pending_repair_requests(db: Session = Depends(get_db)):
+def get_pending_repair_requests(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
    
     repair_requests = (
         db.query(RepairRequest)
@@ -282,7 +282,7 @@ def reject_repair_request(
 
 # get data In_repair
 @router.get("/assets/in-repair", response_model=List[AssetInRepairResponse])
-def get_assets_in_repair(db: Session = Depends(get_db)):
+def get_assets_in_repair(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
 
     results = (
         db.query(RepairRequest)

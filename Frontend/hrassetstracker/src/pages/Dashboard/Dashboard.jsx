@@ -18,42 +18,102 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [counts, setCounts] = useState(null);
 
+  // useEffect(() => {
+  //   const userData = sessionStorage.getItem("userData");
+  //   if (!userData) {
+  //     navigate("/login", { replace: true });
+  //     return;
+  //   }
+
+  //   const parsedUser = JSON.parse(userData);
+  //   setUser(parsedUser.user);
+
+  //   const fetchCounts = async () => {
+  //     try {
+  //       let response;
+  //       if (
+  //         parsedUser.user.role === "SUPER_ADMIN" ||
+  //         parsedUser.user.role === "ADMIN"
+  //       ) {
+  //         response = await fetch("http://127.0.0.1:8000/dashboard/counts");
+  //       } else if (parsedUser.user.role === "EMPLOYEE") {
+  //         response = await fetch(
+  //           `http://127.0.0.1:8000/dashboard/assigned-assets-count/${parsedUser.user.id}`
+  //         );
+  //       }
+
+  //       if (!response.ok) throw new Error("Failed to fetch counts");
+        
+  //       const data = await response.json();
+  //       setCounts(data);
+  //     } catch (err) {
+  //       console.error("Error fetching counts:", err);
+  //     }
+  //   };
+
+  //   fetchCounts();
+  // }, [navigate]);
+
+  // if (!user) return null;
+
+
   useEffect(() => {
-    const userData = sessionStorage.getItem("userData");
-    if (!userData) {
-      navigate("/login", { replace: true });
-      return;
-    }
+  const userData = sessionStorage.getItem("userData");
+  if (!userData) {
+    navigate("/login", { replace: true });
+    return;
+  }
 
-    const parsedUser = JSON.parse(userData);
-    setUser(parsedUser.user);
+  const parsedUser = JSON.parse(userData);
+  setUser(parsedUser.user);
 
-    const fetchCounts = async () => {
-      try {
-        let response;
-        if (
-          parsedUser.user.role === "SUPER_ADMIN" ||
-          parsedUser.user.role === "ADMIN"
-        ) {
-          response = await fetch("http://127.0.0.1:8000/dashboard/counts");
-        } else if (parsedUser.user.role === "EMPLOYEE") {
-          response = await fetch(
-            `http://127.0.0.1:8000/dashboard/assigned-assets-count/${parsedUser.user.id}`
-          );
-        }
+  const fetchCounts = async () => {
+    try {
+      const token = parsedUser?.access_token; 
 
-        if (!response.ok) throw new Error("Failed to fetch counts");
-        const data = await response.json();
-        setCounts(data);
-      } catch (err) {
-        console.error("Error fetching counts:", err);
+      let response;
+      if (parsedUser.user.role === "SUPER_ADMIN" || parsedUser.user.role === "ADMIN") {
+        response = await fetch("http://127.0.0.1:8000/dashboard/counts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, 
+          },
+        });
+      } else if (parsedUser.user.role === "EMPLOYEE") {
+        response = await fetch(
+          `http://127.0.0.1:8000/dashboard/assigned-assets-count/${parsedUser.user.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`, 
+            },
+          }
+        );
       }
-    };
 
-    fetchCounts();
-  }, [navigate]);
+      if (response.status == 401) {
+        // toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
-  if (!user) return null;
+      if (!response.ok) throw new Error("Failed to fetch counts");
+
+      const data = await response.json();
+      setCounts(data);
+    } catch (err) {
+      console.error("Error fetching counts:", err);
+    }
+  };
+
+  fetchCounts();
+}, [navigate]);
+
+if (!user) return null;
 
   return (
     <main className="flex-grow-1">

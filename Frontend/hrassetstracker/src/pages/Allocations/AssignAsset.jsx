@@ -80,6 +80,12 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
 
     const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
     const userId = userData.user?.id || 1; 
+    const token = userData?.access_token;
+      if (!token) {
+        toast.error("You are not logged in.");
+        setLoading(false);
+        return;
+      }
     
     const payload = {
       employee_id: parseInt(employeeId),
@@ -90,7 +96,7 @@ const AssignAsset = ({ assets, onClose, onSave, onRemove }) => {
     try {
       const response = await fetch("http://127.0.0.1:8000/assignasset", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json","Authorization": `Bearer ${token}`, },
         body: JSON.stringify(payload),
       });
 

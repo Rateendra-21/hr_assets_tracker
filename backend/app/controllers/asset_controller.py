@@ -26,7 +26,7 @@ router = APIRouter(
 
 # register a new asset manually
 @router.post("/assetregister", response_model=AssetResponse)
-def create_asset(asset: AssetCreate, db: Session = Depends(get_db)):
+def create_asset(asset: AssetCreate, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     serial_number = asset.serial_number.strip() if asset.serial_number else None
     if asset.status != "e-waste" and serial_number and asset.category in ["Laptop", "Desktop", "Mouse"]:
         existing_asset = db.query(Asset).filter(Asset.serial_number == serial_number).first()
@@ -48,12 +48,12 @@ def create_asset(asset: AssetCreate, db: Session = Depends(get_db)):
 
 # Get all assets
 @router.get("/getAllAssets", response_model=List[AssetResponse])
-def get_assets(db: Session = Depends(get_db)):
+def get_assets(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     return db.query(Asset).all()
 
 # Get asset by ID
 @router.get("/getAssetbyid/{asset_id}", response_model=AssetResponse)
-def get_asset(asset_id: int, db: Session = Depends(get_db)):
+def get_asset(asset_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     asset = db.query(Asset).filter(Asset.id == asset_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
@@ -102,7 +102,7 @@ def get_asset(asset_id: int, db: Session = Depends(get_db)):
 # update asset details
 
 @router.put("/updateasset/{asset_id}", response_model=AssetResponse)
-def update_asset(asset_id: int, asset: AssetCreate, db: Session = Depends(get_db)):
+def update_asset(asset_id: int, asset: AssetCreate, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     db_asset = db.query(Asset).filter(Asset.id == asset_id).first()
     if not db_asset:
         raise HTTPException(
@@ -147,7 +147,7 @@ def generate_qr_id(category: str, location_name: str):
 
 
 @router.post("/assetregister/csv", response_model=List[AssetResponse])
-def upload_assets_csv(file: UploadFile, db: Session = Depends(get_db)):
+def upload_assets_csv(file: UploadFile, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Please upload a CSV file.")
 

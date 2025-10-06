@@ -31,6 +31,15 @@ const ChangePasswordModal = ({ show, onClose }) => {
 
     setLoading(true);
     const token = userData?.access_token;
+
+     if (!token) {
+      toast.error("You are not logged in.");
+      sessionStorage.removeItem("userData");
+      localStorage.clear();
+      window.location.href = "/login";
+      return;
+    }
+
     try {
       const response = await fetch("http://127.0.0.1:8000/change-password", {
         method: "POST",
@@ -39,6 +48,13 @@ const ChangePasswordModal = ({ show, onClose }) => {
       });
 
       const result = await response.json();
+
+      if (response.status == 401) {
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
 
       if (response.ok) {
         toast.success(result.message || "Password changed successfully!");

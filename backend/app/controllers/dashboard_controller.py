@@ -16,7 +16,7 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 # Existing API to get all counts for the admin and super admin
 @router.get("/counts", response_model=DashboardCounts)
-def get_dashboard_counts(db: Session = Depends(get_db)):
+def get_dashboard_counts(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     active_employees = db.query(User).filter(
         User.is_active == 1,
         User.working_status == "active",
@@ -59,7 +59,7 @@ def get_dashboard_counts(db: Session = Depends(get_db)):
 # New API: Get dashboard counts by user_id
 
 @router.get("/assigned-assets-count/{user_id}")
-def get_assigned_assets_count(user_id: int, db: Session = Depends(get_db)):
+def get_assigned_assets_count(user_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
   
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

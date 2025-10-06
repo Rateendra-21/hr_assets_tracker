@@ -33,7 +33,7 @@ router = APIRouter(
 # Assign Asset 
 # ---------------------------
 @router.post("/assignasset", response_model=List[AssetAllocationResponse])
-async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db)):
+async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     employee_id = payload.employee_id
     asset_ids = payload.asset_ids
     user_id = payload.user_id  
@@ -117,7 +117,7 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
 # Assigned Assets Fetch
 # ---------------------------
 @router.get("/assigned", response_model=List[AssignedAssetResponse])
-def get_assigned_assets(db: Session = Depends(get_db)):
+def get_assigned_assets(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     
     allocations = (
         db.query(AssetAllocation)
@@ -163,7 +163,7 @@ def get_assigned_assets(db: Session = Depends(get_db)):
 
 #  Get assigned asset id using employee id
 @router.get("/assigned/{employee_id}", response_model=List[AssignedAssetResponse])
-def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_db)):
+def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
    
     allocations = (
         db.query(AssetAllocation)
@@ -213,7 +213,7 @@ def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_
 # ---------------------------
 
 @router.post("/mark-ewaste")
-def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db)):
+def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
 
     asset = db.query(Asset).filter(Asset.id == payload.asset_id).first()
     if not asset:
@@ -248,7 +248,7 @@ def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db)):
 # ---------------------------
 
 @router.patch("/allocation/action")
-def allocation_action(payload: AllocationActionRequest, db: Session = Depends(get_db)):
+def allocation_action(payload: AllocationActionRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     allocation = db.query(AssetAllocation).filter(AssetAllocation.id == payload.allocation_id).first()
     if not allocation:
         raise HTTPException(status_code=404, detail="Allocation not found")
@@ -289,7 +289,7 @@ def allocation_action(payload: AllocationActionRequest, db: Session = Depends(ge
 # return the asset 
 #---------------------------
 @router.post("/return-asset", response_model=ReturnAssetResponse)
-def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db)) -> Any:
+def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)) -> Any:
     """
     Employee requests to return an asset. Status will be RETURN_PENDING.
     """
@@ -334,7 +334,7 @@ def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db)) -> 
 # ----------------------
 
 @router.patch("/return-action", response_model=ApproveReturnResponse)
-def approve_return(request: ApproveReturnRequest, db: Session = Depends(get_db)) -> Any:
+def approve_return(request: ApproveReturnRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)) -> Any:
     """
     Admin approves or declines a return request
     """

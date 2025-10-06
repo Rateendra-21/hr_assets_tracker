@@ -8,7 +8,7 @@ from app.schemas.asset_lifecycle_event import AssetLifecycleEventResponse, Asset
 from pydantic import BaseModel
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
-
+from app.models.user import User
 router = APIRouter(
     prefix="/asset-lifecycle",
     tags=["Asset Lifecycle"]
@@ -26,7 +26,7 @@ from app.schemas.asset_lifecycle_event import AssetLifecycleEventResponse, UserR
 
 
 @router.get("/timeline/qr/{qr_id}", response_model=AssetWithLifecycleEventsResponse)
-def get_asset_lifecycle_timeline_by_qr(qr_id: str, db: Session = Depends(get_db)):
+def get_asset_lifecycle_timeline_by_qr(qr_id: str, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
 
     asset = db.query(Asset).filter(Asset.qr_id == qr_id).first()
     if not asset:

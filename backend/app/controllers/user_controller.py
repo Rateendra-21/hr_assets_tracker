@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from app.utils.jwt import create_access_token
-# from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user
 
 router = APIRouter()
 
@@ -70,7 +70,7 @@ def generate_password(length: int = 12) -> str:
     return ''.join(secrets.choice(alphabet) for _ in range(max_length))
 
 @router.post("/createadmin", response_model=UserResponse)
-async def create_admin(request: AdminCreateRequest, db: Session = Depends(get_db)):
+async def create_admin(request: AdminCreateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     existing_user = db.query(User).filter(
         (User.email == request.email) |
         (User.mobile_no == request.mobile_no) |
@@ -123,13 +123,13 @@ async def create_admin(request: AdminCreateRequest, db: Session = Depends(get_db
 
 # get the admin data 
 @router.get("/admin/admindata", response_model=List[UserResponse])
-def get_admin_data(db: Session = Depends(get_db)):
+def get_admin_data(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     admins = db.query(User).filter(User.role == "ADMIN").all()
     return admins
 
 #deactivate admin user
 @router.patch("/admin/deactivate/{employee_id}")
-def deactivate_admin(employee_id: str, db: Session = Depends(get_db) ):
+def deactivate_admin(employee_id: str, db: Session = Depends(get_db),current_user: User = Depends(get_current_user) ):
     admin = db.query(User).filter(User.employee_id == employee_id, User.role == "ADMIN").first()
 
     if not admin:
@@ -144,7 +144,7 @@ def deactivate_admin(employee_id: str, db: Session = Depends(get_db) ):
 
 #activate admin user
 @router.patch("/admin/activate/{employee_id}")
-def activate_admin(employee_id: str, db: Session = Depends(get_db)):
+def activate_admin(employee_id: str, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     admin = db.query(User).filter(User.employee_id == employee_id, User.role == "ADMIN").first()
     if not admin:
         raise HTTPException(status_code=404, detail="Admin not found")
@@ -162,7 +162,7 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 @router.post("/change-password")
-def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db)):
+def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     user = db.query(User).filter(User.id == request.userid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
