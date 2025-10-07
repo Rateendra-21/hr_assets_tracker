@@ -44,7 +44,7 @@ const Dashboard = () => {
         });
       } else if (parsedUser.user.role === "EMPLOYEE") {
         response = await fetch(
-          `{${baseUrl}}/dashboard/assigned-assets-count/${parsedUser.user.id}`,
+          `${baseUrl}/dashboard/assigned-assets-count/${parsedUser.user.id}`,
           {
             method: "GET",
             headers: {
