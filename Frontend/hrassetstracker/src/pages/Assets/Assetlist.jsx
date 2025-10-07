@@ -186,7 +186,7 @@ const AssetList = ({ reloadAssets }) => {
       {/* Search & Filter */}
 
       <div
-        className="py-3 mx-2 px-3 mb-3 mt-2 row g-2"
+        className="py-2 mx-2 px-3 mb-3 mt-2 row g-2"
         style={{ border: "1px solid lightgrey", borderRadius: "8px" }}
       >
         {/* Search Input */}

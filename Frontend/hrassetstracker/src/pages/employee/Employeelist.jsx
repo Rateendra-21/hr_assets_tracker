@@ -178,7 +178,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
       {/* Search Box */}
 
       <div
-        className="py-2 px-2 mb-3 mt-2"
+        className="py-3 px-3 mb-2 mt-1"
         style={{ border: "1px solid lightgrey", borderRadius: "8px" }}
       >
         <div className="row g-2 align-items-center">

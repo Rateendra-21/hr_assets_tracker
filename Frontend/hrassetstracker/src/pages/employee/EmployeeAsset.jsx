@@ -264,148 +264,108 @@ const EmployeeAsset = () => {
 
       {/* Table */}
       <div className="py-4 px-1 mx-3 rounded">
-        <div
-          className="shadow rounded"
-          style={{ border: "1px solid lightgrey" }}
-        >
-          <div className="container-fluid p-0">
-            <div
-              className="table-responsive custom-scroll"
-              style={{
-                maxHeight: "500px",
-                overflowY: "auto",
-                overflowX: "auto",
-                padding: filteredData.length > 0 ? "20px" : "0px",
-              }}
-            >
-              <table
-                className="table mb-0 align-middle text-center"
-                style={{ width: "100%", minWidth: "1200px" }}
-              >
-                <thead className="table">
-                  <tr>
-                    <th>
-                      <small>Sr. No</small>
-                    </th>
-                    <th>
-                      <small>Asset Name</small>
-                    </th>
-                    <th>
-                      <small>Category</small>
-                    </th>
-                    <th>
-                      <small>Allocation Date</small>
-                    </th>
-                    <th>
-                      <small>Manufacturer</small>
-                    </th>
-                    <th>
-                      <small>Allocated By</small>
-                    </th>
-                    <th>
-                      <small>Status</small>
-                    </th>
-                    <th>
-                      <small>Action</small>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center py-5">
-                        <span className="text-muted">
-                          No assigned assets found
-                        </span>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredData.map((item, index) => {
-                      const allocationDate = item.allocation_date
-                        ? new Date(item.allocation_date).toLocaleDateString(
-                            "en-GB",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )
-                        : "-";
-
-                      return (
-                        <tr key={item.allocation_id || index}>
-                          <td>
-                            <small>{index + 1}</small>
-                          </td>
-                          <td>
-                            <small>{item.asset_name || "-"}</small>
-                          </td>
-                          <td>
-                            <small>{item.category || "-"}</small>
-                          </td>
-                          <td>
-                            <small>{allocationDate}</small>
-                          </td>
-                          <td>
-                            <small>{item.manufacturer || "-"}</small>
-                          </td>
-                          <td>
-                            <small>{item.allocated_by_name || "-"}</small>
-                          </td>
-                          <td>
-                            <small>{item.status}</small>
-                          </td>
-
-                          <td className="d-flex justify-content-center gap-2">
-                            {item.status === "ASSIGNED" ? (
-                              <>
-                                <button
-                                  className="btn btn-sm btn-dark"
-                                  onClick={() => handleRepairClick(item)}
-                                  title="Report Repair"
-                                >
-                                  <Wrench size={16} className="mb-1" />
-                                </button>
-
-                                <button
-                                  className="btn btn-sm btn-secondary"
-                                  onClick={() => handleReturnClick(item)}
-                                  title="Return"
-                                >
-                                  <Undo2 size={16} className="mb-1" />
-                                </button>
-                              </>
-                            ) : item.status === "ALLOCATED" ? (
-                              <>
-                                <button
-                                  className="btn btn-sm btn-success"
-                                  onClick={() => handleAcceptClick(item)}
-                                  title="Accept"
-                                >
-                                  <CircleCheck size={16} className="mb-1" />
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-danger"
-                                  onClick={() => handleDeclineClick(item)}
-                                  title="Decline"
-                                >
-                                  <CircleX size={16} className="mb-1" />
-                                </button>
-                              </>
-                            ) : (
-                              <span>-</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+  <div className="shadow rounded" style={{ border: "1px solid lightgrey" }}>
+    <div className="container-fluid p-0">
+      <div
+        className="table-responsive custom-scroll"
+        style={{
+          maxHeight: "500px",
+          overflowY: "auto",
+          overflowX: "auto",
+          padding: filteredData.length > 0 ? "20px" : "0px",
+        }}
+      >
+        {filteredData.length === 0 ? (
+          <div className="text-center py-5">
+            <span className="text-muted fs-6">No assigned assets found</span>
           </div>
-        </div>
+        ) : (
+          <table
+            className="table mb-0 align-middle text-center"
+            style={{ width: "100%", minWidth: "1200px" }}
+          >
+            <thead className="table">
+              <tr>
+                <th><small>Sr. No</small></th>
+                <th><small>Asset Name</small></th>
+                <th><small>Category</small></th>
+                <th><small>Allocation Date</small></th>
+                <th><small>Manufacturer</small></th>
+                <th><small>Allocated By</small></th>
+                <th><small>Status</small></th>
+                <th><small>Action</small></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.map((item, index) => {
+                const allocationDate = item.allocation_date
+                  ? new Date(item.allocation_date).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "-";
+
+                return (
+                  <tr key={item.allocation_id || index}>
+                    <td><small>{index + 1}</small></td>
+                    <td><small>{item.asset_name || "-"}</small></td>
+                    <td><small>{item.category || "-"}</small></td>
+                    <td><small>{allocationDate}</small></td>
+                    <td><small>{item.manufacturer || "-"}</small></td>
+                    <td><small>{item.allocated_by_name || "-"}</small></td>
+                    <td><small>{item.status}</small></td>
+
+                    <td className="d-flex justify-content-center gap-2">
+                      {item.status === "ASSIGNED" ? (
+                        <>
+                          <button
+                            className="btn btn-sm btn-dark"
+                            onClick={() => handleRepairClick(item)}
+                            title="Report Repair"
+                          >
+                            <Wrench size={16} className="mb-1" />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => handleReturnClick(item)}
+                            title="Return"
+                          >
+                            <Undo2 size={16} className="mb-1" />
+                          </button>
+                        </>
+                      ) : item.status === "ALLOCATED" ? (
+                        <>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleAcceptClick(item)}
+                            title="Accept"
+                          >
+                            <CircleCheck size={16} className="mb-1" />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDeclineClick(item)}
+                            title="Decline"
+                          >
+                            <CircleX size={16} className="mb-1" />
+                          </button>
+                        </>
+                      ) : (
+                        <span>-</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
+    </div>
+  </div>
+</div>
+
 
       {/* Repair Asset Popup */}
       {showRepairPopup && (
