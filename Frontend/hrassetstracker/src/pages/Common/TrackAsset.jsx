@@ -141,7 +141,7 @@ const groupByAllocationCycles = (events) => {
   if (!hasAllocated) groups.push([registeredEvent]);
   else if (currentGroup.length) groups.push(currentGroup);
 
-  // ✅ Add "Asset in Inventory" event after RETURN_ACCEPTED
+
   groups.forEach((group) => {
     const lastEvent = group[group.length - 1];
     if (lastEvent?.event_type === "RETURN_ACCEPTED") {

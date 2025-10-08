@@ -8,6 +8,7 @@ import {
   Table,
   RotateCcw,
   User2,
+  History,
   User2Icon,
   Wrench,
   Shredder,
@@ -19,6 +20,7 @@ import EwasteAsset from "./EwasteAsset";
 import RepairAsset from "./RepairAsset";
 import ReturnAsset from "./ReturnAsset";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const AssetList = ({ reloadAssets }) => {
   const [assets, setAssets] = useState([]);
@@ -34,7 +36,7 @@ const AssetList = ({ reloadAssets }) => {
   const [showEwastePopup, setShowEwastePopup] = useState(false);
   const [showRepairPopup, setShowRepairPopup] = useState(false);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
-  
+
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const handleQrClick = (asset) => {
     setSelectedAsset(asset);
@@ -71,17 +73,14 @@ const AssetList = ({ reloadAssets }) => {
         setLoading(false);
         return;
       }
-      const res = await fetch(
-        `${baseUrl}/assets/update/${updatedAsset.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(updatedAsset),
-        }
-      );
+      const res = await fetch(`${baseUrl}/assets/update/${updatedAsset.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedAsset),
+      });
       if (res.status === 401) {
         toast.error("Session expired. Please login again.");
         sessionStorage.removeItem("userData");
@@ -114,7 +113,7 @@ const AssetList = ({ reloadAssets }) => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-           Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -132,13 +131,22 @@ const AssetList = ({ reloadAssets }) => {
       }
 
       const data = await res.json();
-      setAssets(data); 
+      setAssets(data);
     } catch (err) {
       console.error("Error fetching assets:", err);
       toast.error(err.message || "Something went wrong while fetching assets.");
     } finally {
       setLoading(false);
     }
+  };
+
+  
+
+  const navigate = useNavigate();
+
+  const handleLifecycleClick = (asset) => {
+    navigate("/track-asset", { state: { assetId: asset.id } });
+    console.log(asset)
   };
 
   // Fetch assets on mount or when reloadAssets changes
@@ -315,15 +323,13 @@ const AssetList = ({ reloadAssets }) => {
                       </div>
 
                       <div className="mt-auto d-flex justify-content-end flex-wrap gap-2">
-                        {/* {asset.status === "AVAILABLE" && (
-                          <button
-                            className="btn btn-warning btn-sm d-flex align-items-center"
-                            onClick={() => handleRepairClick(asset)}
-                            title="Send for Repair"
-                          >
-                            <Wrench size={14} />
-                          </button>
-                        )} */}
+                        <button
+                          className="btn btn-outline-primary btn-sm d-flex align-items-center"
+                          onClick={() => handleLifecycleClick(asset)}
+                        >
+                          <History className="me-1" size={15} />
+                          Lifecycle
+                        </button>
 
                         <button
                           className="btn btn-outline-dark btn-sm d-flex align-items-center"
@@ -458,16 +464,9 @@ const AssetList = ({ reloadAssets }) => {
                         </td>
 
                         <td className="d-flex justify-content-center gap-1 flex-wrap">
-                          {/* {asset.status === "AVAILABLE" && (
-                            <span
-                              className="badge bg-warning text-dark d-flex align-items-center"
-                              style={{ cursor: "pointer" }}
-                              title="Send for Repair"
-                              onClick={() => handleRepairClick(asset)}
-                            >
-                              <Wrench size={14} color="black" />
-                            </span>
-                          )} */}
+                          <button className="btn btn-primary btn-sm d-flex align-items-center">
+                            <History size={14} />
+                          </button>
 
                           <span
                             className="badge bg-dark d-flex align-items-center"
