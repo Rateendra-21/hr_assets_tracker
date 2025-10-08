@@ -16,33 +16,38 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
+from sqlalchemy import or_
 
 router = APIRouter()
 
-
-# login API
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+# login API
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username.ilike(request.username)).first()
-    
+    user = db.query(User).filter(
+        or_(
+            User.email.ilike(request.username),
+            User.mobile_no.ilike(request.username)
+        )
+    ).first()
+
     if not user:
         print("No user found for:", request.username)
         raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
+
     print("User found:", user.username)
     print("Request password:", request.password)
     print("DB hash:", user.password)
-    
+
     if not pwd_context.verify(request.password, user.password):
         print("Password verification failed")
         raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
+
     token = create_access_token(user_id=user.id, role=user.role)
     user_response = UserResponse.from_orm(user)
-    
+
     return LoginResponse(user=user_response, access_token=token, token_type="bearer")
 
 
