@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form , BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.asset_lifecycle_event import AssetLifecycleEvent
@@ -352,13 +352,69 @@ def get_assets_in_repair(db: Session = Depends(get_db),current_user: User = Depe
 
 
 # mark the asset as repaired
+# @router.put("/assets/mark-repaired/{asset_id}")
+# def mark_asset_repaired(
+#     asset_id: int,
+#     remarks: str = Form(...),
+#     user_id: int = Form(...),  
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     asset = db.query(Asset).filter(Asset.id == asset_id).first()
+#     if not asset:
+#         raise HTTPException(status_code=404, detail="Asset not found")
+#     asset.status = "ASSIGNED"
+
+#     allocation = db.query(AssetAllocation).filter(
+#         AssetAllocation.asset_id == asset_id,
+#         AssetAllocation.status == "IN_REPAIR"
+#     ).first()
+#     if allocation:
+#         allocation.status = "ASSIGNED"
+
+#     repair_request = db.query(RepairRequest).filter(
+#         RepairRequest.asset_id == asset_id,
+#         RepairRequest.status.in_(["APPROVED", "IN_REPAIR"])  # allow both
+#     ).first()
+#     if repair_request:
+#         repair_request.status = "REPAIRED"
+#         repair_request.resolution_notes = remarks
+#         repair_request.resolution_date = datetime.utcnow()
+#     else:
+#         raise HTTPException(status_code=404, detail="Repair request not found")
+
+#     lifecycle_event = AssetLifecycleEvent(
+#         asset_id=asset_id,
+#         event_type="REPAIR_COMPLETED",
+#         event_date=datetime.utcnow(),
+#         remarks=remarks,
+#         user_id=user_id  # 👈 now saving user_id
+#     )
+#     db.add(lifecycle_event)
+
+#     db.commit()
+#     db.refresh(asset)
+#     db.refresh(repair_request)
+
+#     return {
+#         "message": "Asset marked as repaired successfully",
+#         "asset_id": asset_id,
+#         "user_id": user_id,
+#         "repair_request_id": repair_request.id,
+#     }
+
+
+import asyncio
+from app.email_templates.repair_completed import repair_completed
+
 @router.put("/assets/mark-repaired/{asset_id}")
 def mark_asset_repaired(
     asset_id: int,
     remarks: str = Form(...),
-    user_id: int = Form(...),  
+    user_id: int = Form(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    background_tasks: BackgroundTasks = None
 ):
     asset = db.query(Asset).filter(Asset.id == asset_id).first()
     if not asset:
@@ -374,7 +430,7 @@ def mark_asset_repaired(
 
     repair_request = db.query(RepairRequest).filter(
         RepairRequest.asset_id == asset_id,
-        RepairRequest.status.in_(["APPROVED", "IN_REPAIR"])  # allow both
+        RepairRequest.status.in_(["APPROVED", "IN_REPAIR"])
     ).first()
     if repair_request:
         repair_request.status = "REPAIRED"
@@ -388,7 +444,7 @@ def mark_asset_repaired(
         event_type="REPAIR_COMPLETED",
         event_date=datetime.utcnow(),
         remarks=remarks,
-        user_id=user_id  # 👈 now saving user_id
+        user_id=user_id
     )
     db.add(lifecycle_event)
 
@@ -396,10 +452,34 @@ def mark_asset_repaired(
     db.refresh(asset)
     db.refresh(repair_request)
 
+    # Send notification email asynchronously
+    employee_user = db.query(User).filter(User.id == repair_request.requested_by).first()
+    if employee_user and asset:
+        html_content = repair_completed(
+            asset_name=asset.asset_name,
+            fullname=employee_user.fullname or employee_user.username,
+            remarks=remarks
+        )
+        if background_tasks:
+            background_tasks.add_task(
+                send_admin_email,
+                subject="Your Asset Repair Has Been Completed",
+                html_content=html_content,
+                recipients=[employee_user.email],
+                attachments=None,
+            )
+        else:
+            # fallback sync call if BackgroundTasks is not available
+            send_admin_email(
+                subject="Your Asset Repair Has Been Completed",
+                html_content=html_content,
+                recipients=[employee_user.email],
+                attachments=None,
+            )
+
     return {
         "message": "Asset marked as repaired successfully",
         "asset_id": asset_id,
         "user_id": user_id,
         "repair_request_id": repair_request.id,
     }
-

@@ -5,7 +5,7 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
   const baseUrl = import.meta.env.VITE_BASE_URL;
-  
+
   const handleModalClick = (e) => e.stopPropagation();
 
   const handleRemarksChange = (e) => {
@@ -54,9 +54,8 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
       }
 
       toast.success("Asset returned successfully!");
-
-      if (onUpdated) await onUpdated(); // refresh parent list
-      onClose(); // close modal
+      if (onUpdated) await onUpdated();
+      onClose();
     } catch (err) {
       console.error("Error returning asset:", err);
       toast.error(err.message || "Failed to return asset.");
@@ -76,7 +75,7 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
         justifyContent: "center",
         zIndex: 1050,
       }}
-      onClick={onClose}
+      onClick={!saving ? onClose : undefined}
     >
       <div
         onClick={handleModalClick}
@@ -102,6 +101,7 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
           value={remarks}
           onChange={handleRemarksChange}
           style={{ resize: "none" }}
+          disabled={saving}
         />
 
         <div className="d-flex justify-content-end gap-2 mt-3">
@@ -113,11 +113,22 @@ const ReturnAsset = ({ asset, onClose, onUpdated }) => {
             Cancel
           </button>
           <button
-            className="btn btn-dark"
+            className="btn btn-dark d-flex align-items-center justify-content-center gap-2"
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Processing..." : "Return Asset"}
+            {saving ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Processing...
+              </>
+            ) : (
+              "Return Asset"
+            )}
           </button>
         </div>
       </div>

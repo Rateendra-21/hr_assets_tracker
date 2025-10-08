@@ -6,7 +6,7 @@ const AssignedList = ({ refreshAssets }) => {
   const [loading, setLoading] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const baseUrl = import.meta.env.VITE_BASE_URL;
-  // Fetch assigned assets from API
+
 
   const fetchAssignedAssets = async () => {
     setLoading(true);

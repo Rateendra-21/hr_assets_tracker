@@ -23,10 +23,17 @@ from app.schemas.asset_allocation import ReturnAssetRequest, ReturnAssetResponse
 from app.email_templates.asset_assigned import build_asset_assignment_email
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
-
 from app.email_templates.asset_accepted import asset_accepted_template
 from app.email_templates.asset_declined import asset_declined_template
+from app.email_templates.return_requested import return_requested_template
 from app.utils.email_utils import send_admin_email
+import asyncio
+from app.email_config import ADMIN_EMAIL
+
+from app.email_templates.return_asset_accepted import return_asset_accepted
+from app.email_templates.return_asset_declined import return_asset_declined
+
+
 
 router = APIRouter(
     tags=["asset-allocations"]
@@ -302,56 +309,73 @@ async def allocation_action(
 #---------------------------
 # return the asset 
 #---------------------------
+
 @router.post("/return-asset", response_model=ReturnAssetResponse)
-def return_asset(request: ReturnAssetRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)) -> Any:
-    """
-    Employee requests to return an asset. Status will be RETURN_PENDING.
-    """
+async def return_asset(
+    request: ReturnAssetRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     allocation = db.query(AssetAllocation).filter(
         AssetAllocation.id == request.allocation_id,
-        AssetAllocation.status == "ASSIGNED"
+        AssetAllocation.status == "ASSIGNED",
     ).first()
 
     if not allocation:
         raise HTTPException(status_code=404, detail="Allocation not found or not eligible for return")
 
-    # Update allocation status
     allocation.status = "RETURN_PENDING"
     allocation.notes = request.notes
     db.add(allocation)
 
-    # Update asset status to RETURN_PENDING
     asset = db.query(Asset).filter(Asset.id == allocation.asset_id).first()
+    asset_name = asset.asset_name if asset else "Unknown Asset"
+
     if asset:
         asset.status = "RETURN_PENDING"
         db.add(asset)
 
-    # Create lifecycle event
     lifecycle_event = AssetLifecycleEvent(
         asset_id=allocation.asset_id,
         event_type=AssetEventType.RETURN_PENDING,
         event_date=datetime.utcnow(),
         user_id=allocation.employee_id,
-        remarks=request.notes
+        remarks=request.notes,
     )
     db.add(lifecycle_event)
 
     db.commit()
     db.refresh(allocation)
 
+    employee_user = db.query(User).filter(User.id == allocation.employee_id).first()
+
+    if employee_user:
+        html_content = return_requested_template(
+            asset_name=asset_name,
+            employee_name=employee_user.fullname or employee_user.username,
+            notes=request.notes,
+        )
+        asyncio.create_task(
+            send_admin_email(
+                subject="New Asset Return Request Submitted",
+                html_content=html_content,
+                recipients=[ADMIN_EMAIL],
+                attachments=None,
+            )
+        )
+
     return {"message": "Return request submitted", "allocation_id": allocation.id}
-
-
 
 # ----------------------
 # Admin: Approve/Decline Return Request
 # ----------------------
 
 @router.patch("/return-action", response_model=ApproveReturnResponse)
-def approve_return(request: ApproveReturnRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)) -> Any:
-    """
-    Admin approves or declines a return request
-    """
+async def approve_return(
+    request: ApproveReturnRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     allocation = db.query(AssetAllocation).filter(
         AssetAllocation.id == request.allocation_id,
         AssetAllocation.status == "RETURN_PENDING"
@@ -371,18 +395,15 @@ def approve_return(request: ApproveReturnRequest, db: Session = Depends(get_db),
             asset.status = "AVAILABLE"
             db.add(asset)
         event_type = AssetEventType.RETURN_ACCEPTED
-
     else:  # decline
-        # Keep both allocation and asset statuses as ASSIGNED
         allocation.status = AssetAllocationStatus.ASSIGNED
         if asset:
             asset.status = "ASSIGNED"
             db.add(asset)
-        event_type = AssetEventType.RETURN_DECLINED  # still log as declined in lifecycle
+        event_type = AssetEventType.RETURN_DECLINED
 
     db.add(allocation)
 
-    # Create lifecycle event
     lifecycle_event = AssetLifecycleEvent(
         asset_id=allocation.asset_id,
         event_type=event_type,
@@ -394,6 +415,30 @@ def approve_return(request: ApproveReturnRequest, db: Session = Depends(get_db),
 
     db.commit()
     db.refresh(allocation)
+
+    employee_user = db.query(User).filter(User.id == allocation.employee_id).first()
+    if employee_user and asset:
+        if request.action == "accept":
+            html_content = return_asset_accepted(
+                asset_name=asset.asset_name,
+                fullname=employee_user.fullname or employee_user.username
+            )
+            subject = "Your Asset Return Request Has Been Accepted"
+        else:
+            html_content = return_asset_declined(
+                asset_name=asset.asset_name,
+                fullname=employee_user.fullname or employee_user.username
+            )
+            subject = "Your Asset Return Request Has Been Declined"
+
+        asyncio.create_task(
+            send_admin_email(
+                subject=subject,
+                html_content=html_content,
+                recipients=[employee_user.email],
+                attachments=None,
+            )
+        )
 
     return {
         "message": f"Return request {request.action}ed successfully",
