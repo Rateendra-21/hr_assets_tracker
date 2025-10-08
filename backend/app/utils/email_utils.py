@@ -1,20 +1,44 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+# from fastapi_mail import FastMail, MessageSchema, MessageType
+# from app.email_config import ADMIN_EMAIL, conf
 
-def send_email(to_email: str, subject: str, body: str):
-    smtp_server = "smtp.gmail.com"  # Gmail SMTP
-    smtp_port = 587
-    smtp_user = "rateendratalekar12@gmail.com"
-    smtp_password = "21021996@Ra"  # Use App Password or env variable
+# async def send_admin_email(subject: str, html_content: str):
+#     message = MessageSchema(
+#         subject=subject,
+#         recipients=[ADMIN_EMAIL],
+#         body=html_content,
+#         subtype=MessageType.html
+#     )
+#     fm = FastMail(conf)
+#     await fm.send_message(message)
 
-    msg = MIMEMultipart()
-    msg['From'] = smtp_user
-    msg['To'] = to_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
 
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.send_message(msg)
+
+# from fastapi_mail import FastMail, MessageSchema, MessageType
+# from app.email_config import ADMIN_EMAIL, conf
+
+# async def send_admin_email(subject: str, html_content: str, attachments: list = None):
+#     message = MessageSchema(
+#         subject=subject,
+#         recipients=[ADMIN_EMAIL],
+#         body=html_content,
+#         subtype=MessageType.html,
+#         attachments=attachments or []
+#     )
+#     fm = FastMail(conf)
+#     await fm.send_message(message)
+
+
+from fastapi_mail import FastMail, MessageSchema, MessageType
+from app.email_config import ADMIN_EMAIL, conf
+
+async def send_admin_email(subject: str, html_content: str, attachments: list = None, recipients: list = None):
+    message = MessageSchema(
+        subject=subject,
+        recipients=recipients or [ADMIN_EMAIL],
+        body=html_content,
+        subtype=MessageType.html,
+        attachments=attachments or []
+    )
+    fm = FastMail(conf)
+    await fm.send_message(message)
+

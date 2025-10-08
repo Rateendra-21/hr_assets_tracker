@@ -26,6 +26,7 @@ const EmployeeAsset = () => {
   const [showReturnPopup, setShowReturnPopup] = useState(false);
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const employeeId = JSON.parse(sessionStorage.getItem("userData"))?.user?.id;
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchAssignedAssets = async () => {
     if (!employeeId) return;
@@ -87,6 +88,7 @@ const EmployeeAsset = () => {
   };
 
   const handleAcceptClick = async (item) => {
+    setIsLoading(true);
     const payload = {
       allocation_id: item.allocation_id,
       action: "accept",
@@ -116,6 +118,7 @@ const EmployeeAsset = () => {
         sessionStorage.removeItem("userData");
         localStorage.clear();
         window.location.href = "/login";
+        setIsLoading(false);
         return;
       }
 
@@ -132,6 +135,7 @@ const EmployeeAsset = () => {
         error.message || "Something went wrong while accepting asset."
       );
     }
+    setIsLoading(false);
   };
 
   const handleDeclineClick = (item) => {
@@ -375,6 +379,7 @@ const EmployeeAsset = () => {
                                 <button
                                   className="btn btn-sm btn-success"
                                   onClick={() => handleAcceptClick(item)}
+                                  disabled={isLoading}
                                   title="Accept"
                                 >
                                   <CircleCheck size={16} className="mb-1" />
@@ -382,6 +387,7 @@ const EmployeeAsset = () => {
                                 <button
                                   className="btn btn-sm btn-danger"
                                   onClick={() => handleDeclineClick(item)}
+                                  disabled={isLoading}
                                   title="Decline"
                                 >
                                   <CircleX size={16} className="mb-1" />

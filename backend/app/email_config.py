@@ -1,5 +1,7 @@
 from fastapi_mail import ConnectionConfig
 
+ADMIN_EMAIL = "ratindratalekar9@gmail.com"
+
 conf = ConnectionConfig(
     MAIL_USERNAME="ratindratalekar9@gmail.com",
     MAIL_PASSWORD="txtsjyomxjhwukmp",  # Your Google App Password (no spaces)
@@ -9,4 +11,5 @@ conf = ConnectionConfig(
     MAIL_STARTTLS=True,
     MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True,
+
 )

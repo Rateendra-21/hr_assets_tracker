@@ -8,7 +8,9 @@ const RejectRepairRequest = ({
   onRejected,
 }) => {
   const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);   // Add loading state
   const baseUrl = import.meta.env.VITE_BASE_URL;
+
   const handleReject = async () => {
     if (!reason.trim()) {
       toast.error("Please enter rejection remark");
@@ -17,29 +19,27 @@ const RejectRepairRequest = ({
 
     const userData = JSON.parse(sessionStorage.getItem("userData"));
     const token = userData?.access_token;
-    
 
     if (!token) {
       toast.error("You are not logged in.");
       return;
     }
 
+    setLoading(true);  // Start loader
+
     try {
       const formData = new URLSearchParams();
       formData.append("rejected_by", rejectedBy);
-      formData.append("remark", reason); // backend expects `remark`
+      formData.append("remark", reason);
 
-      const response = await fetch(
-        `${baseUrl}/repair-requests/reject/${requestData.id}`,
-        {
-          method: "PUT",
-          headers: {
-             "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData.toString(),
-        }
-      );
+      const response = await fetch(`${baseUrl}/repair-requests/reject/${requestData.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData.toString(),
+      });
 
       if (response.status === 401) {
         toast.error("Session expired. Please login again.");
@@ -56,11 +56,13 @@ const RejectRepairRequest = ({
 
       toast.success("Request rejected successfully");
       onRejected?.();
-      onClose(); 
-      setReason(""); 
+      onClose();
+      setReason("");
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Failed to reject request");
+    } finally {
+      setLoading(false);  // Stop loader
     }
   };
 
@@ -81,14 +83,15 @@ const RejectRepairRequest = ({
             placeholder="Enter rejection reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            disabled={loading}  // disable on loading
           />
 
           <div className="d-flex justify-content-end gap-2">
-            <button className="btn btn-secondary" onClick={onClose}>
+            <button className="btn btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button className="btn btn-danger" onClick={handleReject}>
-              Reject
+            <button className="btn btn-danger" onClick={handleReject} disabled={loading || !reason.trim()}>
+              {loading ? "Processing..." : "Reject"}
             </button>
           </div>
         </div>
@@ -98,3 +101,4 @@ const RejectRepairRequest = ({
 };
 
 export default RejectRepairRequest;
+

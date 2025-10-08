@@ -24,6 +24,10 @@ from app.email_templates.asset_assigned import build_asset_assignment_email
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
 
+from app.email_templates.asset_accepted import asset_accepted_template
+from app.email_templates.asset_declined import asset_declined_template
+from app.utils.email_utils import send_admin_email
+
 router = APIRouter(
     tags=["asset-allocations"]
 )
@@ -112,7 +116,6 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
     return allocations
 
 
-
 # ---------------------------
 # Assigned Assets Fetch
 # ---------------------------
@@ -158,7 +161,6 @@ def get_assigned_assets(db: Session = Depends(get_db),current_user: User = Depen
         )
 
     return response
-
 
 
 #  Get assigned asset id using employee id
@@ -248,7 +250,11 @@ def mark_asset_as_ewaste(payload: EwasteRequest, db: Session = Depends(get_db),c
 # ---------------------------
 
 @router.patch("/allocation/action")
-def allocation_action(payload: AllocationActionRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+async def allocation_action(
+    payload: AllocationActionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     allocation = db.query(AssetAllocation).filter(AssetAllocation.id == payload.allocation_id).first()
     if not allocation:
         raise HTTPException(status_code=404, detail="Allocation not found")
@@ -259,23 +265,30 @@ def allocation_action(payload: AllocationActionRequest, db: Session = Depends(ge
     if payload.action.lower() == "accept":
         asset.status = "ASSIGNED"
         allocation.status = AssetAllocationStatus.ASSIGNED
-
         event = AssetLifecycleEvent(
             asset_id=asset.id,
             event_type=AssetEventType.ACCEPTED,
             user_id=payload.user_id,
             remarks=f"Asset assignment accepted by employee"
         )
-
+        html_content = asset_accepted_template(asset.asset_name, current_user.fullname)
+        await send_admin_email(
+            subject="Asset Assignment Accepted",
+            html_content=html_content
+        )
     elif payload.action.lower() == "decline":
-        asset.status = "AVAILABLE"  # asset is now free
-        allocation.status = AssetAllocationStatus.RETURNED  # allocation marked returned
-
+        asset.status = "AVAILABLE"
+        allocation.status = AssetAllocationStatus.RETURNED
         event = AssetLifecycleEvent(
             asset_id=asset.id,
             event_type=AssetEventType.DECLINED,
             user_id=payload.user_id,
             remarks=payload.remarks or f"Asset assignment declined by employee {allocation.employee_id}"
+        )
+        html_content = asset_declined_template(asset.asset_name, current_user.fullname, payload.remarks or "")
+        await send_admin_email(
+            subject="Asset Assignment Declined",
+            html_content=html_content
         )
     else:
         raise HTTPException(status_code=400, detail="Invalid action. Use 'accept' or 'decline'")
@@ -284,6 +297,7 @@ def allocation_action(payload: AllocationActionRequest, db: Session = Depends(ge
     db.commit()
     db.refresh(allocation)
     return {"message": f"Asset assignment {payload.action}ed", "allocation": allocation}
+
 
 #---------------------------
 # return the asset 

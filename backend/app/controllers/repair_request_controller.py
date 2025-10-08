@@ -21,6 +21,11 @@ from app.schemas.repair_requests import AssetInRepairResponse
 from app.models.repair_requests import RepairRequest, RepairRequestStatus
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
+from app.utils.email_utils import send_admin_email
+from app.email_templates.repair_request import repair_request_template
+from app.email_templates.repair_approved import repair_approved_template
+from fastapi_mail import FastMail, MessageSchema, MessageType
+from app.email_templates.repair_rejected import repair_rejected_template
 
 
 router = APIRouter(prefix="/repair-requests", tags=["Repair Requests"])
@@ -33,7 +38,7 @@ async def create_repair_request(
     issue_description: str = Form(...),
     images: List[UploadFile] = File([]),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     asset = db.query(Asset).filter(Asset.id == asset_id).first()
     user = db.query(User).filter(User.id == requested_by).first()
@@ -70,13 +75,14 @@ async def create_repair_request(
         event_type=event_type,
         remarks=f"Repair requested: {issue_description}",
         user_id=requested_by,
-        event_date=datetime.utcnow()
+        event_date=datetime.utcnow(),
     )
     db.add(lifecycle_event)
 
     db.commit()
     db.refresh(repair_request)
 
+    # Save images to DB
     for image in images:
         image_data = await image.read()
         repair_image = RepairRequestImage(
@@ -86,8 +92,16 @@ async def create_repair_request(
             uploaded_at=datetime.utcnow(),
         )
         db.add(repair_image)
-
+        image.file.seek(0)
     db.commit()
+
+    html_content = repair_request_template(asset.asset_name, user.fullname, issue_description)
+
+    await send_admin_email(
+        subject="New Repair Request",
+        html_content=html_content,
+        attachments=images  
+    )
 
     return {
         "id": repair_request.id,
@@ -100,7 +114,7 @@ async def create_repair_request(
 
 
 @router.put("/approve/{request_id}", response_model=RepairRequestResponse)
-def approve_repair_request(
+async def approve_repair_request(
     request_id: int,
     approved_by: int = Form(..., description="Admin user ID approving the request"),
     vendor_name: str = Form(..., description="Vendor assigned for repair"),
@@ -138,7 +152,7 @@ def approve_repair_request(
         asset_allocation.status = "IN_REPAIR"
         asset_allocation.updated_at = datetime.utcnow()
 
-    # Log lifecycle event: REPAIR_APPROVED
+    # Log lifecycle events
     repair_approved_event = AssetLifecycleEvent(
         asset_id=asset.id,
         event_type="REPAIR_APPROVED",
@@ -150,7 +164,6 @@ def approve_repair_request(
     )
     db.add(repair_approved_event)
 
-    # Log lifecycle event: IN_REPAIR
     in_repair_event = AssetLifecycleEvent(
         asset_id=asset.id,
         event_type="IN_REPAIR",
@@ -164,6 +177,22 @@ def approve_repair_request(
 
     db.commit()
     db.refresh(repair_request)
+
+    # Email the employee who raised the request
+    employee_user = db.query(User).filter(User.id == repair_request.requested_by).first()
+    if employee_user and employee_user.email:
+        html_content = repair_approved_template(
+            employee_name=employee_user.fullname or employee_user.username,
+            asset_name=asset.asset_name,
+            vendor_name=vendor_name
+        )
+        # Send to employee, not ADMIN_EMAIL
+        await send_admin_email(
+            subject="Your Repair Request Has Been Approved",
+            html_content=html_content,
+            attachments=None,
+            recipients=[employee_user.email]
+        )
 
     return repair_request
 
@@ -222,15 +251,15 @@ def get_pending_repair_requests(db: Session = Depends(get_db),current_user: User
 
 
 # reject the repair request 
+
 @router.put("/reject/{request_id}", response_model=RepairRequestResponse)
-def reject_repair_request(
+async def reject_repair_request(
     request_id: int,
     rejected_by: int = Form(..., description="Admin user ID rejecting the request"),
     remark: str = Form(..., description="Remark for rejection"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Fetch repair request
     repair_request = db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
     if not repair_request:
         raise HTTPException(status_code=404, detail="Repair request not found")
@@ -238,32 +267,27 @@ def reject_repair_request(
     if repair_request.status != RepairRequestStatus.PENDING:
         raise HTTPException(status_code=400, detail="Repair request is not pending approval")
 
-    # Update repair request status, audit fields, and resolution notes/date
     repair_request.status = RepairRequestStatus.REJECTED
-    repair_request.approved_by = rejected_by  # or rejected_by field if different
-    repair_request.approved_date = datetime.utcnow()  # or use rejection date field
+    repair_request.approved_by = rejected_by  # Or rejected_by field if different
+    repair_request.approved_date = datetime.utcnow()  # Can be rejection date field
     repair_request.resolution_notes = remark
     repair_request.resolution_date = datetime.utcnow()
     repair_request.updated_at = datetime.utcnow()
 
-    # Update asset status to ASSIGNED
     asset = repair_request.asset
     asset.status = "ASSIGNED"
 
-    # Update asset allocation status to ASSIGNED
     asset_allocation = (
         db.query(AssetAllocation)
         .filter(
             AssetAllocation.asset_id == asset.id,
             AssetAllocation.employee_id == repair_request.requested_by
-        )
-        .first()
+        ).first()
     )
     if asset_allocation:
         asset_allocation.status = "ASSIGNED"
         asset_allocation.updated_at = datetime.utcnow()
 
-    
     lifecycle_event = AssetLifecycleEvent(
         asset_id=asset.id,
         event_type="REJECTED",
@@ -277,7 +301,22 @@ def reject_repair_request(
     db.commit()
     db.refresh(repair_request)
 
+    employee_user = db.query(User).filter(User.id == repair_request.requested_by).first()
+    if employee_user and employee_user.email:
+        html_content = repair_rejected_template(
+            employee_name=employee_user.fullname or employee_user.username,
+            asset_name=asset.asset_name,
+            rejection_remark=remark
+        )
+        await send_admin_email(
+            subject="Your Repair Request Has Been Rejected",
+            html_content=html_content,
+            attachments=None,
+            recipients=[employee_user.email]
+        )
+
     return repair_request
+
 
 
 # get data In_repair
