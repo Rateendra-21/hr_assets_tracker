@@ -11,8 +11,6 @@ import {
   X,
   QrCodeIcon,
   Wrench,
-  History,
-  LockIcon,
 } from "lucide-react";
 
 const Layout = () => {
@@ -22,130 +20,54 @@ const Layout = () => {
 
   const menuItems = {
     SUPER_ADMIN: [
-      {
-        name: "Dashboard",
-        path: "/dashboard",
-        icon: <LayoutDashboard size={15} />,
-      },
-      {
-        name: "Manage Admins",
-        path: "/admin-management",
-        icon: <UserCog size={15} />,
-      },
-      {
-        name: "Employees",
-        path: "/employee-management",
-        icon: <Users size={15} />,
-      },
-      {
-        name: "Assets",
-        path: "/asset-management",
-        icon: <Package size={15} />,
-      },
-      // { name: "Asset Lifecycle", path: "/asset-lifecycle", icon: <History size={15} /> },
-      {
-        name: "Allocation",
-        path: "/asset-allocation",
-        icon: <Share2 size={15} />,
-      },
-      {
-        name: "Repair Requests",
-        path: "/repair-requests",
-        icon: <Wrench size={15} />,
-      },
-      {
-        name: "Track Asset",
-        path: "/track-asset",
-        icon: <QrCodeIcon size={15} />,
-      },
-
+      { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
+      { name: "Manage Admins", path: "/admin-management", icon: <UserCog size={15} /> },
+      { name: "Employees", path: "/employee-management", icon: <Users size={15} /> },
+      { name: "Assets", path: "/asset-management", icon: <Package size={15} /> },
+      { name: "Allocation", path: "/asset-allocation", icon: <Share2 size={15} /> },
+      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
+      { name: "Track Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
     ],
     ADMIN: [
-      {
-        name: "Dashboard",
-        path: "/dashboard",
-        icon: <LayoutDashboard size={15} />,
-      },
-      {
-        name: "Employees",
-        path: "/employee-management",
-        icon: <Users size={15} />,
-      },
-      {
-        name: "Assets",
-        path: "/asset-management",
-        icon: <Package size={15} />,
-      },
-      
-      {
-        name: "Allocation",
-        path: "/asset-allocation",
-        icon: <Share2 size={15} />,
-      },
-      {
-        name: "Repair Requests",
-        path: "/repair-requests",
-        icon: <Wrench size={15} />,
-      },
-      {
-        name: "Track Asset",
-        path: "/track-asset",
-        icon: <QrCodeIcon size={15} />,
-      },
-
+      { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
+      { name: "Employees", path: "/employee-management", icon: <Users size={15} /> },
+      { name: "Assets", path: "/asset-management", icon: <Package size={15} /> },
+      { name: "Allocation", path: "/asset-allocation", icon: <Share2 size={15} /> },
+      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
+      { name: "Track Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
     ],
     EMPLOYEE: [
-      {
-        name: "Dashboard",
-        path: "/dashboard",
-        icon: <LayoutDashboard size={15} />,
-      },
+      { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={15} /> },
       { name: "My Assets", path: "/my-assets", icon: <Package size={15} /> },
-      {
-        name: "Repair Requests",
-        path: "/repair-requests",
-        icon: <Wrench size={15} />,
-      },
-      {
-        name: "Track My Asset",
-        path: "/track-asset",
-        icon: <QrCodeIcon size={15} />,
-      },
-     
+      { name: "Repair Requests", path: "/repair-requests", icon: <Wrench size={15} /> },
+      { name: "Track My Asset", path: "/track-asset", icon: <QrCodeIcon size={15} /> },
     ],
   };
 
   useEffect(() => {
     const stored = sessionStorage.getItem("userData");
     if (!stored) {
-      navigate("/login");
+      navigate("/login", { replace: true });
       return;
     }
+
     try {
       const parsed = JSON.parse(stored);
-      // parsed is { user: {...}, message: "Login successful" }
-      if (parsed.user) {
-        setUser(parsed.user);
-      } else {
-        // fallback if direct user object
-        setUser(parsed);
-      }
+      setUser(parsed.user || parsed);
     } catch {
-      navigate("/login");
+      navigate("/login", { replace: true });
     }
   }, [navigate]);
 
   if (!user) return null;
 
-  const roleKey = user.role.toUpperCase();
+  const roleKey = user.role?.toUpperCase();
   const items = menuItems[roleKey] || [];
 
   const handleLogout = () => {
     sessionStorage.removeItem("userData");
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
-
-  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   const sidebarStyle = {
     width: 250,
@@ -170,9 +92,7 @@ const Layout = () => {
                   to={item.path}
                   className={({ isActive }) =>
                     `d-flex align-items-center p-2 text-decoration-none ${
-                      isActive
-                        ? "bg-dark text-white fw-bold rounded"
-                        : "text-dark"
+                      isActive ? "bg-dark text-white fw-bold rounded" : "text-dark"
                     }`
                   }
                 >
@@ -185,16 +105,10 @@ const Layout = () => {
 
           <div className="p-3 border-top">
             <button
-              className="btn w-100 d-flex align-items-center justify-content-center"
-              style={{
-                backgroundColor: "transparent",
-                border: "1px solid black",
-                color: "black",
-              }}
+              className="btn w-100 border d-flex align-items-center justify-content-center"
               onClick={handleLogout}
             >
-              <LogOut size={15} className="me-2" />
-              Logout
+              <LogOut size={15} className="me-2" /> Logout
             </button>
           </div>
         </aside>
@@ -204,7 +118,7 @@ const Layout = () => {
         </div>
       </div>
 
-      {/* Mobile Navbar + Sidebar */}
+      {/* Mobile Navbar */}
       <div className="d-md-none flex-grow-1 d-flex flex-column">
         <nav className="d-flex align-items-center p-2 border-bottom bg-white">
           <button
@@ -224,7 +138,7 @@ const Layout = () => {
               <h5 className="mb-0">HR Assets</h5>
               <button
                 className="btn btn-transparent p-0"
-                onClick={closeMobileMenu}
+                onClick={() => setIsMobileMenuOpen(false)}
               >
                 <X size={24} />
               </button>
@@ -237,12 +151,10 @@ const Layout = () => {
                     to={item.path}
                     className={({ isActive }) =>
                       `d-flex align-items-center p-2 text-decoration-none ${
-                        isActive
-                          ? "bg-dark text-white fw-bold rounded"
-                          : "text-dark"
+                        isActive ? "bg-dark text-white fw-bold rounded" : "text-dark"
                       }`
                     }
-                    onClick={closeMobileMenu}
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <span className="me-2">{item.icon}</span>
                     {item.name}
@@ -255,12 +167,11 @@ const Layout = () => {
               <button
                 className="btn w-100 border"
                 onClick={() => {
-                  closeMobileMenu();
+                  setIsMobileMenuOpen(false);
                   handleLogout();
                 }}
               >
-                <LogOut size={15} className="me-2" />
-                Logout
+                <LogOut size={15} className="me-2" /> Logout
               </button>
             </div>
           </div>
