@@ -180,3 +180,7 @@ def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db
     db.refresh(user)
 
     return {"message": "Password changed successfully"}
+
+
+#forgot password
+

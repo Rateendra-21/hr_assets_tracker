@@ -126,9 +126,54 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
 # ---------------------------
 # Assigned Assets Fetch
 # ---------------------------
-@router.get("/assigned", response_model=List[AssignedAssetResponse])
-def get_assigned_assets(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+# @router.get("/assigned", response_model=List[AssignedAssetResponse])
+# def get_assigned_assets(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     
+#     allocations = (
+#         db.query(AssetAllocation)
+#         .join(Asset, Asset.id == AssetAllocation.asset_id)
+#         .options(
+#             joinedload(AssetAllocation.asset),
+#             joinedload(AssetAllocation.asset).joinedload(Asset.location),
+#         )
+      
+
+#       .filter(or_(
+#     Asset.status == AssetAllocationStatus.ASSIGNED, 
+#     Asset.status == AssetAllocationStatus.ALLOCATED,
+#     AssetAllocation.status == AssetAllocationStatus.RETURN_PENDING
+# ))
+#     )
+
+#     response = []
+#     for alloc in allocations:
+#         employee = db.query(User).filter(User.id == alloc.employee_id).first()
+#         allocator = db.query(User).filter(User.id == alloc.allocated_by).first()
+
+#         response.append(
+#             AssignedAssetResponse(
+#                 allocation_id=alloc.id,
+#                 asset_id=alloc.asset.id,
+#                 asset_name=alloc.asset.asset_name,
+#                 category=alloc.asset.category,
+#                 status=alloc.asset.status.value if hasattr(alloc.asset.status, "value") else alloc.asset.status,
+#                 employee_id=employee.id if employee else alloc.employee_id,
+#                 employee_name=employee.fullname if employee else "-",
+#                 allocated_by=allocator.id if allocator else alloc.allocated_by,
+#                 allocated_by_name=allocator.fullname if allocator else "-",
+#                 allocation_date=alloc.allocation_date,
+#                 designation=employee.designation if employee else None,
+#                 manufacturer=alloc.asset.manufacturer if alloc.asset else None,
+#             )
+#         )
+
+#     return response
+
+
+@router.get("/assigned", response_model=List[AssignedAssetResponse])
+def get_assigned_assets(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    
+    # Query allocations where allocation status is ASSIGNED (current assigned)
     allocations = (
         db.query(AssetAllocation)
         .join(Asset, Asset.id == AssetAllocation.asset_id)
@@ -136,15 +181,10 @@ def get_assigned_assets(db: Session = Depends(get_db),current_user: User = Depen
             joinedload(AssetAllocation.asset),
             joinedload(AssetAllocation.asset).joinedload(Asset.location),
         )
-      
-
-      .filter(or_(
-    Asset.status == AssetAllocationStatus.ASSIGNED, 
-    Asset.status == AssetAllocationStatus.ALLOCATED,
-    AssetAllocation.status == AssetAllocationStatus.RETURN_PENDING
-))
+        .filter(AssetAllocation.status == AssetAllocationStatus.ASSIGNED)  # only current assigned allocations
+        .all()
     )
-
+    
     response = []
     for alloc in allocations:
         employee = db.query(User).filter(User.id == alloc.employee_id).first()
@@ -168,6 +208,7 @@ def get_assigned_assets(db: Session = Depends(get_db),current_user: User = Depen
         )
 
     return response
+
 
 
 #  Get assigned asset id using employee id

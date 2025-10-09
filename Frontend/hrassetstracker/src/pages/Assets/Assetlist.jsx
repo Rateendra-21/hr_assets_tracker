@@ -20,6 +20,7 @@ import EwasteAsset from "./EwasteAsset";
 import RepairAsset from "./RepairAsset";
 import ReturnAsset from "./ReturnAsset";
 import { toast } from "react-hot-toast";
+import LifeCycle from "./LifeCycle";
 import { useNavigate } from "react-router-dom";
 
 const AssetList = ({ reloadAssets }) => {
@@ -36,8 +37,12 @@ const AssetList = ({ reloadAssets }) => {
   const [showEwastePopup, setShowEwastePopup] = useState(false);
   const [showRepairPopup, setShowRepairPopup] = useState(false);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
-
   const baseUrl = import.meta.env.VITE_BASE_URL;
+
+
+  const [lifecycleData, setLifecycleData] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handleQrClick = (asset) => {
     setSelectedAsset(asset);
     setShowQrPopup(true);
@@ -140,16 +145,51 @@ const AssetList = ({ reloadAssets }) => {
     }
   };
 
-  
-
   const navigate = useNavigate();
 
-  const handleLifecycleClick = (asset) => {
-    navigate("/track-asset", { state: { assetId: asset.id } });
-    console.log(asset)
+  const handleLifecycleClick = async (asset) => {
+    try {
+      // fetch logic as you wrote ...
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+
+      if (!token) {
+        toast.error("You are not logged in.");
+        return;
+      }
+
+      const res = await fetch(`${baseUrl}/asset-lifecycle/timeline/${asset.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401) {
+        toast.error("Session expired. Please login again.");
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Failed to fetch lifecycle data");
+      }
+
+      const data = await res.json();
+      setLifecycleData(data);
+      setIsModalOpen(true);
+
+    } catch (err) {
+      console.error("Error fetching lifecycle:", err);
+      toast.error("Error fetching lifecycle data");
+    }
   };
 
-  // Fetch assets on mount or when reloadAssets changes
+  
   useEffect(() => {
     fetchAssets();
   }, [reloadAssets]);
@@ -375,6 +415,7 @@ const AssetList = ({ reloadAssets }) => {
             </div>
           )}
         </div>
+        
       </div>
 
       {viewMode === "table" && (
@@ -464,7 +505,8 @@ const AssetList = ({ reloadAssets }) => {
                         </td>
 
                         <td className="d-flex justify-content-center gap-1 flex-wrap">
-                          <button className="btn btn-primary btn-sm d-flex align-items-center">
+                          <button className="btn btn-primary btn-sm d-flex align-items-center"
+                          onClick={() => handleLifecycleClick(asset)}>
                             <History size={14} />
                           </button>
 
@@ -528,6 +570,13 @@ const AssetList = ({ reloadAssets }) => {
           show={showQrPopup}
           onClose={() => setShowQrPopup(false)}
           asset={selectedAsset}
+        />
+      )}
+
+      {isModalOpen && (
+        <LifeCycle
+          data={lifecycleData}
+          onClose={() => setIsModalOpen(false)}
         />
       )}
 

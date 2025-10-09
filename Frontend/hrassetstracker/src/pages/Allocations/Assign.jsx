@@ -1,68 +1,101 @@
 import { useState, useEffect } from "react";
 import { Box, LayoutGrid, Table } from "lucide-react";
-import AssignAsset from "./AssignAsset";
 import Assignedlist from "./Assignedlist";
+import { toast } from "react-hot-toast";
 
 const Assign = () => {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [showModal, setShowModal] = useState(false);
   const [selectedAssets, setSelectedAssets] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
-  const [activeView, setActiveView] = useState("assigned"); 
+  const [activeView, setActiveView] = useState("assigned");
+  const [employees, setEmployees] = useState([]);
+  const [employeeId, setEmployeeId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const baseUrl = import.meta.env.VITE_BASE_URL;
-  // Fetch all assets from backend
-  
+
+  // Fetch all assets
   const fetchAssets = async () => {
-  const userData = JSON.parse(sessionStorage.getItem("userData"));
-  const token = userData?.access_token;
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+    const token = userData?.access_token;
 
-  if (!token) {
-    toast.error("You are not logged in.");
-    setLoading(false);
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const res = await fetch(`${baseUrl}/assets/getAllAssets`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-         Authorization: `Bearer ${token}`,
-      },
-    });
-
-
-    if (res.status === 401) {
-      sessionStorage.removeItem("userData");
-      localStorage.clear();
-      window.location.href = "/login";
+    if (!token) {
+      toast.error("You are not logged in.");
+      setLoading(false);
       return;
     }
 
-    const data = await res.json();
-    console.log("Data",data)
-    if (!res.ok) {
-      throw new Error(data.detail || "Failed to fetch assets");
+    setLoading(true);
+    try {
+      const res = await fetch(`${baseUrl}/assets/getAllAssets`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401) {
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed to fetch assets");
+
+      setAssets(data.filter((asset) => asset.status === "AVAILABLE"));
+    } catch (err) {
+      console.error("Error fetching assets:", err);
+      toast.error(err.message || "Something went wrong while fetching assets.");
+    } finally {
+      setLoading(false);
     }
-    
-    setAssets(data.filter((asset) => asset.status === "AVAILABLE"));
-  } catch (err) {
-    console.error("Error fetching assets:", err);
-    toast.error(err.message || "Something went wrong while fetching assets.");
-  } finally {
-    setLoading(false);
-  }
+  };
+
+  // Fetch employees
+  const fetchEmployees = async () => {
+    try {
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
+      const token = userData?.access_token;
+      if (!token) return;
+
+      const response = await fetch(`${baseUrl}/employees/getemployee`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        sessionStorage.removeItem("userData");
+        localStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Failed to fetch employees");
+
+      const activeEmployees = Array.isArray(data)
+        ? data.filter((emp) => emp.is_active === true)
+        : [];
+      setEmployees(activeEmployees);
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+      toast.error("Error fetching employees");
+    }
   };
 
   useEffect(() => {
     fetchAssets();
+    fetchEmployees();
   }, []);
 
-  // Filter assets based on selected category
+  // Filter assets
   const filteredAssets =
     categoryFilter === "all"
       ? assets
@@ -70,7 +103,7 @@ const Assign = () => {
           (a) => (a.category?.name || a.category) === categoryFilter
         );
 
-  // Handle selection of assets
+  // Handle asset selection
   const handleAssetSelect = (asset) => {
     setSelectedAssets((prev) => {
       const isSelected = prev.some((a) => a.id === asset.id);
@@ -80,32 +113,60 @@ const Assign = () => {
     });
   };
 
-  // Open modal to assign assets
-  const handleAssignClick = () => {
-    if (selectedAssets.length === 0) {
-      alert("Please select at least one asset to assign");
+  // Assign assets
+  const handleAssignAssets = async () => {
+    if (!employeeId) {
+      toast.error("Please select an employee!");
       return;
     }
-    setShowModal(true);
-  };
+    if (selectedAssets.length === 0) {
+      toast.error("Please select at least one asset!");
+      return;
+    }
 
-  const handleModalClose = () => setShowModal(false);
+    const userData = JSON.parse(sessionStorage.getItem("userData")) || {};
+    const userId = userData.user?.id || 1;
+    const token = userData?.access_token;
 
-  const handleSave = async (employeeId) => {
-    if (selectedAssets.length === 0) return;
+    const payload = {
+      employee_id: parseInt(employeeId),
+      asset_ids: selectedAssets.map((asset) => asset.id),
+      user_id: userId,
+    };
+
+    setSubmitting(true);
     try {
-      fetchAssets();
+      const response = await fetch(`${baseUrl}/assignasset`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        toast.error(errData.detail || "Failed to assign assets");
+        setSubmitting(false);
+        return;
+      }
+
+      toast.success("Assets assigned successfully!");
       setSelectedAssets([]);
-      handleModalClose();
-    } catch (err) {
-      console.error("Error assigning assets:", err);
+      setEmployeeId("");
+      fetchAssets();
+    } catch (error) {
+      console.error("Error assigning assets:", error);
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <main className="flex-grow-1">
       <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 rounded p-3 bg-mix shadow-sm">
-        {/* Left Section */}
         <div className="d-flex flex-column mb-2 mb-md-0">
           <h5 className="text-dark d-flex align-items-center mb-1">
             <Box className="me-2 text-muted" size={20} />
@@ -116,13 +177,8 @@ const Assign = () => {
           </small>
         </div>
 
-        {/* Right Section */}
         <div>
-          <div
-            className="btn-group w-100 w-md-auto"
-            role="group"
-            aria-label="View toggle"
-          >
+          <div className="btn-group w-100 w-md-auto" role="group">
             <button
               type="button"
               className={`btn btn-sm rounded-start ${
@@ -149,14 +205,12 @@ const Assign = () => {
         </div>
       </div>
 
-      {/* Assigned Assets View */}
       {activeView === "assigned" && (
         <div className="p-3 border rounded bg-white mb-2">
           <Assignedlist refreshAssets={fetchAssets} />
         </div>
       )}
 
-      {/* Assign Assets View */}
       {activeView === "assign" && (
         <>
           <div className="p-3 border rounded bg-white mb-2 mt-4">
@@ -184,7 +238,6 @@ const Assign = () => {
                     viewMode === "grid" ? "" : "opacity-75"
                   }`}
                   onClick={() => setViewMode("grid")}
-                  aria-label="Grid View"
                 >
                   <LayoutGrid size={14} />
                 </button>
@@ -193,26 +246,44 @@ const Assign = () => {
                     viewMode === "table" ? "" : "opacity-75"
                   }`}
                   onClick={() => setViewMode("table")}
-                  aria-label="Table View"
                 >
                   <Table size={14} />
                 </button>
               </div>
 
-              {/* Assign Button */}
-              <div className="col-12 col-md-7 d-flex justify-content-md-end">
+              {/* Employee Dropdown + Assign Button */}
+              <div className="col-12 col-md-7 d-flex justify-content-md-end align-items-center gap-2">
+                <select
+                  className="form-select form-select-sm w-auto"
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
+                >
+                  <option value="">Select Employee To Assign</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.fullname} - {emp.location?.locationname || "-"}
+                    </option>
+                  ))}
+                </select>
+
                 <button
                   className="btn btn-dark btn-sm"
-                  onClick={handleAssignClick}
-                  disabled={selectedAssets.length === 0}
+                  onClick={handleAssignAssets}
+                  disabled={
+                    selectedAssets.length === 0 ||
+                    !employeeId ||
+                    submitting
+                  }
                 >
-                  Assign Selected Assets ({selectedAssets.length})
+                  {submitting
+                    ? "Assigning..."
+                    : `Assign Selected (${selectedAssets.length})`}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Asset List */}
+          {/* Asset list section */}
           <div>
             {loading ? (
               <div className="text-center py-5">
@@ -226,8 +297,7 @@ const Assign = () => {
               </div>
             ) : (
               <>
-                {/* Grid View */}
-                {viewMode === "grid" && (
+                {viewMode === "grid" ? (
                   <div
                     className="w-100 custom-scroll py-2"
                     style={{
@@ -267,53 +337,39 @@ const Assign = () => {
                                     {asset.category || "-"}
                                   </h6>
                                 </div>
-
-                                <div className="d-flex align-items-center gap-3 mt-1 mt-md-0">
-                                  <div className="form-check">
-                                    <input
-                                      className="form-check-input"
-                                      style={{
-                                        border: "1px solid black",
-                                        cursor: "pointer",
-                                        height: "20px",
-                                        width: "20px",
-                                      }}
-                                      type="checkbox"
-                                      checked={selectedAssets.some(
-                                        (a) => a.id === asset.id
-                                      )}
-                                      onChange={(e) => {
-                                        e.stopPropagation();
-                                        handleAssetSelect(asset);
-                                      }}
-                                    />
-                                  </div>
+                                <div className="form-check mt-1 mt-md-0">
+                                  <input
+                                    className="form-check-input"
+                                    style={{
+                                      border: "1px solid black",
+                                      cursor: "pointer",
+                                      height: "20px",
+                                      width: "20px",
+                                    }}
+                                    type="checkbox"
+                                    checked={selectedAssets.some(
+                                      (a) => a.id === asset.id
+                                    )}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      handleAssetSelect(asset);
+                                    }}
+                                  />
                                 </div>
                               </div>
 
-                              {/* Add more asset info here */}
                               <div className="row mb-3">
                                 <div className="col-6">
                                   <small className="text-muted">Location</small>
-                                  <p
-                                    className="mb-1"
-                                    style={{ fontSize: "0.85rem" }}
-                                  >
+                                  <p className="mb-1" style={{ fontSize: "0.85rem" }}>
                                     {asset.location?.locationname || "-"}
                                   </p>
                                 </div>
                                 <div className="col-6">
-                                  <small className="text-muted">
-                                    Registered Date
-                                  </small>
-                                  <p
-                                    className="mb-1"
-                                    style={{ fontSize: "0.85rem" }}
-                                  >
+                                  <small className="text-muted">Registered Date</small>
+                                  <p className="mb-1" style={{ fontSize: "0.85rem" }}>
                                     {asset.register_date
-                                      ? new Date(
-                                          asset.register_date
-                                        ).toLocaleDateString("en-GB", {
+                                      ? new Date(asset.register_date).toLocaleDateString("en-GB", {
                                           day: "2-digit",
                                           month: "short",
                                           year: "numeric",
@@ -322,22 +378,14 @@ const Assign = () => {
                                   </p>
                                 </div>
                                 <div className="col-6">
-                                  <small className="text-muted">
-                                    Manufacturer
-                                  </small>
-                                  <p
-                                    className="mb-1"
-                                    style={{ fontSize: "0.85rem" }}
-                                  >
+                                  <small className="text-muted">Manufacturer</small>
+                                  <p className="mb-1" style={{ fontSize: "0.85rem" }}>
                                     {asset.manufacturer || "-"}
                                   </p>
                                 </div>
                                 <div className="col-6">
                                   <small className="text-muted">Status</small>
-                                  <p
-                                    className="mb-1"
-                                    style={{ fontSize: "0.85rem" }}
-                                  >
+                                  <p className="mb-1" style={{ fontSize: "0.85rem" }}>
                                     {asset.status || "-"}
                                   </p>
                                 </div>
@@ -348,11 +396,7 @@ const Assign = () => {
                       ))}
                     </div>
                   </div>
-                )}
-
-                {/* Table View */}
-
-                {viewMode === "table" && (
+                ) : (
                   <div
                     className="shadow rounded"
                     style={{ border: "1px solid lightgrey" }}
@@ -368,35 +412,19 @@ const Assign = () => {
                       <table className="table table-sm mb-0 align-middle text-center">
                         <thead>
                           <tr>
-                            <th>
-                              <small>Select</small>
-                            </th>
-                            <th>
-                              <small>Asset Name</small>
-                            </th>
-                            <th>
-                              <small>Category</small>
-                            </th>
-                            <th>
-                              <small>Location</small>
-                            </th>
-                            <th>
-                              <small>Registered Date</small>
-                            </th>
-                            <th>
-                              <small>Manufacturer</small>
-                            </th>
-                            <th>
-                              <small>Status</small>
-                            </th>
+                            <th><small>Select</small></th>
+                            <th><small>Asset Name</small></th>
+                            <th><small>Category</small></th>
+                            <th><small>Location</small></th>
+                            <th><small>Registered Date</small></th>
+                            <th><small>Manufacturer</small></th>
+                            <th><small>Status</small></th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredAssets.map((asset) => {
                             const formattedDate = asset.register_date
-                              ? new Date(
-                                  asset.register_date
-                                ).toLocaleDateString("en-GB", {
+                              ? new Date(asset.register_date).toLocaleDateString("en-GB", {
                                   day: "2-digit",
                                   month: "short",
                                   year: "numeric",
@@ -420,29 +448,15 @@ const Assign = () => {
                                     checked={isSelected}
                                     onChange={() => handleAssetSelect(asset)}
                                     onClick={(e) => e.stopPropagation()}
-                                    style={{ transform: "scale(0.9)" }} // shrink checkbox slightly
+                                    style={{ transform: "scale(0.9)" }}
                                   />
                                 </td>
-                                <td>
-                                  <small>{asset.asset_name}</small>
-                                </td>
-                                <td>
-                                  <small>{asset.category || "-"}</small>
-                                </td>
-                                <td>
-                                  <small>
-                                    {asset.location?.locationname || "-"}
-                                  </small>
-                                </td>
-                                <td>
-                                  <small>{formattedDate}</small>
-                                </td>
-                                <td>
-                                  <small>{asset.manufacturer || "-"}</small>
-                                </td>
-                                <td>
-                                  <small>{asset.status || "-"}</small>
-                                </td>
+                                <td><small>{asset.asset_name}</small></td>
+                                <td><small>{asset.category || "-"}</small></td>
+                                <td><small>{asset.location?.locationname || "-"}</small></td>
+                                <td><small>{formattedDate}</small></td>
+                                <td><small>{asset.manufacturer || "-"}</small></td>
+                                <td><small>{asset.status || "-"}</small></td>
                               </tr>
                             );
                           })}
@@ -456,20 +470,11 @@ const Assign = () => {
           </div>
         </>
       )}
-
-      {/* Assign Asset Modal */}
-      {showModal && (
-        <AssignAsset
-          assets={selectedAssets}
-          onClose={handleModalClose}
-          onSave={handleSave}
-          onRemove={(assetId) =>
-            setSelectedAssets((prev) => prev.filter((a) => a.id !== assetId))
-          }
-        />
-      )}
     </main>
   );
 };
 
 export default Assign;
+
+
+
