@@ -26,6 +26,9 @@ from app.email_templates.repair_request import repair_request_template
 from app.email_templates.repair_approved import repair_approved_template
 from fastapi_mail import FastMail, MessageSchema, MessageType
 from app.email_templates.repair_rejected import repair_rejected_template
+import asyncio
+from app.email_templates.repair_completed import repair_completed
+
 
 
 router = APIRouter(prefix="/repair-requests", tags=["Repair Requests"])
@@ -112,7 +115,7 @@ async def create_repair_request(
         "request_date": repair_request.request_date,
     }
 
-
+# approve reapair request
 @router.put("/approve/{request_id}", response_model=RepairRequestResponse)
 async def approve_repair_request(
     request_id: int,
@@ -251,7 +254,6 @@ def get_pending_repair_requests(db: Session = Depends(get_db),current_user: User
 
 
 # reject the repair request 
-
 @router.put("/reject/{request_id}", response_model=RepairRequestResponse)
 async def reject_repair_request(
     request_id: int,
@@ -318,7 +320,6 @@ async def reject_repair_request(
     return repair_request
 
 
-
 # get data In_repair
 @router.get("/assets/in-repair", response_model=List[AssetInRepairResponse])
 def get_assets_in_repair(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
@@ -350,63 +351,7 @@ def get_assets_in_repair(db: Session = Depends(get_db),current_user: User = Depe
     return response
 
 
-
 # mark the asset as repaired
-# @router.put("/assets/mark-repaired/{asset_id}")
-# def mark_asset_repaired(
-#     asset_id: int,
-#     remarks: str = Form(...),
-#     user_id: int = Form(...),  
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     asset = db.query(Asset).filter(Asset.id == asset_id).first()
-#     if not asset:
-#         raise HTTPException(status_code=404, detail="Asset not found")
-#     asset.status = "ASSIGNED"
-
-#     allocation = db.query(AssetAllocation).filter(
-#         AssetAllocation.asset_id == asset_id,
-#         AssetAllocation.status == "IN_REPAIR"
-#     ).first()
-#     if allocation:
-#         allocation.status = "ASSIGNED"
-
-#     repair_request = db.query(RepairRequest).filter(
-#         RepairRequest.asset_id == asset_id,
-#         RepairRequest.status.in_(["APPROVED", "IN_REPAIR"])  # allow both
-#     ).first()
-#     if repair_request:
-#         repair_request.status = "REPAIRED"
-#         repair_request.resolution_notes = remarks
-#         repair_request.resolution_date = datetime.utcnow()
-#     else:
-#         raise HTTPException(status_code=404, detail="Repair request not found")
-
-#     lifecycle_event = AssetLifecycleEvent(
-#         asset_id=asset_id,
-#         event_type="REPAIR_COMPLETED",
-#         event_date=datetime.utcnow(),
-#         remarks=remarks,
-#         user_id=user_id  # 👈 now saving user_id
-#     )
-#     db.add(lifecycle_event)
-
-#     db.commit()
-#     db.refresh(asset)
-#     db.refresh(repair_request)
-
-#     return {
-#         "message": "Asset marked as repaired successfully",
-#         "asset_id": asset_id,
-#         "user_id": user_id,
-#         "repair_request_id": repair_request.id,
-#     }
-
-
-import asyncio
-from app.email_templates.repair_completed import repair_completed
-
 @router.put("/assets/mark-repaired/{asset_id}")
 def mark_asset_repaired(
     asset_id: int,

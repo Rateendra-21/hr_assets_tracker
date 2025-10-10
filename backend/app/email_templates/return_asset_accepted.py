@@ -1,18 +1,3 @@
-# def return_asset_accepted(asset_name: str, fullname: str) -> str:
-#     return f"""
-#     <html>
-#       <body style="font-family: Arial, sans-serif; font-size: 16px; color: #222;">
-#         <p>Dear {fullname},</p>
-#         <p>Your asset <strong>{asset_name}</strong> return request has been <span style="color: green; font-weight: bold;">accepted</span>.</p>
-#         <p>Thank you for your cooperation.</p>
-#         <br/>
-#         <p>Best regards,</p>
-#         <p>Asset Management Team</p>
-#       </body>
-#     </html>
-#     """
-
-
 def return_asset_accepted(asset_name: str, fullname: str) -> str:
     return f"""
     <html>

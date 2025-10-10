@@ -15,54 +15,52 @@ from app.schemas.user import EmployeeUpdateRequest
 from datetime import datetime
 from app.schemas.user import UserResponse, EmployeeDeactivateRequest
 from app.schemas.user import UserResponse, EmployeeActivateRequest
-
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
+from app.email_templates.employee_creation import employee_account_email_body
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
-# create emoployee by manula 
+# create emoployee by manulal
 
-async def send_password_email(email: str, raw_password: str):
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def generate_password(length: int = 12) -> str:
+    max_length = min(length, 72)
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(alphabet) for _ in range(max_length))
+
+async def send_password_email(email: str, fullname: str, raw_password: str):
+    email_body = employee_account_email_body(fullname, raw_password)
+
     message = MessageSchema(
-        subject="Hr Asset Tracker Account Password",
+        subject="HR Asset Tracker - Account Created",
         recipients=[email],
-        body=(
-            f"Hello,\n\n"
-            f"Your account has been created on Hr Asset Tracker portal.\n"
-            f"Your temporary password is: {raw_password}\n\n"
-            f"Please login and change your password immediately for security purposes.\n\n"
-            f"Thank you."
-        ),
-        subtype="plain"
+        body=email_body,
+        subtype="html" 
     )
     fm = FastMail(conf)
     await fm.send_message(message)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-def generate_password(length: int = 12) -> str:
-    max_length = min(length, 72)  # bcrypt password length limit
-    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-    return ''.join(secrets.choice(alphabet) for _ in range(max_length))
-
 @router.post("/createemployee", response_model=UserResponse)
-async def create_employee(request: AdminCreateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
-    # 1. Check if user exists
+async def create_employee(
+    request: AdminCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     existing_user = db.query(User).filter(
         (User.email == request.email) |
         (User.mobile_no == request.mobile_no) |
         (User.employee_id == request.employee_id)
     ).first()
+
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with given email, mobile number, or employee ID already exists."
         )
-    
-   
-    raw_password = generate_password() 
-    hashed_password = pwd_context.hash(raw_password.encode("utf-8")[:72])
 
+    raw_password = generate_password()
+    hashed_password = pwd_context.hash(raw_password.encode("utf-8")[:72])
 
     new_employee = User(
         fullname=request.fullname,
@@ -81,7 +79,6 @@ async def create_employee(request: AdminCreateRequest, db: Session = Depends(get
         working_status="active"
     )
 
-    # 4. Save to database
     try:
         db.add(new_employee)
         db.commit()
@@ -90,16 +87,15 @@ async def create_employee(request: AdminCreateRequest, db: Session = Depends(get
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-    # 5. Send password to employee via email
-    await send_password_email(request.email, raw_password)
+    await send_password_email(request.email, request.fullname, raw_password)
 
-    # 6. Return response (optional: include raw password)
     response_data = UserResponse.from_orm(new_employee).dict()
     response_data["raw_password"] = raw_password
     return response_data
 
 
 # get all employee
+
 @router.get("/getemployee", response_model=List[UserResponse])
 def get_admin_data(db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     admins = db.query(User).filter(User.role == "EMPLOYEE").all()
@@ -107,8 +103,13 @@ def get_admin_data(db: Session = Depends(get_db),current_user: User = Depends(ge
 
 
 # create employee by using csv file upload
+
 @router.post("/upload-csv")
-async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+async def upload_employee_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
 
@@ -126,10 +127,12 @@ async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depend
     ]
 
     for row in reader:
+        # check missing fields
         if not all(field in row for field in required_fields):
             errors.append({"error": "Missing required fields in CSV", "row": row})
             continue
 
+        # check duplicates
         existing_user = db.query(User).filter(
             (User.email == row["email"]) |
             (User.mobile_no == row["mobile_no"]) |
@@ -139,17 +142,18 @@ async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depend
             duplicates.append(row["email"])
             continue
 
-        # 1. Generate password (you can use random or fullname+employee_id)
-        raw_password = f"{row['fullname']}{row['employee_id']}"
+        # generate password
+        raw_password = generate_password()
         hashed_password = pwd_context.hash(raw_password.encode("utf-8")[:72])
 
         try:
+            # create new employee record
             new_emp = User(
                 fullname=row["fullname"],
                 mobile_no=row["mobile_no"],
                 email=row["email"],
-                username=row["email"],  
-                password=hashed_password,  # store hashed password
+                username=row["email"],
+                password=hashed_password,
                 employee_id=row["employee_id"],
                 designation=row["designation"],
                 reporting_manager=row["reporting_manager"],
@@ -164,10 +168,11 @@ async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depend
             db.commit()
             db.refresh(new_emp)
 
-            # 2. Send password to employee
-            await send_password_email(row["email"], raw_password)
+            # ✅ Send email (same as createemployee route)
+            await send_password_email(row["email"], row["fullname"], raw_password)
 
             created_employees.append(new_emp)
+
         except Exception as e:
             db.rollback()
             errors.append({"email": row.get("email", "unknown"), "error": str(e)})
@@ -179,8 +184,8 @@ async def upload_employee_csv(file: UploadFile = File(...), db: Session = Depend
     }
 
 
-
 #uodate employee by id
+
 @router.put("/update/{employee_id}", response_model=dict)
 def update_employee(employee_id: str, request: EmployeeUpdateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
 
@@ -221,6 +226,7 @@ def update_employee(employee_id: str, request: EmployeeUpdateRequest, db: Sessio
 
 
 # Employee Deactivate
+
 @router.put("/deactivate", response_model=dict)
 def deactivate_employee(request: EmployeeDeactivateRequest, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     employee = db.query(User).filter(User.employee_id == request.employee_id).first()

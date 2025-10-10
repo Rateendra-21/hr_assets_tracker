@@ -17,6 +17,9 @@ from pydantic import BaseModel
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
 from sqlalchemy import or_
+from fastapi import Body
+import random
+from app.email_templates.resetpassword import reset_password_email_body
 
 router = APIRouter()
 
@@ -183,4 +186,29 @@ def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db
 
 
 #forgot password
-
+@router.post("/forgot-password")
+async def forgot_password(email_or_mobile: str = Body(...), employee_id: str = Body(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        (User.email.ilike(email_or_mobile) | User.mobile_no.ilike(email_or_mobile)) & (User.employee_id == employee_id)
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found with provided info")
+    
+    temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    user.password = pwd_context.hash(temp_password)
+    db.commit()
+    
+ 
+    email_body = reset_password_email_body(user.fullname, temp_password)
+    
+    message = MessageSchema(
+        subject="HR Asset Tracker - Password Reset",
+        recipients=[user.email],
+        body=email_body,
+        subtype="html"
+    )
+    fm = FastMail(conf)
+    await fm.send_message(message)
+    
+    return {"message": "Temporary password sent to your email"}

@@ -1,18 +1,3 @@
-# def return_asset_declined(asset_name: str, fullname: str) -> str:
-#     return f"""
-#     <html>
-#       <body style="font-family: Arial, sans-serif; font-size: 16px; color: #222;">
-#         <p>Dear {fullname},</p>
-#         <p>Your asset <strong>{asset_name}</strong> return request has been <span style="color: red; font-weight: bold;">declined</span>.</p>
-#         <p>Please contact admin for more details.</p>
-#         <br/>
-#         <p>Best regards,</p>
-#         <p>Asset Management Team</p>
-#       </body>
-#     </html>
-#     """
-
-
 def return_asset_declined(asset_name: str, fullname: str) -> str:
     return f"""
     <html>
