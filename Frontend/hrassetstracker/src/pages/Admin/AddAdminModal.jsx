@@ -105,7 +105,7 @@ const AddAdminModal = ({ show, onClose, onSave, editingAdmin }) => {
         location_id: formData.workLocation,
         reporting_manager: formData.reportingManager,
         employee_type: "Full-Time",
-        username: formData.email,
+        // username: formData.email,
         department_id: formData.department,
         role: "ADMIN",
       };

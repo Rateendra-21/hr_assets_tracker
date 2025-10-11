@@ -10,6 +10,8 @@ from sqlalchemy import func
 from app.models.asset_lifecycle_event import AssetLifecycleEvent
 from app.utils.jwt import create_access_token
 from app.utils.auth import get_current_user
+from sqlalchemy import func, distinct
+from app.models.asset_allocation import AssetAllocation, AssetAllocationStatus
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -58,20 +60,71 @@ def get_dashboard_counts(db: Session = Depends(get_db),current_user: User = Depe
 
 # New API: Get dashboard counts by user_id
 
-@router.get("/assigned-assets-count/{user_id}")
-def get_assigned_assets_count(user_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+# @router.get("/assigned-assets-count/{user_id}")
+# def get_assigned_assets_count(user_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
   
+#     user = db.query(User).filter(User.id == user_id).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
+
+
+#     assigned_count = db.query(func.count(AssetAllocation.id)).filter(
+#         AssetAllocation.employee_id == user.id,
+#         AssetAllocation.status == "ASSIGNED"
+#     ).scalar()
+
+  
+#     latest_event_subq = (
+#         db.query(
+#             AssetLifecycleEvent.asset_id,
+#             func.max(AssetLifecycleEvent.event_date).label("latest_date")
+#         )
+#         .group_by(AssetLifecycleEvent.asset_id)
+#         .subquery()
+#     )
+
+#     latest_events = db.query(AssetLifecycleEvent).join(
+#         latest_event_subq,
+#         (AssetLifecycleEvent.asset_id == latest_event_subq.c.asset_id) &
+#         (AssetLifecycleEvent.event_date == latest_event_subq.c.latest_date)
+#     ).subquery()
+
+#     pending_repair_requests_count = db.query(func.count(latest_events.c.id)).filter(
+#         latest_events.c.user_id == user.id,
+#         latest_events.c.event_type == "REPAIR_REQUESTED"
+#     ).scalar()
+
+#     return {
+#         "assigned_assets_count": assigned_count,
+#         "pending_repair_requests_count": pending_repair_requests_count
+#     }
+
+
+
+
+
+
+@router.get("/assigned-assets-count/{user_id}")
+def get_assigned_assets_count(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Count distinct currently assigned assets for the user
+    assigned_count = (
+        db.query(func.count(distinct(AssetAllocation.asset_id)))
+        .filter(
+            AssetAllocation.employee_id == user.id,
+            AssetAllocation.status == AssetAllocationStatus.ASSIGNED
+        )
+        .scalar()
+    )
 
-    assigned_count = db.query(func.count(AssetAllocation.id)).filter(
-        AssetAllocation.employee_id == user.id,
-        AssetAllocation.status == "ASSIGNED"
-    ).scalar()
-
-  
+    # Latest lifecycle event per asset
     latest_event_subq = (
         db.query(
             AssetLifecycleEvent.asset_id,
@@ -81,16 +134,25 @@ def get_assigned_assets_count(user_id: int, db: Session = Depends(get_db),curren
         .subquery()
     )
 
-    latest_events = db.query(AssetLifecycleEvent).join(
-        latest_event_subq,
-        (AssetLifecycleEvent.asset_id == latest_event_subq.c.asset_id) &
-        (AssetLifecycleEvent.event_date == latest_event_subq.c.latest_date)
-    ).subquery()
+    latest_events = (
+        db.query(AssetLifecycleEvent)
+        .join(
+            latest_event_subq,
+            (AssetLifecycleEvent.asset_id == latest_event_subq.c.asset_id) &
+            (AssetLifecycleEvent.event_date == latest_event_subq.c.latest_date)
+        )
+        .subquery()
+    )
 
-    pending_repair_requests_count = db.query(func.count(latest_events.c.id)).filter(
-        latest_events.c.user_id == user.id,
-        latest_events.c.event_type == "REPAIR_REQUESTED"
-    ).scalar()
+    # Count pending repair requests (latest events) for the user
+    pending_repair_requests_count = (
+        db.query(func.count(latest_events.c.id))
+        .filter(
+            latest_events.c.user_id == user.id,
+            latest_events.c.event_type == "REPAIR_REQUESTED"
+        )
+        .scalar()
+    )
 
     return {
         "assigned_assets_count": assigned_count,

@@ -31,7 +31,7 @@ class UserResponse(BaseModel):
     fullname: str
     email: str
     mobile_no: Optional[str] = None
-    username: str
+    # username: str
     employee_id: str
     designation: Optional[str] = None
     reporting_manager: Optional[str] = None
@@ -79,7 +79,7 @@ class AdminCreateRequest(BaseModel):
     location_id: int
     reporting_manager: Optional[str] = None
     employee_type: str
-    username: str
+    # username: str
     password: Optional[str] = None
     is_admin: Optional[bool] = False
     role: Optional[str] = "ADMIN"

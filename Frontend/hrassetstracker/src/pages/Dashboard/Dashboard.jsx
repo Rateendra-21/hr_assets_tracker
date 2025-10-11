@@ -368,7 +368,7 @@ if (!user) return null;
             {/* Pending Repair Requests */}
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <div
-                className="card shadow rounded p-3 text-white position-relative h-100"
+                className="card  rounded p-3 text-white position-relative h-100"
                 style={{
                   border: "none",
                   background:

@@ -32,7 +32,7 @@ from app.email_config import ADMIN_EMAIL
 
 from app.email_templates.return_asset_accepted import return_asset_accepted
 from app.email_templates.return_asset_declined import return_asset_declined
-
+from sqlalchemy import desc
 
 
 router = APIRouter(
@@ -212,9 +212,59 @@ def get_assigned_assets(db: Session = Depends(get_db), current_user: User = Depe
 
 
 #  Get assigned asset id using employee id
-@router.get("/assigned/{employee_id}", response_model=List[AssignedAssetResponse])
-def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+# @router.get("/assigned/{employee_id}", response_model=List[AssignedAssetResponse])
+# def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
    
+#     allocations = (
+#         db.query(AssetAllocation)
+#         .join(Asset, Asset.id == AssetAllocation.asset_id)
+#         .options(joinedload(AssetAllocation.asset).joinedload(Asset.location))
+#         .filter(
+#             AssetAllocation.employee_id == employee_id,
+#             or_(
+                
+#                 AssetAllocation.status == AssetAllocationStatus.ASSIGNED,
+#                 AssetAllocation.status == AssetAllocationStatus.ALLOCATED
+#             )
+#         )
+#         .all()
+#     )
+
+#     if not allocations:
+#         return []
+
+#     response = []
+#     for alloc in allocations:
+#         employee = db.query(User).filter(User.id == alloc.employee_id).first()
+#         allocator = db.query(User).filter(User.id == alloc.allocated_by).first()
+
+#         response.append(
+#             AssignedAssetResponse(
+#                 allocation_id=alloc.id,
+#                 asset_id=alloc.asset.id if alloc.asset else None,
+#                 asset_name=alloc.asset.asset_name if alloc.asset else "-",
+#                 category=alloc.asset.category if alloc.asset else "-",
+#                 status=alloc.asset.status.value if hasattr(alloc.asset.status, "value") else alloc.asset.status,
+#                 employee_id=employee.id if employee else alloc.employee_id,
+#                 employee_name=employee.fullname if employee else "-",
+#                 allocated_by=allocator.id if allocator else alloc.allocated_by,
+#                 allocated_by_name=allocator.fullname if allocator else "-",
+#                 allocation_date=alloc.allocation_date,
+#                 designation=employee.designation if employee else None,
+#                 manufacturer=alloc.asset.manufacturer if alloc.asset else None,
+#             )
+#         )
+
+#     return response
+
+
+@router.get("/assigned/{employee_id}", response_model=List[AssignedAssetResponse])
+def get_assigned_assets_by_employee(
+    employee_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Query all allocations for this employee with ASSIGNED or ALLOCATED status
     allocations = (
         db.query(AssetAllocation)
         .join(Asset, Asset.id == AssetAllocation.asset_id)
@@ -222,19 +272,27 @@ def get_assigned_assets_by_employee(employee_id: int, db: Session = Depends(get_
         .filter(
             AssetAllocation.employee_id == employee_id,
             or_(
-                
                 AssetAllocation.status == AssetAllocationStatus.ASSIGNED,
                 AssetAllocation.status == AssetAllocationStatus.ALLOCATED
             )
         )
+        .order_by(desc(AssetAllocation.allocation_date))  # latest first
         .all()
     )
 
     if not allocations:
         return []
 
-    response = []
+    # Keep only latest allocation per asset
+    seen_assets = set()
+    latest_allocations = []
     for alloc in allocations:
+        if alloc.asset_id not in seen_assets:
+            latest_allocations.append(alloc)
+            seen_assets.add(alloc.asset_id)
+
+    response = []
+    for alloc in latest_allocations:
         employee = db.query(User).filter(User.id == alloc.employee_id).first()
         allocator = db.query(User).filter(User.id == alloc.allocated_by).first()
 
@@ -393,7 +451,8 @@ async def return_asset(
     if employee_user:
         html_content = return_requested_template(
             asset_name=asset_name,
-            employee_name=employee_user.fullname or employee_user.username,
+            # employee_name=employee_user.fullname or employee_user.username,
+            employee_name=employee_user.fullname ,
             notes=request.notes,
         )
         asyncio.create_task(
@@ -462,13 +521,15 @@ async def approve_return(
         if request.action == "accept":
             html_content = return_asset_accepted(
                 asset_name=asset.asset_name,
-                fullname=employee_user.fullname or employee_user.username
+                # fullname=employee_user.fullname or employee_user.username
+                fullname=employee_user.fullname
             )
             subject = "Your Asset Return Request Has Been Accepted"
         else:
             html_content = return_asset_declined(
                 asset_name=asset.asset_name,
-                fullname=employee_user.fullname or employee_user.username
+                # fullname=employee_user.fullname or employee_user.username
+                fullname=employee_user.fullname 
             )
             subject = "Your Asset Return Request Has Been Declined"
 

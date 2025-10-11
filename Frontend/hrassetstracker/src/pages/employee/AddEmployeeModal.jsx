@@ -224,7 +224,7 @@ const AddEmployeeModal = ({ show, handleClose, onSave }) => {
         location_id: formData.workLocation,
         reporting_manager: formData.reportingManager,
         employee_type: "Full-Time",
-        username: formData.email,
+        // username: formData.email,
         department_id: formData.department,
         role: "EMPLOYEE",
       };

@@ -18,7 +18,7 @@ class User(Base):
     fullname = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     mobile_no = Column(String(20), nullable=True)
-    username = Column(String(50), unique=True, nullable=False)
+    # username = Column(String(50), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
     employee_id = Column(String(50), unique=True, nullable=False)
     designation = Column(String(100), nullable=True)

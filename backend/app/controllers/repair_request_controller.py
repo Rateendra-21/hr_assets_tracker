@@ -185,7 +185,8 @@ async def approve_repair_request(
     employee_user = db.query(User).filter(User.id == repair_request.requested_by).first()
     if employee_user and employee_user.email:
         html_content = repair_approved_template(
-            employee_name=employee_user.fullname or employee_user.username,
+            # employee_name=employee_user.fullname or employee_user.username,
+            employee_name=employee_user.fullname ,
             asset_name=asset.asset_name,
             vendor_name=vendor_name
         )
@@ -306,7 +307,8 @@ async def reject_repair_request(
     employee_user = db.query(User).filter(User.id == repair_request.requested_by).first()
     if employee_user and employee_user.email:
         html_content = repair_rejected_template(
-            employee_name=employee_user.fullname or employee_user.username,
+            # employee_name=employee_user.fullname or employee_user.username,
+            employee_name=employee_user.fullname,
             asset_name=asset.asset_name,
             rejection_remark=remark
         )
@@ -402,7 +404,8 @@ def mark_asset_repaired(
     if employee_user and asset:
         html_content = repair_completed(
             asset_name=asset.asset_name,
-            fullname=employee_user.fullname or employee_user.username,
+            # fullname=employee_user.fullname or employee_user.username,
+            fullname=employee_user.fullname,
             remarks=remarks
         )
         if background_tasks:

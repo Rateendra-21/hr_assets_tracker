@@ -184,12 +184,21 @@ const AdminList = forwardRef((props, ref) => {
                               {admin.department?.departmentname}
                             </h6>
                           </div>
+
                           <span
                             className={`badge rounded-pill ${
-                              admin.is_active ? "bg-dark" : "bg-danger"
+                              admin.is_active
+                                ? "bg-dark"
+                                : admin.working_status === "pending"
+                                ? "bg-warning"
+                                : "bg-danger"
                             }`}
                           >
-                            {admin.is_active ? "Active" : "Inactive"}
+                            {admin.is_active
+                              ? "Active"
+                              : admin.working_status === "pending"
+                              ? "Not Confirmed"
+                              : "Inactive"}
                           </span>
                         </div>
 
@@ -215,19 +224,24 @@ const AdminList = forwardRef((props, ref) => {
                         </div>
 
                         <div className="mt-auto d-flex gap-2 justify-content-end">
-                          <button
-                            className={`btn btn-sm d-flex align-items-center ${
-                              admin.is_active ? "btn-danger" : "btn-success"
-                            }`}
-                            onClick={() =>
-                              handleToggleAdmin(
-                                admin.employee_id,
-                                admin.is_active
-                              )
-                            }
-                          >
-                            {admin.is_active ? "Deactivate" : "Activate"}
-                          </button>
+                          {!(
+                            admin.is_active === false &&
+                            admin.working_status === "pending"
+                          ) && (
+                            <button
+                              className={`btn btn-sm d-flex align-items-center ${
+                                admin.is_active ? "btn-danger" : "btn-success"
+                              }`}
+                              onClick={() =>
+                                handleToggleAdmin(
+                                  admin.employee_id,
+                                  admin.is_active
+                                )
+                              }
+                            >
+                              {admin.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -321,29 +335,42 @@ const AdminList = forwardRef((props, ref) => {
                           </td>
                           <td>
                             <span
-                              className={`badge ${
-                                admin.is_active ? "bg-success" : "bg-danger"
+                              className={`badge rounded-pill ${
+                                admin.is_active
+                                  ? "bg-dark"
+                                  : admin.working_status === "pending"
+                                  ? "bg-warning"
+                                  : "bg-danger"
                               }`}
                             >
-                              {admin.is_active ? "Active" : "Inactive"}
+                              {admin.is_active
+                                ? "Active"
+                                : admin.working_status === "pending"
+                                ? "Not Confirmed"
+                                : "Inactive"}
                             </span>
                           </td>
                           <td className="d-flex justify-content-center">
-                            <button
-                              className={`btn btn-sm d-flex align-items-center ${
-                                admin.is_active ? "btn-danger" : "btn-success"
-                              }`}
-                              onClick={() =>
-                                handleToggleAdmin(
-                                  admin.employee_id,
-                                  admin.is_active
-                                )
-                              }
-                            >
-                              <small className="me-1">
+                            {!(
+                              admin.is_active === false &&
+                              admin.working_status === "pending"
+                            ) ? (
+                              <button
+                                className={`btn btn-sm d-flex align-items-center ${
+                                  admin.is_active ? "btn-danger" : "btn-success"
+                                }`}
+                                onClick={() =>
+                                  handleToggleAdmin(
+                                    admin.employee_id,
+                                    admin.is_active
+                                  )
+                                }
+                              >
                                 {admin.is_active ? "Deactivate" : "Activate"}
-                              </small>
-                            </button>
+                              </button>
+                            ) : (
+                              "-"
+                            )}
                           </td>
                         </tr>
                       ))}

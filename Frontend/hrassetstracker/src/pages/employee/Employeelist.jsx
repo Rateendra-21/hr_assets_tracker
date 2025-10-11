@@ -85,26 +85,25 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
       return;
     }
     try {
-      const response = await fetch(
-        `${baseUrl}/employees/deactivate`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" , "Authorization": `Bearer ${token}`, },
-          body: JSON.stringify({
-            employee_id: employeeId.toString(),
-            remarks: reason,
-          }),
-        }
-      );
+      const response = await fetch(`${baseUrl}/employees/deactivate`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          employee_id: employeeId.toString(),
+          remarks: reason,
+        }),
+      });
 
-       if (res.status === 401) {
+      if (res.status === 401) {
         toast.error("Session expired. Please login again.");
         sessionStorage.removeItem("userData");
         localStorage.clear();
         window.location.href = "/login";
         return;
       }
-      
 
       if (!response.ok) {
         const errData = await response.json();
@@ -137,7 +136,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           employee_id: emp.employee_id,
@@ -161,7 +160,6 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
       console.log("Activation success:", data);
       toast.success(data.message || "Employee activated successfully");
 
- 
       refreshList();
     } catch (error) {
       console.error("Error activating employee:", error);
@@ -182,7 +180,6 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
         style={{ border: "1px solid lightgrey", borderRadius: "8px" }}
       >
         <div className="row g-2 align-items-center">
-         
           <div className="col-12 col-md-7 position-relative">
             <User
               className="position-absolute text-muted"
@@ -202,7 +199,6 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
             />
           </div>
 
-  
           <div className="col-9 col-md-4">
             <select
               value={statusFilter}
@@ -275,12 +271,21 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
                             {emp.department?.departmentname || "-"}
                           </h6>
                         </div>
+
                         <span
-                          className={`badge ${
-                            emp.is_active ? "bg-success" : "bg-danger"
-                          } rounded-pill mt-1 mt-md-0`}
+                          className={`badge rounded-pill ${
+                            emp.is_active
+                              ? "bg-success"
+                              : emp.working_status === "pending"
+                              ? "bg-warning"
+                              : "bg-danger"
+                          } mt-1 mt-md-0`}
                         >
-                          {emp.is_active ? "Active" : "Inactive"}
+                          {emp.is_active
+                            ? "Active"
+                            : emp.working_status === "pending"
+                            ? "Not Confirmed"
+                            : "Inactive"}
                         </span>
                       </div>
 
@@ -313,7 +318,7 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
                       </div>
 
                       {/* Buttons */}
-                      <div className="mt-auto d-flex gap-2 flex-wrap justify-content-end">
+                      {/* <div className="mt-auto d-flex gap-2 flex-wrap justify-content-end">
                         {emp.is_active === 1 || emp.is_active === true ? (
                           <button
                             className="btn btn-danger btn-sm"
@@ -341,6 +346,44 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
                           onClick={() => handleEditClick(emp)}
                         >
                           Edit
+                        </button>
+                      </div> */}
+
+                      <div className="mt-auto d-flex gap-2 flex-wrap justify-content-end">
+                        {/* Show Activate/Deactivate and Edit only if not pending */}
+                        {emp.working_status !== "pending" && (
+                          <>
+                            {emp.is_active === 1 || emp.is_active === true ? (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDeactivateClick(emp)}
+                              >
+                                Deactivate
+                              </button>
+                            ) : (
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={() => handleActivateClick(emp)}
+                              >
+                                Activate
+                              </button>
+                            )}
+
+                            <button
+                              className="btn btn-dark text-light btn-sm"
+                              onClick={() => handleEditClick(emp)}
+                            >
+                              Edit
+                            </button>
+                          </>
+                        )}
+
+                        {/* View button always visible */}
+                        <button
+                          className="btn btn-dark btn-sm"
+                          onClick={() => handleView(emp)}
+                        >
+                          View
                         </button>
                       </div>
                     </div>
@@ -436,14 +479,22 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
                         </td>
                         <td>
                           <span
-                            className={`badge ${
-                              emp.is_active ? "bg-success" : "bg-danger"
-                            }`}
+                            className={`badge rounded-pill ${
+                              emp.is_active
+                                ? "bg-success"
+                                : emp.working_status === "pending"
+                                ? "bg-warning"
+                                : "bg-danger"
+                            } mt-1 mt-md-0`}
                           >
-                            {emp.is_active ? "Active" : "Inactive"}
+                            {emp.is_active
+                              ? "Active"
+                              : emp.working_status === "pending"
+                              ? "Not Confirmed"
+                              : "Inactive"}
                           </span>
                         </td>
-                        <td className="d-flex justify-content-center">
+                        {/* <td className="d-flex justify-content-center">
                           {emp.is_active ? (
                             <button
                               className="btn btn-danger btn-sm me-1"
@@ -471,6 +522,43 @@ const EmployeeList = forwardRef(({ employees, refreshList, loading }, ref) => {
                             onClick={() => handleEditClick(emp)}
                           >
                             <Edit size={16} />
+                          </button>
+                        </td> */}
+
+                        <td className="d-flex justify-content-center">
+                          {emp.working_status !== "pending" && (
+                            <>
+                              {emp.is_active ? (
+                                <button
+                                  className="btn btn-danger btn-sm me-1"
+                                  onClick={() => handleDeactivateClick(emp)}
+                                >
+                                  <small>Deactivate</small>
+                                </button>
+                              ) : (
+                                <button
+                                  className="btn btn-success btn-sm me-1"
+                                  onClick={() => handleActivateClick(emp)}
+                                >
+                                  <small>Activate</small>
+                                </button>
+                              )}
+
+                              <button
+                                className="btn btn-dark text-light btn-sm mx-1"
+                                onClick={() => handleEditClick(emp)}
+                              >
+                                <Edit size={16} />
+                              </button>
+                            </>
+                          )}
+
+                          {/* View button always visible */}
+                          <button
+                            className="btn btn-dark btn-sm me-1"
+                            onClick={() => handleView(emp)}
+                          >
+                            <Eye size={16} />
                           </button>
                         </td>
                       </tr>

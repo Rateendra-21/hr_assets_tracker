@@ -11,7 +11,8 @@ import EmployeeAsset from "../pages/employee/EmployeeAsset";
 import RepairRequests from "../pages/Repairs/RepairRequests";
 import AssetLifecycle from "../pages/Assets/AssetLifecycle";
 import PrivateRoute from "./PrivateRoute";
-
+import ConfirmAdmin from "../pages/Common/ConfirmAdmin"
+import ConfirmEmployee from "../pages/Common/ConfirmEmployee";
 const AppRoutes = () => {
   const isLoggedIn = !!sessionStorage.getItem("userData");
 
@@ -26,6 +27,8 @@ const AppRoutes = () => {
       />
 
       <Route path="/login" element={<Login />} />
+      <Route path="/confirm-admin" element={<ConfirmAdmin />} />
+      <Route path="/Confirm-Employee" element={< ConfirmEmployee/>}/>
 
       {/* Protected Routes */}
       <Route
