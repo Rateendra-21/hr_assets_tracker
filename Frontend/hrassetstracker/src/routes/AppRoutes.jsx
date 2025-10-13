@@ -164,13 +164,14 @@ const AppRoutes = () => {
           isLoggedIn ? (
             <Navigate to="/dashboard" />
           ) : (
-            <Navigate to="/welcome" /> // 👈 redirect to Welcome instead of login
+            // <Navigate to="/welcome" /> 
+            <Navigate to="/login" /> 
           )
         }
       />
 
       {/* Public routes */}
-      <Route path="/welcome" element={<Welcome />} /> {/* 👈 new welcome route */}
+      {/* <Route path="/welcome" element={<Welcome />} />  */}
       <Route path="/login" element={<Login />} />
       <Route path="/confirm-admin" element={<ConfirmAdmin />} />
       <Route path="/confirm-employee" element={<ConfirmEmployee />} />
