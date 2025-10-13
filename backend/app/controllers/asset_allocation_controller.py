@@ -172,8 +172,6 @@ async def bulk_allocate_assets(payload: BulkAssetAllocationRequest, db: Session 
 
 @router.get("/assigned", response_model=List[AssignedAssetResponse])
 def get_assigned_assets(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    
-    # Query allocations where allocation status is ASSIGNED (current assigned)
     allocations = (
         db.query(AssetAllocation)
         .join(Asset, Asset.id == AssetAllocation.asset_id)
@@ -181,10 +179,15 @@ def get_assigned_assets(db: Session = Depends(get_db), current_user: User = Depe
             joinedload(AssetAllocation.asset),
             joinedload(AssetAllocation.asset).joinedload(Asset.location),
         )
-        .filter(AssetAllocation.status == AssetAllocationStatus.ASSIGNED)  # only current assigned allocations
+        .filter(
+            AssetAllocation.status.in_([
+                AssetAllocationStatus.ASSIGNED,
+                AssetAllocationStatus.RETURN_PENDING
+            ])
+        )
         .all()
     )
-    
+
     response = []
     for alloc in allocations:
         employee = db.query(User).filter(User.id == alloc.employee_id).first()
@@ -208,6 +211,7 @@ def get_assigned_assets(db: Session = Depends(get_db), current_user: User = Depe
         )
 
     return response
+
 
 
 
