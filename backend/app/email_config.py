@@ -1,10 +1,10 @@
 from fastapi_mail import ConnectionConfig
 
-ADMIN_EMAIL = "ratindratalekar9@gmail.com"
+ADMIN_EMAIL = "test@gmail.com"
 
 conf = ConnectionConfig(
-    MAIL_USERNAME="ratindratalekar9@gmail.com",
-    MAIL_PASSWORD="txtsjyomxjhwukmp",  # Your Google App Password (no spaces)
+    MAIL_USERNAME="test@gmail.com",
+    MAIL_PASSWORD="",  # Your Google App Password (no spaces)
     MAIL_FROM="noreply@gmail.com",
     MAIL_PORT=587,
     MAIL_SERVER="smtp.gmail.com",
